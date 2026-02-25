@@ -1,0 +1,45 @@
+﻿@model ECM.ReservationSystem.Models.Entities.City
+@{
+    ViewData["Title"] = "تفاصيل المدينة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-info-circle"></i>
+        تفاصيل المدينة
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/Cities" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            العودة للقائمة
+        </a>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">الاسم بالإنجليزية</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">الاسم بالعربية</dt>
+            <dd class="col-sm-9">@Model.NameAr</dd>
+
+            <dt class="col-sm-3">الحالة</dt>
+            <dd class="col-sm-9">
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success">نشطة</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">غير نشطة</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">تاريخ الإضافة</dt>
+            <dd class="col-sm-9">@Model.CreatedAt.ToString("yyyy/MM/dd")</dd>
+        </dl>
+    </div>
+</div>

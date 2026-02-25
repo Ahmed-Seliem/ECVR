@@ -1,0 +1,170 @@
+﻿@model ECM.ReservationSystem.Models.Entities.UnitType
+@{
+    ViewData["Title"] = "تحرير نوع الوحدة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-edit"></i>
+        تحرير نوع الوحدة: @Model.NameAr
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/UnitTypes" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right"></i>
+            العودة للقائمة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-th-large"></i>
+                    تحديث بيانات نوع الوحدة
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="CreatedAt" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Name" class="form-label">الاسم بالإنجليزية <span class="text-danger">*</span></label>
+                                <input asp-for="Name" class="form-control" placeholder="اسم نوع الوحدة بالإنجليزية" />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NameAr" class="form-label">الاسم بالعربية <span class="text-danger">*</span></label>
+                                <input asp-for="NameAr" class="form-control" placeholder="اسم نوع الوحدة بالعربية" />
+                                <span asp-validation-for="NameAr" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">الوصف</label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="وصف مختصر لنوع الوحدة"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsForManagement" class="form-check-input" type="checkbox" />
+                                    <label asp-for="IsForManagement" class="form-check-label">
+                                        مخصص للإدارة فقط
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    إذا تم التحديد، سيكون هذا النوع متاحاً للإدارة فقط
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                    <label asp-for="IsActive" class="form-check-label">
+                                        نشط
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    يحدد ما إذا كان نوع الوحدة نشط أم لا
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>تاريخ الإنشاء:</strong> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/Admin/UnitTypes" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-warning text-dark">
+                            <i class="fas fa-save"></i>
+                            حفظ التغييرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    معلومات النوع الحالية
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-6">الاسم:</dt>
+                    <dd class="col-sm-6">@Model.Name</dd>
+
+                    <dt class="col-sm-6">الاسم العربي:</dt>
+                    <dd class="col-sm-6">@Model.NameAr</dd>
+
+                    <dt class="col-sm-6">الحالة:</dt>
+                    <dd class="col-sm-6">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">نشط</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">غير نشط</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-6">للإدارة:</dt>
+                    <dd class="col-sm-6">
+                        @if (Model.IsForManagement)
+                        {
+                            <span class="badge bg-warning text-dark">نعم</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary">لا</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card shadow mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    تحذير
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    تأكد من صحة البيانات قبل الحفظ. تغيير إعدادات نوع الوحدة قد يؤثر على الوحدات المرتبطة به.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

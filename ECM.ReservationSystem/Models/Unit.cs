@@ -1,0 +1,40 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ECM.ReservationSystem.Models.Entities
+{
+    public class Unit
+    {
+        public int Id { get; set; }
+
+        [Required]
+        public string Name { get; set; }
+
+        public string? Code { get; set; } // اجعله nullable للاختبار
+        public string? Description { get; set; }
+
+        public int DefaultCapacity { get; set; } = 6;
+        public int MaxCapacity { get; set; } = 10;
+        public FloorType FloorType { get; set; }
+        public int FloorNumber { get; set; }
+        public int Year { get; set; } = DateTime.Now.Year;
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        // Foreign Keys
+        public int CityId { get; set; }
+        public int UnitTypeId { get; set; }
+
+        // Navigation Properties
+        public City? City { get; set; }
+        public UnitType? UnitType { get; set; }
+        public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
+        public ICollection<Pricing> Pricings { get; set; } = new List<Pricing>();
+    }
+
+    public enum FloorType
+    {
+        GroundFloor = 1,        // دور أرضي
+        MiddleFloor = 2,        // دور متكرر  
+        TopFloor = 3            // دور أخير
+    }
+}

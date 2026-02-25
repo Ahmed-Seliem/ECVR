@@ -1,0 +1,247 @@
+﻿@model ECM.ReservationSystem.Models.Entities.Unit
+@{
+    ViewData["Title"] = "إضافة وحدة جديدة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-plus"></i>
+        إضافة وحدة جديدة
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/Units" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right"></i>
+            العودة للقائمة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-9">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-building"></i>
+                    بيانات الوحدة
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <!-- Basic Information -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Name" class="form-label">اسم الوحدة <span class="text-danger">*</span></label>
+                                <input asp-for="Name" class="form-control" placeholder="اسم الوحدة" />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Code" class="form-label">كود الوحدة <span class="text-danger">*</span></label>
+                                <input asp-for="Code" class="form-control" placeholder="كود فريد للوحدة" />
+                                <span asp-validation-for="Code" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">الوصف</label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="وصف مختصر للوحدة"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <!-- Location Information -->
+                    <hr />
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-map-marker-alt"></i>
+                        معلومات الموقع
+                    </h6>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="CityId" class="form-label">المدينة <span class="text-danger">*</span></label>
+                                <select asp-for="CityId" asp-items="ViewBag.Cities" class="form-select">
+                                    <option value="">اختر المدينة</option>
+                                </select>
+                                <span asp-validation-for="CityId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="UnitTypeId" class="form-label">نوع الوحدة <span class="text-danger">*</span></label>
+                                <select asp-for="UnitTypeId" asp-items="ViewBag.UnitTypes" class="form-select">
+                                    <option value="">اختر نوع الوحدة</option>
+                                </select>
+                                <span asp-validation-for="UnitTypeId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="FloorType" class="form-label">نوع الدور <span class="text-danger">*</span></label>
+                                <select asp-for="FloorType" asp-items="ViewBag.FloorTypes" class="form-select">
+                                    <option value="">اختر نوع الدور</option>
+                                </select>
+                                <span asp-validation-for="FloorType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="FloorNumber" class="form-label">رقم الدور <span class="text-danger">*</span></label>
+                                <input asp-for="FloorNumber" type="number" class="form-control" min="0" max="50" placeholder="رقم الدور" />
+                                <span asp-validation-for="FloorNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capacity Information -->
+                    <hr />
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-users"></i>
+                        معلومات السعة
+                    </h6>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="DefaultCapacity" class="form-label">السعة الافتراضية <span class="text-danger">*</span></label>
+                                <input asp-for="DefaultCapacity" type="number" class="form-control" min="1" max="1000" placeholder="السعة الافتراضية" />
+                                <span asp-validation-for="DefaultCapacity" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="MaxCapacity" class="form-label">السعة القصوى <span class="text-danger">*</span></label>
+                                <input asp-for="MaxCapacity" type="number" class="form-control" min="1" max="1000" placeholder="السعة القصوى" />
+                                <span asp-validation-for="MaxCapacity" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="Year" class="form-label">السنة <span class="text-danger">*</span></label>
+                                <select asp-for="Year" asp-items="ViewBag.Years" class="form-select">
+                                    <option value="">اختر السنة</option>
+                                </select>
+                                <span asp-validation-for="Year" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <hr />
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                            <label asp-for="IsActive" class="form-check-label">
+                                الوحدة نشطة ومتاحة للحجز
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/Admin/Units" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            حفظ الوحدة
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    معلومات مهمة
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        كود الوحدة يجب أن يكون فريد
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        السعة القصوى يجب أن تكون أكبر من أو تساوي السعة الافتراضية
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        يجب اختيار مدينة ونوع وحدة نشطين
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        رقم الدور يجب أن يتناسب مع نوع الدور
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb"></i>
+                    نصائح
+                </h5>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <p>• استخدم اسماء وصفية للوحدات</p>
+                    <p>• اختر كود قصير وسهل التذكر</p>
+                    <p>• تأكد من صحة معلومات السعة</p>
+                    <p>• يمكنك تعديل البيانات لاحقاً</p>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Auto-fill floor number based on floor type
+            $('#FloorType').on('change', function() {
+            const floorType = parseInt($(this).val());
+            const floorNumberInput = $('#FloorNumber');
+
+            if (floorType === 1) { // Ground Floor
+                floorNumberInput.val(0);
+            } else if (floorType === 3) { // Top Floor
+                if (!floorNumberInput.val() || floorNumberInput.val() <= 1) {
+                    floorNumberInput.val(2);
+                }
+            }
+        });
+
+        // Validate max capacity is greater than or equal to default capacity
+        $('#MaxCapacity, #DefaultCapacity').on('input', function() {
+            const defaultCapacity = parseInt($('#DefaultCapacity').val()) || 0;
+            const maxCapacity = parseInt($('#MaxCapacity').val()) || 0;
+
+            if (maxCapacity > 0 && defaultCapacity > 0 && maxCapacity < defaultCapacity) {
+                $(this).addClass('is-invalid');
+                if (!$(this).next('.invalid-feedback').length) {
+                    $(this).after('<div class="invalid-feedback">السعة القصوى يجب أن تكون أكبر من أو تساوي السعة الافتراضية</div>');
+                }
+            } else {
+                $(this).removeClass('is-invalid');
+                $(this).next('.invalid-feedback').remove();
+            }
+        });
+    </script>
+}

@@ -1,0 +1,135 @@
+﻿@model ECM.ReservationSystem.Models.Entities.UnitType
+@{
+    ViewData["Title"] = "إضافة نوع وحدة جديد";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-plus"></i>
+        إضافة نوع وحدة جديد
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/UnitTypes" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right"></i>
+            العودة للقائمة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-th-large"></i>
+                    بيانات نوع الوحدة
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Name" class="form-label">الاسم بالإنجليزية <span class="text-danger">*</span></label>
+                                <input asp-for="Name" class="form-control" placeholder="اسم نوع الوحدة بالإنجليزية" />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NameAr" class="form-label">الاسم بالعربية <span class="text-danger">*</span></label>
+                                <input asp-for="NameAr" class="form-control" placeholder="اسم نوع الوحدة بالعربية" />
+                                <span asp-validation-for="NameAr" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">الوصف</label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="وصف مختصر لنوع الوحدة"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsForManagement" class="form-check-input" type="checkbox" />
+                                    <label asp-for="IsForManagement" class="form-check-label">
+                                        مخصص للإدارة فقط
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    إذا تم التحديد، سيكون هذا النوع متاحاً للإدارة فقط
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                                    <label asp-for="IsActive" class="form-check-label">
+                                        نشط
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    يحدد ما إذا كان نوع الوحدة نشط أم لا
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/Admin/UnitTypes" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            حفظ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    معلومات مهمة
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        يجب إدخال الاسم بالعربية والإنجليزية
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        الوصف اختياري ولكن ينصح بإضافته
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        يمكن تخصيص النوع للإدارة فقط
+                    </li>
+                    <li>
+                        <i class="fas fa-check-circle text-success"></i>
+                        يمكن إلغاء تفعيل النوع مؤقتاً
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

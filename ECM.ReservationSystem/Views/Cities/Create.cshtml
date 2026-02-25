@@ -1,0 +1,96 @@
+﻿@model ECM.ReservationSystem.Models.Entities.City
+@{
+    ViewData["Title"] = "إضافة مدينة جديدة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-plus-circle"></i>
+        إضافة مدينة جديدة
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/Cities" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            العودة للقائمة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label">اسم المدينة (بالإنجليزية)</label>
+                        <input asp-for="Name" class="form-control" placeholder="مثال: Cairo" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="NameAr" class="form-label">اسم المدينة (بالعربية)</label>
+                        <input asp-for="NameAr" class="form-control" placeholder="مثال: القاهرة" />
+                        <span asp-validation-for="NameAr" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label">
+                                المدينة نشطة
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">المدن غير النشطة لا تظهر في قوائم الحجز</small>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/Admin/Cities" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            حفظ المدينة
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-header">
+                <h6 class="m-0">
+                    <i class="fas fa-info-circle"></i>
+                    معلومات مهمة
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        اسم المدينة بالإنجليزية مطلوب للتكامل مع الأنظمة الأخرى
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        يمكن إضافة الاسم بالعربية لسهولة العرض
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        يمكن إلغاء تفعيل المدينة مؤقتاً دون حذفها
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,331 @@
+﻿@model ECM.ReservationSystem.Models.ViewModels.Admin.DashboardViewModel
+@{
+    ViewData["Title"] = "لوحة التحكم";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-dashboard"></i>
+        لوحة التحكم الرئيسية
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="/Admin/Reservations" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-calendar-check"></i>
+                عرض الحجوزات
+            </a>
+            <a href="/Admin/Units/Availability" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-calendar-alt"></i>
+                جدولة الوحدات
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-right-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            المدن المتاحة
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalCities</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-map-marker-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-right-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            إجمالي الوحدات
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalUnits</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-building fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-right-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            الحجوزات المؤكدة
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ConfirmedReservations</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-right-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            في انتظار الدفع
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PendingReservations</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Cards -->
+<div class="row mb-4">
+    <div class="col-xl-6 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">الإيرادات</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            إجمالي الإيرادات
+                        </div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">
+                            @Model.TotalRevenue.ToString("C", new System.Globalization.CultureInfo("ar-SA"))
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            إيرادات هذا الشهر
+                        </div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">
+                            @Model.MonthlyRevenue.ToString("C", new System.Globalization.CultureInfo("ar-SA"))
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expired Holds Alert -->
+    @if (Model.ExpiredTemporaryHolds > 0)
+    {
+        <div class="col-xl-6 col-lg-5">
+            <div class="card bg-danger text-white shadow">
+                <div class="card-body">
+                    <div class="text-white-50 small">تحذير</div>
+                    <div class="text-white h5">
+                        يوجد @Model.ExpiredTemporaryHolds حجز منتهي الصلاحية
+                    </div>
+                    <a href="/Admin/Reservations?status=1" class="btn btn-light btn-sm mt-2">
+                        عرض الحجوزات المنتهية
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Expiring Holds Alert -->
+@if (Model.ExpiringHolds.Any())
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-left-warning shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        حجوزات على وشك انتهاء المهلة
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>اسم الموظف</th>
+                                    <th>الوحدة</th>
+                                    <th>انتهاء المهلة</th>
+                                    <th>الوقت المتبقي</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var hold in Model.ExpiringHolds)
+                                {
+                                    <tr>
+                                        <td>@hold.EmployeeName</td>
+                                        <td>@hold.UnitName</td>
+                                        <td>@hold.PaymentDeadline.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="text-danger">
+                                            @{
+                                                var hours = (int)hold.TimeRemaining.TotalHours;
+                                                var minutes = hold.TimeRemaining.Minutes;
+                                            }
+                                            @hours ساعة و @minutes دقيقة
+                                        </td>
+                                        <td>
+                                            <a href="/Admin/Reservations/Details/@hold.Id" class="btn btn-sm btn-outline-primary">
+                                                عرض التفاصيل
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Recent Activities and Statistics -->
+<div class="row">
+    <!-- Recent Reservations -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-list"></i>
+                    أحدث الحجوزات
+                </h6>
+            </div>
+            <div class="card-body">
+                @if (Model.RecentReservations.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-borderless table-sm">
+                            <thead>
+                                <tr>
+                                    <th>الموظف</th>
+                                    <th>الوحدة</th>
+                                    <th>الحالة</th>
+                                    <th>التاريخ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var reservation in Model.RecentReservations)
+                                {
+                                    <tr>
+                                        <td>@reservation.EmployeeName</td>
+                                        <td>
+                                            <small class="text-muted">@reservation.CityName</small><br />
+                                            @reservation.UnitName
+                                        </td>
+                                        <td>
+                                            @{
+                                                var statusClass = reservation.Status switch
+                                                {
+                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.TemporaryHold => "warning",
+                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Confirmed => "info",
+                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Paid => "success",
+                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Cancelled => "danger",
+                                                    _ => "secondary"
+                                                };
+                                                var statusText = reservation.Status switch
+                                                {
+                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.TemporaryHold => "حجز مؤقت",
+                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Confirmed => "مؤكد",
+                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Paid => "مدفوع",
+                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Cancelled => "ملغي",
+                                                    _ => reservation.Status.ToString()
+                                                };
+                                            }
+                                            <span class="badge bg-@statusClass">@statusText</span>
+                                        </td>
+                                        <td>
+                                            <small>@reservation.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center">لا توجد حجوزات حديثة</p>
+                }
+                <div class="text-center">
+                    <a href="/Admin/Reservations" class="btn btn-primary btn-sm">
+                        عرض جميع الحجوزات
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- City Statistics -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-pie"></i>
+                    إحصائيات المدن
+                </h6>
+            </div>
+            <div class="card-body">
+                @if (Model.CityStatistics.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-borderless table-sm">
+                            <thead>
+                                <tr>
+                                    <th>المدينة</th>
+                                    <th>الوحدات</th>
+                                    <th>محجوزة</th>
+                                    <th>متاحة</th>
+                                    <th>الإيرادات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var city in Model.CityStatistics)
+                                {
+                                    <tr>
+                                        <td>@city.CityName</td>
+                                        <td>@city.TotalUnits</td>
+                                        <td>
+                                            <span class="badge bg-danger">@city.ReservedUnits</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">@city.AvailableUnits</span>
+                                        </td>
+                                        <td>
+                                            <small>@city.Revenue.ToString("C", new System.Globalization.CultureInfo("ar-SA"))</small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center">لا توجد بيانات إحصائية</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

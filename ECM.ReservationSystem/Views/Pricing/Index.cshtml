@@ -1,0 +1,160 @@
+﻿@model IEnumerable<ECM.ReservationSystem.Models.ViewModels.Admin.PricingViewModel>
+@{
+    ViewData["Title"] = "إدارة التسعيرة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-dollar-sign"></i>
+        إدارة التسعيرة
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/Pricing/Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            إضافة تسعيرة جديدة
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-light">
+        <h6 class="card-title mb-0">
+            <i class="fas fa-filter"></i>
+            البحث والتصفية
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="get">
+            <div class="row">
+                <div class="col-md-5">
+                    <label class="form-label">الوحدة</label>
+                    <select name="unitId" class="form-select">
+                        <option value="">جميع الوحدات</option>
+                        @foreach (SelectListItem item in ViewBag.Units)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">نوع الدور</label>
+                    <select name="floorType" class="form-select">
+                        <option value="">جميع الأدوار</option>
+                        @foreach (SelectListItem item in ViewBag.FloorTypes)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-search"></i>
+                        بحث
+                    </button>
+                    <a href="/Admin/Pricing" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                        مسح
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <h6 class="card-title mb-0">
+            <i class="fas fa-list"></i>
+            قائمة التسعيرات (@Model.Count())
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>الوحدة</th>
+                            <th>نوع الدور</th>
+                            <th>السعر الأسبوعي</th>
+                            <th>الشخص الإضافي</th>
+                            <th>التأمين</th>
+                            <th>فترة السريان</th>
+                            <th>الحالة</th>
+                            <th>العمليات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">@item.UnitName</div>
+                                    <small class="text-muted">@item.CityName - @item.UnitTypeName</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">@item.FloorTypeDisplay</span>
+                                </td>
+                                <td class="text-success fw-bold">@item.WeeklyRentDefaultCapacity.ToString("N2") جنيه</td>
+                                <td class="text-warning fw-bold">@item.AdditionalPersonCost.ToString("N2") جنيه</td>
+                                <td class="text-info fw-bold">@item.InsuranceAmount.ToString("N2") جنيه</td>
+                                <td>
+                                    <small>
+                                        <div>من: @item.EffectiveFrom.ToString("dd/MM/yyyy")</div>
+                                        @if (item.EffectiveTo.HasValue)
+                                        {
+                                            <div>إلى: @item.EffectiveTo.Value.ToString("dd/MM/yyyy")</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-success">مفتوح</div>
+                                        }
+                                    </small>
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">غير نشط</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/Admin/Pricing/Details/@item.Id" class="btn btn-outline-info" title="التفاصيل">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="/Admin/Pricing/Edit/@item.Id" class="btn btn-outline-warning" title="تعديل">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="/Admin/Pricing/Delete/@item.Id" class="btn btn-outline-danger" title="حذف">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-dollar-sign fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">لا توجد تسعيرات</h5>
+                <p class="text-muted">لا توجد تسعيرات مطابقة لمعايير البحث</p>
+                <a href="/Admin/Pricing/Create" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    إضافة تسعيرة جديدة
+                </a>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,570 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - نظام إدارة الحجوزات ECM</title>
+
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.bootstrap4.min.css" />
+
+    <!-- Select2 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/css/select2.min.css" rel="stylesheet" />
+
+    <!-- SweetAlert -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --primary-color: #37bc9b;
+            --secondary-color: #4b91ea;
+            --success-color: #00AE8D;
+            --warning-color: #f6c23e;
+            --danger-color: #e74c3c;
+            --dark-color: #2c3e50;
+            --light-color: #f8f9fa;
+            --gray-color: #6c757d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f6fa;
+        }
+
+        /* Top Navigation */
+        .topnavbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: none;
+            height: 60px;
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+            .navbar-brand:hover {
+                color: #f8f9fa !important;
+            }
+
+        .navbar-nav .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            font-weight: 500;
+            padding: 0 15px !important;
+        }
+
+            .navbar-nav .nav-link:hover {
+                color: white !important;
+                background-color: rgba(255,255,255,0.1);
+                border-radius: 5px;
+            }
+
+        /* Sidebar */
+        .aside {
+            position: fixed;
+            right: 0;
+            top: 60px;
+            height: calc(100vh - 60px);
+            width: 250px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .aside-collapsed .aside {
+            width: 70px;
+        }
+
+        .sidebar {
+            padding: 20px 0;
+        }
+
+            .sidebar .nav {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+                .sidebar .nav li {
+                    margin: 5px 15px;
+                }
+
+                    .sidebar .nav li a {
+                        display: flex;
+                        align-items: center;
+                        padding: 12px 15px;
+                        color: var(--dark-color);
+                        text-decoration: none;
+                        border-radius: 8px;
+                        transition: all 0.3s ease;
+                        font-weight: 500;
+                    }
+
+                        .sidebar .nav li a:hover,
+                        .sidebar .nav li.active a {
+                            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                            color: white;
+                            transform: translateX(-5px);
+                        }
+
+                        .sidebar .nav li a i {
+                            width: 20px;
+                            margin-left: 10px;
+                            text-align: center;
+                        }
+
+        /* Main Content */
+        .content-wrapper {
+            margin-right: 250px;
+            margin-top: 60px;
+            padding: 30px;
+            min-height: calc(100vh - 60px);
+            transition: all 0.3s ease;
+        }
+
+        .aside-collapsed .content-wrapper {
+            margin-right: 70px;
+        }
+
+        /* Cards */
+        .panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border: none;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .panel-heading {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 20px 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border: none;
+        }
+
+        .panel-body {
+            padding: 25px;
+        }
+
+        .panel-footer {
+            background: #f8f9fa;
+            padding: 20px 25px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        /* Stats Cards */
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border: none;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+            .stats-card:hover {
+                transform: translateY(-5px);
+            }
+
+            .stats-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 4px;
+                height: 100%;
+                background: var(--primary-color);
+            }
+
+            .stats-card.success::before {
+                background: var(--success-color);
+            }
+
+            .stats-card.warning::before {
+                background: var(--warning-color);
+            }
+
+            .stats-card.danger::before {
+                background: var(--danger-color);
+            }
+
+            .stats-card.info::before {
+                background: var(--secondary-color);
+            }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+
+        .stats-label {
+            color: var(--gray-color);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .stats-icon {
+            position: absolute;
+            left: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 3rem;
+            opacity: 0.1;
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 10px 20px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+            .btn-primary:hover {
+                background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+                transform: translateY(-2px);
+            }
+
+        .btn-success {
+            background: var(--success-color);
+        }
+
+            .btn-success:hover {
+                background: #009b7d;
+                transform: translateY(-2px);
+            }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: var(--dark-color);
+        }
+
+        .btn-secondary {
+            background: var(--gray-color);
+        }
+
+        /* Form Controls */
+        .form-control {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+            .form-control:focus {
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 0.2rem rgba(55, 188, 155, 0.25);
+            }
+
+        .select2-container--default .select2-selection--single {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            height: 46px;
+            line-height: 42px;
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: var(--primary-color);
+        }
+
+        /* DataTables */
+        .datatable {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+            .datatable thead th {
+                background: var(--primary-color);
+                color: white;
+                border: none;
+                font-weight: 600;
+            }
+
+            .datatable tbody tr:hover {
+                background-color: rgba(55, 188, 155, 0.05);
+            }
+
+        /* Alerts */
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            animation: slideDown 0.3s ease;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, var(--success-color), #00c49a);
+            color: white;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, var(--danger-color), #e67e22);
+            color: white;
+        }
+
+        /* Toggle Button */
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+            .sidebar-toggle:hover {
+                background-color: rgba(255,255,255,0.1);
+            }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .aside
+
+        {
+            transform: translateX(100%);
+        }
+
+        .aside.show {
+            transform: translateX(0);
+        }
+
+        .content-wrapper {
+            margin-right: 0;
+        }
+
+        }
+
+        /* Page Title */
+        .page-title {
+            color: var(--dark-color);
+            font-weight: 700;
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+            .page-title::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                width: 50px;
+                height: 3px;
+                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                border-radius: 2px;
+            }
+
+        /* Footer */
+        footer {
+            background: var(--dark-color);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin-top: 50px;
+        }
+
+        @@keyframes slideDown {
+            from
+
+        {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <header class="topnavbar-wrapper">
+        <nav class="navbar navbar-expand-lg topnavbar">
+            <div class="container-fluid">
+                <button class="sidebar-toggle me-3" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <a class="navbar-brand" href="/">
+                    <i class="fas fa-building me-2"></i>
+                    نظام إدارة الحجوزات ECM
+                </a>
+
+                <div class="ms-auto">
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-2"></i>
+                                 Ahmed Seliem
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> الملف الشخصي</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> الإعدادات</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/Account/Logout"><i class="fas fa-sign-out-alt me-2"></i> تسجيل الخروج</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="aside" id="sidebar">
+        <div class="aside-inner">
+            <nav class="sidebar">
+                <ul class="nav">
+                    <li class="active">
+                        <a href="/">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>لوحة التحكم</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Cities">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>المدن</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/ReservationTypes">
+                            <i class="fas fa-tags"></i>
+                            <span>أنواع الحجز</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/UnitTypes">
+                            <i class="fas fa-home"></i>
+                            <span>أنواع الوحدات</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Units">
+                            <i class="fas fa-building"></i>
+                            <span>الوحدات</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Schedules">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>جدولة الوحدات</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Reservations">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>الحجوزات</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Reports">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>التقارير</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <section>
+        <div class="content-wrapper">
+            <!-- Alert Messages -->
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <main role="main">
+                @RenderBody()
+            </main>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <span>© Intalio 2025 - نظام إدارة الحجوزات ECM - جميع الحقوق محفوظة</span>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.js"></script>
+
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            document.body.classList.toggle('aside-collapsed');
+        }
+
+        // Initialize DataTables
+        $(document).ready(function() {
+            $('.datatable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.10.21/i18n/Arabic.json'
+                },
+                responsive: true,
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "الكل"]]
+            });
+
+            // Initialize Select2
+            $('.select2').select2({
+                theme: 'default',
+                language: 'ar'
+            });
+
+            // Auto-hide alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 5000);
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

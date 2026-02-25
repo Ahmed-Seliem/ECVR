@@ -1,0 +1,83 @@
+
+.border-right-primary {
+    border-right: 0.25rem solid #4e73df !important;
+}
+
+.border-right-success {
+    border-right: 0.25rem solid #1cc88a !important;
+}
+
+.border-right-info {
+    border-right: 0.25rem solid #36b9cc !important;
+}
+
+.border-right-warning {
+    border-right: 0.25rem solid #f6c23e !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+.card {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+}
+
+.table-responsive {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.btn-group .btn {
+    margin: 0 2px;
+}
+
+/* RTL Adjustments */
+.navbar-nav .dropdown-menu {
+    right: 0;
+    left: auto;
+}
+
+.btn-toolbar .btn-group {
+    margin-left: 0.5rem;
+    margin-right: 0;
+}
+
+/* Status badges */
+.badge {
+    font-size: 0.75em;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    transition: transform 0.2s;
+}
+
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+    }
+
+/* Animation for alerts */
+.alert {
+    animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

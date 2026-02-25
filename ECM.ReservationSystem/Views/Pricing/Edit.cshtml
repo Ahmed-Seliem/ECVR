@@ -1,0 +1,257 @@
+﻿@model ECM.ReservationSystem.Models.ViewModels.Admin.PricingViewModel
+@{
+    ViewData["Title"] = "تحرير التسعيرة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-edit"></i>
+        تحرير التسعيرة: @Model.UnitName
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/Pricing" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-right"></i>
+            العودة للقائمة
+        </a>
+        <a href="/Admin/Pricing/Details/@Model.Id" class="btn btn-outline-info">
+            <i class="fas fa-eye"></i>
+            عرض التفاصيل
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-9">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-dollar-sign"></i>
+                    تحديث بيانات التسعيرة
+                </h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <input type="hidden" asp-for="Id" />
+
+                    <!-- Unit Selection -->
+                    <div class="mb-3">
+                        <label asp-for="UnitId" class="form-label">الوحدة <span class="text-danger">*</span></label>
+                        <select asp-for="UnitId" asp-items="ViewBag.Units" class="form-select">
+                            <option value="">اختر الوحدة</option>
+                        </select>
+                        <span asp-validation-for="UnitId" class="text-danger"></span>
+                    </div>
+
+                    <!-- Floor Type -->
+                    <div class="mb-3">
+                        <label asp-for="FloorType" class="form-label">نوع الدور <span class="text-danger">*</span></label>
+                        <select asp-for="FloorType" asp-items="ViewBag.FloorTypes" class="form-select">
+                            <option value="">اختر نوع الدور</option>
+                        </select>
+                        <span asp-validation-for="FloorType" class="text-danger"></span>
+                    </div>
+
+                    <!-- Pricing Information -->
+                    <hr />
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-money-bill-wave"></i>
+                        معلومات التسعير
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="WeeklyRentDefaultCapacity" class="form-label">السعر الأسبوعي (6 أشخاص) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input asp-for="WeeklyRentDefaultCapacity" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                                    <span class="input-group-text">جنيه</span>
+                                </div>
+                                <span asp-validation-for="WeeklyRentDefaultCapacity" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="AdditionalPersonCost" class="form-label">تكلفة الشخص الإضافي <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input asp-for="AdditionalPersonCost" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                                    <span class="input-group-text">جنيه</span>
+                                </div>
+                                <span asp-validation-for="AdditionalPersonCost" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="InsuranceAmount" class="form-label">مبلغ التأمين <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input asp-for="InsuranceAmount" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                                    <span class="input-group-text">جنيه</span>
+                                </div>
+                                <span asp-validation-for="InsuranceAmount" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Effective Dates -->
+                    <hr />
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-calendar-alt"></i>
+                        فترة السريان
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EffectiveFrom" class="form-label">تاريخ بداية السريان <span class="text-danger">*</span></label>
+                                <input asp-for="EffectiveFrom" type="date" class="form-control" />
+                                <span asp-validation-for="EffectiveFrom" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EffectiveTo" class="form-label">تاريخ انتهاء السريان</label>
+                                <input asp-for="EffectiveTo" type="date" class="form-control" />
+                                <div class="form-text">اتركه فارغاً إذا كانت التسعيرة مفتوحة النهاية</div>
+                                <span asp-validation-for="EffectiveTo" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <hr />
+                    <div class="mb-3 form-check form-switch">
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                        <label asp-for="IsActive" class="form-check-label">التسعيرة نشطة</label>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>تم إنشاؤها في:</strong> @Model.EffectiveFrom.ToString("dd/MM/yyyy")
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/Admin/Pricing" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-warning text-dark">
+                            <i class="fas fa-save"></i>
+                            حفظ التغييرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    معلومات التسعيرة الحالية
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-5">الوحدة:</dt>
+                    <dd class="col-sm-7">@Model.UnitName</dd>
+
+                    <dt class="col-sm-5">المدينة:</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge bg-info">@Model.CityName</span>
+                    </dd>
+
+                    <dt class="col-sm-5">نوع الوحدة:</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge bg-secondary">@Model.UnitTypeName</span>
+                    </dd>
+
+                    <dt class="col-sm-5">نوع الدور:</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge bg-primary">@Model.FloorTypeDisplay</span>
+                    </dd>
+
+                    <dt class="col-sm-5">السعر الأسبوعي:</dt>
+                    <dd class="col-sm-7">@Model.WeeklyRentDefaultCapacity.ToString("N2") ج</dd>
+
+                    <dt class="col-sm-5">الشخص الإضافي:</dt>
+                    <dd class="col-sm-7">@Model.AdditionalPersonCost.ToString("N2") ج</dd>
+
+                    <dt class="col-sm-5">التأمين:</dt>
+                    <dd class="col-sm-7">@Model.InsuranceAmount.ToString("N2") ج</dd>
+
+                    <dt class="col-sm-5">الحالة:</dt>
+                    <dd class="col-sm-7">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">نشط</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">غير نشط</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card shadow mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    تحذير
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    تغيير التسعيرة قد يؤثر على الحجوزات المستقبلية. تأكد من صحة الأسعار قبل الحفظ.
+                </p>
+            </div>
+        </div>
+
+        <div class="card shadow mt-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line"></i>
+                    إحصائيات سريعة
+                </h5>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <p><i class="fas fa-calendar"></i> عدد الحجوزات: <strong>قريباً</strong></p>
+                    <p><i class="fas fa-tag"></i> خطط أسعار أخرى: <strong>قريباً</strong></p>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Validate effective dates
+        $('#EffectiveTo, #EffectiveFrom').on('change', function () {
+            const from = new Date($('#EffectiveFrom').val());
+            const to = $('#EffectiveTo').val() ? new Date($('#EffectiveTo').val()) : null;
+
+            if (to && to <= from) {
+                $('#EffectiveTo').addClass('is-invalid');
+                if (!$('#EffectiveTo').next('.invalid-feedback').length) {
+                    $('#EffectiveTo').after('<div class="invalid-feedback">تاريخ انتهاء السريان يجب أن يكون بعد تاريخ بداية السريان</div>');
+                }
+            } else {
+                $('#EffectiveTo').removeClass('is-invalid');
+                $('#EffectiveTo').next('.invalid-feedback').remove();
+            }
+        });
+
+        // Highlight changed fields
+        $('input, select').on('change', function() {
+            $(this).addClass('border-warning');
+        });
+    </script>
+}

@@ -1,0 +1,76 @@
+﻿@model ECM.ReservationSystem.Models.ViewModels.Admin.PricingViewModel
+@{
+    ViewData["Title"] = "حذف التسعيرة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 text-danger">
+        <i class="fas fa-trash-alt"></i>
+        حذف التسعيرة
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/Pricing" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right"></i>
+            العودة للقائمة
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    هل أنت متأكد أنك تريد حذف هذه التسعيرة؟ لا يمكن التراجع عن هذه العملية.
+</div>
+
+<div class="card shadow">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-dollar-sign"></i>
+            بيانات التسعيرة
+        </h5>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">الوحدة</dt>
+            <dd class="col-sm-9">@Model.UnitName</dd>
+
+            <dt class="col-sm-3">المدينة</dt>
+            <dd class="col-sm-9">@Model.CityName</dd>
+
+            <dt class="col-sm-3">نوع الوحدة</dt>
+            <dd class="col-sm-9">@Model.UnitTypeName</dd>
+
+            <dt class="col-sm-3">نوع الدور</dt>
+            <dd class="col-sm-9">@Model.FloorTypeDisplay</dd>
+
+            <dt class="col-sm-3">السعر الأسبوعي</dt>
+            <dd class="col-sm-9">@Model.WeeklyRentDefaultCapacity.ToString("N2") ج</dd>
+
+            <dt class="col-sm-3">فترة السريان</dt>
+            <dd class="col-sm-9">
+                من @Model.EffectiveFrom.ToString("dd/MM/yyyy")
+                @if (Model.EffectiveTo.HasValue)
+                {
+                    <text> إلى @Model.EffectiveTo.Value.ToString("dd/MM/yyyy")</text>
+                }
+                else
+                {
+                    <text> (مفتوح)</text>
+                }
+            </dd>
+        </dl>
+    </div>
+    <div class="card-footer d-flex justify-content-end">
+        <form asp-action="Delete" method="post">
+            <input type="hidden" asp-for="Id" />
+            <a href="/Admin/Pricing" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-times"></i>
+                إلغاء
+            </a>
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash-alt"></i>
+                تأكيد الحذف
+            </button>
+        </form>
+    </div>
+</div>

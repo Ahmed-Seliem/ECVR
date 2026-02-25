@@ -1,0 +1,60 @@
+﻿@model ECM.ReservationSystem.Models.Entities.City
+@{
+    ViewData["Title"] = "حذف مدينة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 text-danger">
+        <i class="fas fa-trash-alt"></i>
+        حذف مدينة
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/Cities" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            العودة للقائمة
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    هل أنت متأكد أنك تريد حذف هذه المدينة؟
+</div>
+
+<div class="card shadow mb-3">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">الاسم بالإنجليزية</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">الاسم بالعربية</dt>
+            <dd class="col-sm-9">@Model.NameAr</dd>
+
+            <dt class="col-sm-3">الحالة</dt>
+            <dd class="col-sm-9">
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success">نشطة</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">غير نشطة</span>
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="/Admin/Cities" class="btn btn-secondary me-md-2">
+            <i class="fas fa-times"></i> إلغاء
+        </a>
+        <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash"></i> حذف
+        </button>
+    </div>
+</form>
+

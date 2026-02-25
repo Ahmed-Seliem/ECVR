@@ -1,0 +1,150 @@
+﻿@model ECM.ReservationSystem.Models.Entities.UnitType
+@{
+    ViewData["Title"] = "حذف نوع الوحدة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 text-danger">
+        <i class="fas fa-trash"></i>
+        حذف نوع الوحدة
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/Admin/UnitTypes" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right"></i>
+            العودة للقائمة
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    تأكيد حذف نوع الوحدة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>تحذير!</strong> أنت على وشك حذف نوع الوحدة التالي. هذا الإجراء لا يمكن التراجع عنه.
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">الاسم بالإنجليزية:</h6>
+                        <p class="fs-5">@Model.Name</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">الاسم بالعربية:</h6>
+                        <p class="fs-5">@Model.NameAr</p>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <div class="mb-3">
+                        <h6 class="text-muted">الوصف:</h6>
+                        <p>@Model.Description</p>
+                    </div>
+                }
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">الحالة:</h6>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">نشط</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">غير نشط</span>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">مخصص للإدارة:</h6>
+                        @if (Model.IsForManagement)
+                        {
+                            <span class="badge bg-warning text-dark">نعم</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary">لا</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <h6 class="text-muted">تاريخ الإنشاء:</h6>
+                    <p>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+
+                <hr />
+
+                <form asp-action="Delete" method="post" class="d-inline">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/Admin/UnitTypes" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من حذف نوع الوحدة؟')">
+                            <i class="fas fa-trash"></i>
+                            تأكيد الحذف
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    معلومات مهمة
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-exclamation-circle text-warning"></i>
+                        لا يمكن حذف نوع الوحدة إذا كان مرتبطاً بوحدات
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-exclamation-circle text-warning"></i>
+                        عملية الحذف نهائية ولا يمكن التراجع عنها
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-exclamation-circle text-warning"></i>
+                        تأكد من عدم الحاجة لهذا النوع مستقبلاً
+                    </li>
+                    <li>
+                        <i class="fas fa-lightbulb text-info"></i>
+                        يمكنك إلغاء تفعيل النوع بدلاً من حذفه
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow mt-3 border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-question-circle"></i>
+                    بديل للحذف
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    إذا كنت تريد إخفاء نوع الوحدة مؤقتاً، يمكنك إلغاء تفعيله بدلاً من حذفه نهائياً.
+                </p>
+                <a href="/Admin/UnitTypes/Edit/@Model.Id" class="btn btn-info btn-sm">
+                    <i class="fas fa-edit"></i>
+                    تحرير بدلاً من الحذف
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
