@@ -1,23 +1,31 @@
-﻿namespace ECM.ReservationSystem.InfrastructureExtensions;
+namespace ECM.ReservationSystem.InfrastructureExtensions;
 
 public static class AsposeLicenseHelper
 {
     public static void SetLicense(IConfiguration configuration)
     {
-        var licensePath = configuration["AsposeLicenseFilePath"];
+        var licensePath = configuration["Settings:AsposeLicenseFilePath"];
 
         if (string.IsNullOrWhiteSpace(licensePath))
         {
             return;
         }
 
-        // Aspose.Cells
-        var cellsLicense = new Aspose.Cells.License();
-        cellsLicense.SetLicense(licensePath);
+        TrySetLicense("Aspose.Cells.License, Aspose.Cells", licensePath);
+        TrySetLicense("Aspose.Words.License, Aspose.Words", licensePath);
+    }
 
-        // Aspose.Words
-        var wordsLicense = new Aspose.Words.License();
-        wordsLicense.SetLicense(licensePath);
+    private static void TrySetLicense(string licenseTypeName, string licensePath)
+    {
+        var licenseType = Type.GetType(licenseTypeName, throwOnError: false);
 
+        if (licenseType is null)
+        {
+            return;
+        }
+
+        var instance = Activator.CreateInstance(licenseType);
+        var setLicenseMethod = licenseType.GetMethod("SetLicense", new[] { typeof(string) });
+        setLicenseMethod?.Invoke(instance, new object[] { licensePath });
     }
 }

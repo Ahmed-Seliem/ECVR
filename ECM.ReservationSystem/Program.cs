@@ -1,4 +1,6 @@
+using ECM.ReservationSystem.Application;
 using ECM.ReservationSystem.Data;
+using ECM.ReservationSystem.Infrastructure;
 using ECM.ReservationSystem.InfrastructureExtensions;
 using ECM.ReservationSystem.Services;
 using ECM.ReservationSystem.Services.Implementations;
@@ -10,18 +12,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 AsposeLicenseHelper.SetLicense(builder.Configuration);
-var allowInsecureHttp = builder.Configuration.GetValue<bool>("Settings:AllowHttp", false); // true if your public URL is http://...
-
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .CreateLogger();
-builder.Host.UseSerilog();
+builder.Host.UseSerilog((context, _, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext();
+});
 
 
 
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 // Add Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -52,6 +56,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseSerilogRequestLogging();
 
 app.UseAuthorization();
 
