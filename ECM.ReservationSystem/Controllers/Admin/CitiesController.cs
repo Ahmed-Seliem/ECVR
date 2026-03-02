@@ -18,6 +18,7 @@ public class CitiesController : Controller
     public async Task<IActionResult> Index()
     {
         var cities = await _context.Cities
+            .Include(c => c.Units)
             .OrderBy(c => c.Name)
             .ToListAsync();
         return View(cities);

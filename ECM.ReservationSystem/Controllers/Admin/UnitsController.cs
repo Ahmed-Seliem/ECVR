@@ -41,6 +41,12 @@ namespace ECM.ReservationSystem.Controllers.Admin
             ViewBag.Cities = new SelectList(await _context.Cities.Where(c => c.IsActive).ToListAsync(), "Id", "Name", cityId);
             ViewBag.UnitTypes = new SelectList(await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync(), "Id", "Name", unitTypeId);
             ViewBag.Years = new SelectList(GetAvailableYears(), year);
+            ViewBag.FloorTypes = new SelectList(new[]
+            {
+                new { Value = (int)FloorType.GroundFloor, Text = "دور أرضي" },
+                new { Value = (int)FloorType.MiddleFloor, Text = "دور متكرر" },
+                new { Value = (int)FloorType.TopFloor, Text = "دور أخير" }
+            }, "Value", "Text");
 
             ViewBag.CurrentFilters = new { cityId, unitTypeId, year };
 

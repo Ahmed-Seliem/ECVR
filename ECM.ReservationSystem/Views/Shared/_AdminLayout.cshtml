@@ -20,14 +20,11 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
-    <!-- DataTables -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.bootstrap4.min.css" />
-
-    <!-- Select2 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/css/select2.min.css" rel="stylesheet" />
-
-    <!-- SweetAlert -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css" rel="stylesheet" />
+    <!-- Vendor CSS -->
+    <link rel="stylesheet" href="~/lib/DataTable/dataTables.bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/select2/dist/css/select2.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-sweetalert/dist/sweetalert.css" />
+    <link rel="stylesheet" href="~/lib/flatpicker/flatpickr.min.css" />
 
     <style>
         :root {
@@ -350,21 +347,36 @@
             }
 
         /* Responsive */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 60px 0 0 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 999;
+        }
+
+        .sidebar-backdrop.show {
+            display: block;
+        }
+
         @@media (max-width: 768px) {
-            .aside
+            .aside {
+                width: 280px;
+                transform: translateX(100%);
+            }
 
-        {
-            transform: translateX(100%);
-        }
+            .aside.show {
+                transform: translateX(0);
+            }
 
-        .aside.show {
-            transform: translateX(0);
-        }
+            .content-wrapper {
+                margin-right: 0;
+                padding: 16px;
+            }
 
-        .content-wrapper {
-            margin-right: 0;
-        }
-
+            .aside-collapsed .aside {
+                width: 280px;
+            }
         }
 
         /* Page Title */
@@ -505,6 +517,7 @@
             </nav>
         </div>
     </aside>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Main Content -->
     <section>
@@ -542,22 +555,68 @@
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/dataTables.bootstrap4.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/js/select2.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.js"></script>
+    <script src="~/lib/DataTable/jquery.dataTables.min.js"></script>
+    <script src="~/lib/DataTable/dataTables.bootstrap.min.js"></script>
+    <script src="~/lib/select2/dist/js/select2.js"></script>
+    <script src="~/lib/bootstrap-sweetalert/dist/sweetalert.min.js"></script>
+    <script src="~/lib/flatpicker/flatpickr.js"></script>
+    <script src="~/lib/flatpicker/flatpickrAr.js"></script>
 
     <script>
-        // Toggle Sidebar
+        // Toggle Sidebar (desktop: collapse, mobile: offcanvas)
         function toggleSidebar() {
-            document.body.classList.toggle('aside-collapsed');
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+
+            if (isMobile) {
+                sidebar.classList.toggle('show');
+                backdrop.classList.toggle('show');
+            } else {
+                document.body.classList.toggle('aside-collapsed');
+            }
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            sidebar.classList.remove('show');
+            backdrop.classList.remove('show');
         }
 
         // Initialize DataTables
         $(document).ready(function() {
+            $('#sidebarBackdrop').on('click', closeMobileSidebar);
+            $('.sidebar .nav a').on('click', function () {
+                if (window.matchMedia('(max-width: 768px)').matches) {
+                    closeMobileSidebar();
+                }
+            });
+
+            $(window).on('resize', function () {
+                if (!window.matchMedia('(max-width: 768px)').matches) {
+                    closeMobileSidebar();
+                }
+            });
+
             $('.datatable').DataTable({
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.10.21/i18n/Arabic.json'
+                    decimal: "",
+                    emptyTable: "لا توجد بيانات",
+                    info: "عرض _START_ إلى _END_ من _TOTAL_ صف",
+                    infoEmpty: "عرض 0 إلى 0 من 0 صف",
+                    infoFiltered: "(تمت التصفية من _MAX_ صف)",
+                    lengthMenu: "عرض _MENU_ صف",
+                    loadingRecords: "جاري التحميل...",
+                    processing: "جاري المعالجة...",
+                    search: "بحث:",
+                    zeroRecords: "لا توجد نتائج مطابقة",
+                    paginate: {
+                        first: "الأول",
+                        last: "الأخير",
+                        next: "التالي",
+                        previous: "السابق"
+                    }
                 },
                 responsive: true,
                 pageLength: 10,
@@ -565,9 +624,10 @@
             });
 
             // Initialize Select2
-            $('.select2').select2({
-                theme: 'default',
-                language: 'ar'
+            $('.select2').each(function () {
+                if (!$(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2({ theme: 'default', width: '100%' });
+                }
             });
 
             // Auto-hide alerts after 5 seconds

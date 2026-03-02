@@ -1,0 +1,79 @@
+@model IEnumerable<ECM.ReservationSystem.Models.Entities.UnitType>
+
+@if (Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover datatable">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>الاسم بالعربية</th>
+                    <th>الوصف</th>
+                    <th>للإدارة</th>
+                    <th>الحالة</th>
+                    <th>تاريخ الإنشاء</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var unitType in Model)
+                {
+                    <tr>
+                        <td>@unitType.Name</td>
+                        <td>@(string.IsNullOrWhiteSpace(unitType.NameAr) ? "-" : unitType.NameAr)</td>
+                        <td>@(string.IsNullOrWhiteSpace(unitType.Description) ? "-" : unitType.Description)</td>
+                        <td>
+                            @if (unitType.IsForManagement)
+                            {
+                                <span class="badge bg-warning text-dark">للإدارة</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-primary">للعملاء</span>
+                            }
+                        </td>
+                        <td>
+                            @if (unitType.IsActive)
+                            {
+                                <span class="badge bg-success">نشط</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">غير نشط</span>
+                            }
+                        </td>
+                        <td>@unitType.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-warning js-edit-unittype"
+                                        data-id="@unitType.Id"
+                                        data-name="@unitType.Name"
+                                        data-namear="@unitType.NameAr"
+                                        data-description="@unitType.Description"
+                                        data-management="@unitType.IsForManagement"
+                                        data-active="@unitType.IsActive"
+                                        data-createdat="@unitType.CreatedAt.ToString("o")">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger js-delete-unittype"
+                                        data-id="@unitType.Id"
+                                        data-name="@unitType.Name">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-home fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">لا توجد أنواع وحدات</h5>
+    </div>
+}
