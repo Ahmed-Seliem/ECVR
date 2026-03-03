@@ -1,4 +1,4 @@
-﻿@model ECM.ReservationSystem.Models.Entities.Unit
+@model ECM.ReservationSystem.Domain.Entities.Unit
 @{
     ViewData["Title"] = "تفاصيل الوحدة";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -117,13 +117,13 @@
                     <dd class="col-sm-8">
                         @switch (Model.FloorType)
                         {
-                            case ECM.ReservationSystem.Models.Entities.FloorType.GroundFloor:
+                            case ECM.ReservationSystem.Domain.Entities.FloorType.GroundFloor:
                                 <span class="badge bg-success fs-6">دور أرضي</span>
                                 break;
-                            case ECM.ReservationSystem.Models.Entities.FloorType.MiddleFloor:
+                            case ECM.ReservationSystem.Domain.Entities.FloorType.MiddleFloor:
                                 <span class="badge bg-warning text-dark fs-6">دور متكرر</span>
                                 break;
-                            case ECM.ReservationSystem.Models.Entities.FloorType.TopFloor:
+                            case ECM.ReservationSystem.Domain.Entities.FloorType.TopFloor:
                                 <span class="badge bg-dark fs-6">دور أخير</span>
                                 break;
                         }

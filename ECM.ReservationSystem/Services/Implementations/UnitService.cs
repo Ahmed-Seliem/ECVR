@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
 using ECM.ReservationSystem.Data;
-using ECM.ReservationSystem.Models.Entities;
+using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECM.ReservationSystem.Services.Implementations
 {

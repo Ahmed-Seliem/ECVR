@@ -1,4 +1,4 @@
-﻿using ECM.ReservationSystem.Models.Entities;
+using ECM.ReservationSystem.Domain.Entities;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ECM.ReservationSystem.Models.ViewModels.Admin

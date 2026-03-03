@@ -6,6 +6,17 @@
     var displayName = User?.Claims?
     .FirstOrDefault(c => c.Type == "DisplayName")?
     .Value ?? "User";
+    var currentPath = Context?.Request?.Path.Value ?? "/";
+
+    bool IsActive(string prefix, bool exact = false)
+    {
+        if (exact)
+        {
+            return string.Equals(currentPath, prefix, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return currentPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 
@@ -44,6 +55,14 @@
         }
 
         /* Top Navigation */
+        .topnavbar-wrapper {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 1030;
+        }
+
         .topnavbar {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -86,7 +105,7 @@
             transition: all 0.3s ease;
         }
 
-        .aside-collapsed .aside {
+        body.sidebar-collapsed .aside {
             width: 70px;
         }
 
@@ -137,8 +156,21 @@
             transition: all 0.3s ease;
         }
 
-        .aside-collapsed .content-wrapper {
+        body.sidebar-collapsed .content-wrapper {
             margin-right: 70px;
+        }
+
+        body.sidebar-collapsed .sidebar .nav li a {
+            justify-content: center;
+            padding: 12px 10px;
+        }
+
+        body.sidebar-collapsed .sidebar .nav li a span {
+            display: none;
+        }
+
+        body.sidebar-collapsed .sidebar .nav li a i {
+            margin-left: 0;
         }
 
         /* Cards */
@@ -312,6 +344,62 @@
                 background-color: rgba(55, 188, 155, 0.05);
             }
 
+        .dataTables_wrapper .dataTables_paginate {
+            margin-top: 12px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .pagination {
+            gap: 6px;
+            margin-bottom: 0;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button a,
+        .dataTables_wrapper .dataTables_paginate .page-link {
+            border-radius: 8px !important;
+            min-width: 42px;
+            text-align: center;
+            border: 1px solid #d7dde5 !important;
+            color: var(--dark-color) !important;
+            background: #fff !important;
+            font-weight: 600;
+            padding: 0.45rem 0.75rem;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .page-item.active .page-link,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.active a {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+            border-color: transparent !important;
+            color: #fff !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .page-item.disabled .page-link,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled a {
+            color: #98a2b3 !important;
+            background: #f8f9fa !important;
+        }
+
+        .modal-dialog {
+            margin-top: 90px;
+        }
+
+        .modal-header {
+            position: relative;
+            padding-left: 3rem;
+        }
+
+        .modal-header .btn-close {
+            position: absolute;
+            left: 1rem;
+            right: auto;
+            margin: 0;
+        }
+
         /* Alerts */
         .alert {
             border-radius: 10px;
@@ -374,7 +462,7 @@
                 padding: 16px;
             }
 
-            .aside-collapsed .aside {
+            body.sidebar-collapsed .aside {
                 width: 280px;
             }
         }
@@ -465,49 +553,55 @@
         <div class="aside-inner">
             <nav class="sidebar">
                 <ul class="nav">
-                    <li class="active">
+                    <li class="@(IsActive("/", exact: true) || IsActive("/Home") ? "active" : "")">
                         <a href="/">
                             <i class="fas fa-tachometer-alt"></i>
                             <span>لوحة التحكم</span>
                         </a>
                     </li>
-                    <li>
+                    <li class="@(IsActive("/Admin/Cities") ? "active" : "")">
                         <a href="/Admin/Cities">
                             <i class="fas fa-map-marker-alt"></i>
                             <span>المدن</span>
                         </a>
                     </li>
-                    <li>
+                    <li class="@(IsActive("/Admin/ReservationTypes") ? "active" : "")">
                         <a href="/Admin/ReservationTypes">
                             <i class="fas fa-tags"></i>
                             <span>أنواع الحجز</span>
                         </a>
                     </li>
-                    <li>
+                    <li class="@(IsActive("/Admin/UnitTypes") ? "active" : "")">
                         <a href="/Admin/UnitTypes">
                             <i class="fas fa-home"></i>
                             <span>أنواع الوحدات</span>
                         </a>
                     </li>
-                    <li>
+                    <li class="@(IsActive("/Admin/Units") && !IsActive("/Admin/Units/Availability") ? "active" : "")">
                         <a href="/Admin/Units">
                             <i class="fas fa-building"></i>
                             <span>الوحدات</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="/Admin/Schedules">
+                    <li class="@(IsActive("/Admin/Units/Availability") ? "active" : "")">
+                        <a href="/Admin/Units/Availability">
                             <i class="fas fa-calendar-alt"></i>
                             <span>جدولة الوحدات</span>
                         </a>
                     </li>
-                    <li>
+                    <li class="@(IsActive("/Admin/Pricing") ? "active" : "")">
+                        <a href="/Admin/Pricing">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span>التسعير</span>
+                        </a>
+                    </li>
+                    <li class="@(IsActive("/Admin/Reservations") ? "active" : "")">
                         <a href="/Admin/Reservations">
                             <i class="fas fa-calendar-check"></i>
                             <span>الحجوزات</span>
                         </a>
                     </li>
-                    <li>
+                    <li class="@(IsActive("/Admin/Reports") ? "active" : "")">
                         <a href="/Admin/Reports">
                             <i class="fas fa-chart-bar"></i>
                             <span>التقارير</span>
@@ -573,7 +667,7 @@
                 sidebar.classList.toggle('show');
                 backdrop.classList.toggle('show');
             } else {
-                document.body.classList.toggle('aside-collapsed');
+                document.body.classList.toggle('sidebar-collapsed');
             }
         }
 
@@ -597,6 +691,9 @@
                 if (!window.matchMedia('(max-width: 768px)').matches) {
                     closeMobileSidebar();
                 }
+                if (window.matchMedia('(max-width: 768px)').matches) {
+                    document.body.classList.remove('sidebar-collapsed');
+                }
             });
 
             $('.datatable').DataTable({
@@ -614,8 +711,8 @@
                     paginate: {
                         first: "الأول",
                         last: "الأخير",
-                        next: "التالي",
-                        previous: "السابق"
+                        next: "التالي ›",
+                        previous: "‹ السابق"
                     }
                 },
                 responsive: true,

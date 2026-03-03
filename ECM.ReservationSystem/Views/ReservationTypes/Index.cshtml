@@ -1,0 +1,161 @@
+@model IEnumerable<ECM.ReservationSystem.Domain.Entities.ReservationType>
+@{
+    ViewData["Title"] = "إدارة أنواع الحجز";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0">
+        <i class="fas fa-tags"></i>
+        إدارة أنواع الحجز
+    </h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createReservationTypeModal">
+        <i class="fas fa-plus"></i>
+        إضافة نوع حجز
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @await Html.PartialAsync("_ReservationTypesTable", Model)
+    </div>
+</div>
+
+<div class="modal fade" id="createReservationTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="/Admin/ReservationTypes/Create">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة نوع حجز</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">الاسم (EN)</label>
+                            <input name="Name" class="form-control" maxlength="100" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الاسم (AR)</label>
+                            <input name="NameAr" class="form-control" maxlength="100" />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">الوصف</label>
+                            <textarea name="Description" class="form-control" rows="3" maxlength="250"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الحد الأقصى للأفراد</label>
+                            <input name="MaxGuestsLimit" type="number" class="form-control" min="1" value="6" />
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="createReservationTypeIsActive" name="IsActive" value="true" checked />
+                                <input type="hidden" name="IsActive" value="false" />
+                                <label class="form-check-label" for="createReservationTypeIsActive">نشط</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editReservationTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editReservationTypeForm" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="editReservationTypeId" name="Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل نوع الحجز</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">الاسم (EN)</label>
+                            <input id="editReservationTypeName" name="Name" class="form-control" maxlength="100" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الاسم (AR)</label>
+                            <input id="editReservationTypeNameAr" name="NameAr" class="form-control" maxlength="100" />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">الوصف</label>
+                            <textarea id="editReservationTypeDescription" name="Description" class="form-control" rows="3" maxlength="250"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">الحد الأقصى للأفراد</label>
+                            <input id="editReservationTypeMaxGuestsLimit" name="MaxGuestsLimit" type="number" class="form-control" min="1" />
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="editReservationTypeIsActive" name="IsActive" value="true" />
+                                <input type="hidden" name="IsActive" value="false" />
+                                <label class="form-check-label" for="editReservationTypeIsActive">نشط</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const editModal = new bootstrap.Modal(document.getElementById('editReservationTypeModal'));
+
+            $(document).on('click', '.js-edit-reservation-type', function () {
+                const row = $(this);
+                const id = row.data('id');
+                $('#editReservationTypeId').val(id);
+                $('#editReservationTypeName').val(row.data('name'));
+                $('#editReservationTypeNameAr').val(row.data('namear'));
+                $('#editReservationTypeDescription').val(row.data('description'));
+                $('#editReservationTypeMaxGuestsLimit').val(row.data('maxguests'));
+                $('#editReservationTypeIsActive').prop('checked', row.data('active') === true || row.data('active') === 'True');
+                $('#editReservationTypeForm').attr('action', '/Admin/ReservationTypes/Edit/' + id);
+                editModal.show();
+            });
+
+            $(document).on('click', '.js-delete-reservation-type', function () {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                swal({
+                    title: 'تأكيد الحذف',
+                    text: `سيتم حذف نوع الحجز: ${name}`,
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، حذف',
+                    cancelButtonText: 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) return;
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = '/Admin/ReservationTypes/Delete/' + id;
+                    const token = document.querySelector('input[name=\"__RequestVerificationToken\"]').value;
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token;
+                    form.appendChild(tokenInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+        });
+    </script>
+}

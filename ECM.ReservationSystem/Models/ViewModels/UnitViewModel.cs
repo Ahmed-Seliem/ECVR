@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using ECM.ReservationSystem.Models.Entities;
+using System.ComponentModel.DataAnnotations;
+using ECM.ReservationSystem.Domain.Entities;
 
 namespace ECM.ReservationSystem.Models.ViewModels.Admin
 {

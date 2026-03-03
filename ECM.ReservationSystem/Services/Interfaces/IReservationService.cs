@@ -1,5 +1,5 @@
-﻿using ECM.ReservationSystem.Models.DTOs;
-using ECM.ReservationSystem.Models.Entities;
+using ECM.ReservationSystem.Models.DTOs;
+using ECM.ReservationSystem.Domain.Entities;
 
 namespace ECM.ReservationSystem.Services.Interfaces
 {

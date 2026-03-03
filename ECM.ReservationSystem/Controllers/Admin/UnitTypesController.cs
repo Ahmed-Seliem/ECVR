@@ -1,5 +1,5 @@
-﻿using ECM.ReservationSystem.Data;
-using ECM.ReservationSystem.Models.Entities;
+using ECM.ReservationSystem.Data;
+using ECM.ReservationSystem.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,7 +37,6 @@ public class UnitTypesController : Controller
     {
         if (ModelState.IsValid)
         {
-            unitType.CreatedAt = DateTime.Now;
             _context.Add(unitType);
             await _context.SaveChangesAsync();
             TempData["Success"] = "تم إضافة نوع الوحدة بنجاح";
@@ -63,7 +62,7 @@ public class UnitTypesController : Controller
     // POST: Admin/UnitTypes/Edit/5
     [HttpPost("Edit/{id}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,NameAr,Description,IsForManagement,IsActive,CreatedAt")] UnitType unitType)
+    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,NameAr,Description,IsForManagement,IsActive")] UnitType unitType)
     {
         if (id != unitType.Id)
             return NotFound();
@@ -129,3 +128,4 @@ public class UnitTypesController : Controller
         return _context.UnitTypes.Any(e => e.Id == id);
     }
 }
+

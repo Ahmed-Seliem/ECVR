@@ -3,6 +3,7 @@ using ECM.ReservationSystem.Application;
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Infrastructure;
 using ECM.ReservationSystem.InfrastructureExtensions;
+using ECM.ReservationSystem.OpenIdSettings;
 using ECM.ReservationSystem.Services;
 using ECM.ReservationSystem.Services.Implementations;
 using ECM.ReservationSystem.Services.Interfaces;
@@ -33,6 +34,8 @@ var allowInsecureHttp = builder.Configuration.GetValue<bool>("Settings:AllowHttp
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<MockDataOptions>(builder.Configuration.GetSection("MockData"));
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 // Add Entity Framework
@@ -49,6 +52,7 @@ builder.Services.AddScoped<IUnitService, UnitService>();
 
 
 builder.Services.AddHostedService<ExpiredHoldsCleanupService>();
+builder.Services.AddHostedService<MockDataSeederHostedService>();
 
 
 #region Identity External Server

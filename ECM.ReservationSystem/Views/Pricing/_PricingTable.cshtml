@@ -1,0 +1,90 @@
+@model IEnumerable<ECM.ReservationSystem.Models.ViewModels.Admin.PricingViewModel>
+
+@if (Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover datatable">
+            <thead>
+                <tr>
+                    <th>الوحدة</th>
+                    <th>نوع الدور</th>
+                    <th>السعر الأسبوعي</th>
+                    <th>الشخص الإضافي</th>
+                    <th>التأمين</th>
+                    <th>فترة السريان</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold">@item.UnitName</div>
+                            <small class="text-muted">@item.CityName - @item.UnitTypeName</small>
+                        </td>
+                        <td><span class="badge bg-info">@item.FloorTypeDisplay</span></td>
+                        <td class="fw-bold text-success">@item.WeeklyRentDefaultCapacity.ToString("N2") ج</td>
+                        <td class="fw-bold text-warning">@item.AdditionalPersonCost.ToString("N2") ج</td>
+                        <td class="fw-bold text-primary">@item.InsuranceAmount.ToString("N2") ج</td>
+                        <td>
+                            <div>من: @item.EffectiveFrom.ToString("yyyy/MM/dd")</div>
+                            @if (item.EffectiveTo.HasValue)
+                            {
+                                <div>إلى: @item.EffectiveTo.Value.ToString("yyyy/MM/dd")</div>
+                            }
+                            else
+                            {
+                                <div class="text-success">مفتوح</div>
+                            }
+                        </td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span class="badge bg-success">نشط</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">غير نشط</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="/Admin/Pricing/Details/@item.Id" class="btn btn-sm btn-outline-info" title="التفاصيل">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-warning js-edit-pricing"
+                                        data-id="@item.Id"
+                                        data-unitid="@item.UnitId"
+                                        data-floortype="@((int)item.FloorType)"
+                                        data-weekly="@item.WeeklyRentDefaultCapacity"
+                                        data-additional="@item.AdditionalPersonCost"
+                                        data-insurance="@item.InsuranceAmount"
+                                        data-effectivefrom="@item.EffectiveFrom.ToString("yyyy-MM-dd")"
+                                        data-effectiveto="@(item.EffectiveTo?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                        data-active="@item.IsActive">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger js-delete-pricing"
+                                        data-id="@item.Id"
+                                        data-name="@item.UnitName">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-dollar-sign fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">لا توجد تسعيرات مطابقة</h5>
+    </div>
+}

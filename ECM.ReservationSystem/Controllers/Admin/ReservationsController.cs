@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ECM.ReservationSystem.Data;
-using ECM.ReservationSystem.Models.Entities;
+using ECM.ReservationSystem.Domain.Entities;
 
 namespace ECM.ReservationSystem.Controllers.Admin
 {
@@ -17,6 +17,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
         }
 
         // GET: Admin/Reservations
+        [HttpGet("")]
         public async Task<IActionResult> Index(ReservationStatus? status, int? cityId, int? year)
         {
             var query = _context.Reservations
@@ -48,6 +49,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
         }
 
         // GET: Admin/Reservations/Details/5
+        [HttpGet("Details/{id:int}")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -67,7 +69,8 @@ namespace ECM.ReservationSystem.Controllers.Admin
         }
 
         // POST: Admin/Reservations/UpdateStatus/5
-        [HttpPost]
+        [HttpPost("UpdateStatus/{id}")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, ReservationStatus status)
         {
             var reservation = await _context.Reservations.FindAsync(id);
@@ -75,7 +78,6 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 return NotFound();
 
             reservation.Status = status;
-            reservation.UpdatedAt = DateTime.Now;
 
             _context.Update(reservation);
             await _context.SaveChangesAsync();
@@ -91,3 +93,4 @@ namespace ECM.ReservationSystem.Controllers.Admin
         }
     }
 }
+

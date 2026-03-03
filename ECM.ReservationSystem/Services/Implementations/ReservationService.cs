@@ -1,13 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Models.DTOs;
-using ECM.ReservationSystem.Models.Entities;
+using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Services.Interfaces;
 
 namespace ECM.ReservationSystem.Services.Implementations
 {
     public class ReservationService : IReservationService
     {
+        private const int MaxGuestsLimit = 6;
         private readonly ApplicationDbContext _context;
         private readonly IPricingService _pricingService;
 
@@ -72,6 +73,11 @@ namespace ECM.ReservationSystem.Services.Implementations
 
         public async Task<CostCalculationDto> CalculateCostAsync(int unitId, DateTime checkInDate, DateTime checkOutDate, int numberOfGuests, bool isTransportationRequired)
         {
+            if (numberOfGuests < 1 || numberOfGuests > MaxGuestsLimit)
+            {
+                return new CostCalculationDto { IsAvailable = false, Message = $"الحد الأقصى للأفراد هو {MaxGuestsLimit}" };
+            }
+
             var unit = await _context.Units
                 .Include(u => u.City)
                 .FirstOrDefaultAsync(u => u.Id == unitId);
@@ -149,7 +155,6 @@ namespace ECM.ReservationSystem.Services.Implementations
                 Notes = request.Notes,
                 Status = ReservationStatus.TemporaryHold,
                 PaymentDeadline = DateTime.Now.AddHours(24), // 24 hours to pay
-                CreatedAt = DateTime.Now,
                 CaseSystemId = request.CaseSystemId
             };
 
@@ -186,7 +191,6 @@ namespace ECM.ReservationSystem.Services.Implementations
                 return false;
 
             reservation.Status = ReservationStatus.Confirmed;
-            reservation.UpdatedAt = DateTime.Now;
 
             _context.Update(reservation);
             await _context.SaveChangesAsync();
@@ -200,7 +204,6 @@ namespace ECM.ReservationSystem.Services.Implementations
                 return false;
 
             reservation.Status = ReservationStatus.Cancelled;
-            reservation.UpdatedAt = DateTime.Now;
 
             _context.Update(reservation);
             await _context.SaveChangesAsync();
@@ -218,7 +221,6 @@ namespace ECM.ReservationSystem.Services.Implementations
             foreach (var reservation in expiredReservations)
             {
                 reservation.Status = ReservationStatus.Cancelled;
-                reservation.UpdatedAt = DateTime.Now;
             }
 
             if (expiredReservations.Any())

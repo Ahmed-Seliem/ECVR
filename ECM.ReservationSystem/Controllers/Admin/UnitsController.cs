@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using ECM.ReservationSystem.Data;
+using ECM.ReservationSystem.Domain.Entities;
+using ECM.ReservationSystem.Models.ViewModels.Admin;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using ECM.ReservationSystem.Data;
-using ECM.ReservationSystem.Models.Entities;
 
 namespace ECM.ReservationSystem.Controllers.Admin
 {
@@ -59,7 +60,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
         {
             await PopulateDropdowns();
 
-            // للتشخيص - تحقق من البيانات
+            // Debug: verify dropdown data exists
             var cities = await _context.Cities.Where(c => c.IsActive).CountAsync();
             var unitTypes = await _context.UnitTypes.Where(ut => ut.IsActive).CountAsync();
 
@@ -74,7 +75,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Unit unit)
         {
-            // للتشخيص - طباعة البيانات المستلمة
+            // Debug: print incoming values
             System.Diagnostics.Debug.WriteLine($"=== Unit Create Debug ===");
             System.Diagnostics.Debug.WriteLine($"Name: {unit.Name}");
             System.Diagnostics.Debug.WriteLine($"Code: {unit.Code}");
@@ -87,7 +88,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             System.Diagnostics.Debug.WriteLine($"Year: {unit.Year}");
             System.Diagnostics.Debug.WriteLine($"IsActive: {unit.IsActive}");
 
-            // طباعة أخطاء الـ ModelState
+            // Debug: print model state errors
             if (!ModelState.IsValid)
             {
                 System.Diagnostics.Debug.WriteLine("=== ModelState Errors ===");
@@ -102,13 +103,13 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 }
             }
 
-            // تحقق إضافي من صحة البيانات
+            // Business rule: max capacity must be >= default capacity
             if (unit.MaxCapacity > 0 && unit.DefaultCapacity > 0 && unit.MaxCapacity < unit.DefaultCapacity)
             {
                 ModelState.AddModelError("MaxCapacity", "السعة القصوى يجب أن تكون أكبر من أو تساوي السعة الافتراضية");
             }
 
-            // تحقق من أن الـ Code فريد (فقط إذا كان موجود)
+            // Business rule: Code must be unique when provided
             if (!string.IsNullOrWhiteSpace(unit.Code) && await _context.Units.AnyAsync(u => u.Code == unit.Code))
             {
                 ModelState.AddModelError("Code", "كود الوحدة موجود مسبقاً، يرجى اختيار كود آخر");
@@ -118,7 +119,6 @@ namespace ECM.ReservationSystem.Controllers.Admin
             {
                 try
                 {
-                    unit.CreatedAt = DateTime.Now;
                     _context.Add(unit);
                     await _context.SaveChangesAsync();
 
@@ -156,7 +156,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
         // POST: Admin/Units/Edit/5
         [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Code,Description,DefaultCapacity,MaxCapacity,FloorType,FloorNumber,Year,IsActive,CityId,UnitTypeId,CreatedAt")] Unit unit)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Code,Description,DefaultCapacity,MaxCapacity,FloorType,FloorNumber,Year,IsActive,CityId,UnitTypeId")] Unit unit)
         {
             if (id != unit.Id)
                 return NotFound();
@@ -236,6 +236,80 @@ namespace ECM.ReservationSystem.Controllers.Admin
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet("Availability")]
+        public async Task<IActionResult> UnitsAvailability(int? cityId, int? year)
+        {
+            var currentYear = year ?? DateTime.Now.Year;
+
+            var query = _context.Units
+                .Include(u => u.City)
+                .Include(u => u.UnitType)
+                .Include(u => u.Reservations)
+                .Where(u => u.IsActive && u.Year == currentYear);
+
+            if (cityId.HasValue)
+                query = query.Where(u => u.CityId == cityId.Value);
+
+            var units = await query.ToListAsync();
+
+            var viewModels = units.Select(unit => new UnitAvailabilityViewModel
+            {
+                UnitId = unit.Id,
+                UnitName = unit.Name,
+                CityName = unit.City.Name,
+                UnitTypeName = unit.UnitType.Name,
+                FloorType = unit.FloorType,
+                Year = unit.Year,
+                WeekAvailabilities = GetWeekAvailabilities(unit, currentYear)
+            }).ToList();
+
+            ViewBag.Cities = await _context.Cities.Where(c => c.IsActive).ToListAsync();
+            ViewBag.CurrentCityId = cityId;
+            ViewBag.CurrentYear = currentYear;
+            ViewBag.AvailableYears = GetAvailableYears();
+
+            return View(viewModels);
+        }
+
+        private List<WeekAvailabilityViewModel> GetWeekAvailabilities(Unit unit, int year)
+        {
+            var weekAvailabilities = new List<WeekAvailabilityViewModel>();
+            var startDate = new DateTime(year, 1, 1);
+            var endDate = new DateTime(year, 12, 31);
+
+            // Find first Friday of the year
+            while (startDate.DayOfWeek != DayOfWeek.Friday)
+            {
+                startDate = startDate.AddDays(1);
+            }
+
+            var currentDate = startDate;
+            while (currentDate <= endDate)
+            {
+                var weekEnd = currentDate.AddDays(6); // Friday to Thursday (7 days)
+
+                var reservation = unit.Reservations
+                    .FirstOrDefault(r => r.CheckInDate <= currentDate && r.CheckOutDate >= weekEnd
+                                        && (r.Status == ReservationStatus.Confirmed
+                                           || r.Status == ReservationStatus.Paid
+                                           || r.Status == ReservationStatus.TemporaryHold));
+
+                weekAvailabilities.Add(new WeekAvailabilityViewModel
+                {
+                    WeekStartDate = currentDate,
+                    WeekEndDate = weekEnd,
+                    IsAvailable = reservation == null,
+                    IsReserved = reservation != null,
+                    ReservationStatus = reservation?.Status.ToString(),
+                    EmployeeName = reservation?.EmployeeName
+                });
+
+                currentDate = currentDate.AddDays(7); // Move to next Friday
+            }
+
+            return weekAvailabilities;
+        }
+
         private async Task PopulateDropdowns()
         {
             var cities = await _context.Cities.Where(c => c.IsActive).ToListAsync();
@@ -244,7 +318,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             ViewBag.Cities = new SelectList(cities, "Id", "Name");
             ViewBag.UnitTypes = new SelectList(unitTypes, "Id", "Name");
 
-            // إصلاح FloorTypes - تأكد من القيم الصحيحة
+            // Floor types
             var floorTypes = new[]
             {
                 new { Value = (int)FloorType.GroundFloor, Text = "دور أرضي" },
@@ -255,7 +329,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             ViewBag.FloorTypes = new SelectList(floorTypes, "Value", "Text");
             ViewBag.Years = new SelectList(GetAvailableYears());
 
-            // للتشخيص
+            // Debug
             System.Diagnostics.Debug.WriteLine($"Cities loaded: {cities.Count}");
             System.Diagnostics.Debug.WriteLine($"UnitTypes loaded: {unitTypes.Count}");
         }
@@ -283,3 +357,4 @@ namespace ECM.ReservationSystem.Controllers.Admin
         }
     }
 }
+

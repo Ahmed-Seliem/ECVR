@@ -22,7 +22,7 @@ namespace ECM.ReservationSystem.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.AvailableDate", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.AvailableDate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -48,11 +48,20 @@ namespace ECM.ReservationSystem.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsBookingOpen")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UpdatedByUserId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -61,7 +70,7 @@ namespace ECM.ReservationSystem.Migrations
                     b.ToTable("AvailableDates");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.City", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.City", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -71,6 +80,9 @@ namespace ECM.ReservationSystem.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -85,6 +97,12 @@ namespace ECM.ReservationSystem.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UpdatedByUserId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
@@ -93,7 +111,7 @@ namespace ECM.ReservationSystem.Migrations
                     b.ToTable("Cities");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.Pricing", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.Pricing", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -106,6 +124,9 @@ namespace ECM.ReservationSystem.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime>("EffectiveFrom")
                         .HasColumnType("datetime2");
@@ -125,6 +146,12 @@ namespace ECM.ReservationSystem.Migrations
                     b.Property<int>("UnitId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UpdatedByUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<decimal>("WeeklyRentDefaultCapacity")
                         .HasColumnType("decimal(18,2)");
 
@@ -135,7 +162,7 @@ namespace ECM.ReservationSystem.Migrations
                     b.ToTable("Pricings");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.Reservation", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.Reservation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -155,6 +182,9 @@ namespace ECM.ReservationSystem.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("EmployeeName")
                         .IsRequired()
@@ -198,6 +228,9 @@ namespace ECM.ReservationSystem.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<long?>("UpdatedByUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<decimal>("WeeklyRent")
                         .HasColumnType("decimal(18,2)");
 
@@ -212,7 +245,53 @@ namespace ECM.ReservationSystem.Migrations
                     b.ToTable("Reservations");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.TransportationCost", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.ReservationType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxGuestsLimit")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UpdatedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ReservationTypes");
+                });
+
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.TransportationCost", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -226,6 +305,9 @@ namespace ECM.ReservationSystem.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("EffectiveFrom")
                         .HasColumnType("datetime2");
 
@@ -238,6 +320,12 @@ namespace ECM.ReservationSystem.Migrations
                     b.Property<decimal>("RoundTripCost")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UpdatedByUserId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CityId");
@@ -245,7 +333,7 @@ namespace ECM.ReservationSystem.Migrations
                     b.ToTable("TransportationCosts");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.Unit", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.Unit", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -261,6 +349,9 @@ namespace ECM.ReservationSystem.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("DefaultCapacity")
                         .HasColumnType("int");
@@ -287,6 +378,12 @@ namespace ECM.ReservationSystem.Migrations
                     b.Property<int>("UnitTypeId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UpdatedByUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("Year")
                         .HasColumnType("int");
 
@@ -299,7 +396,7 @@ namespace ECM.ReservationSystem.Migrations
                     b.ToTable("Units");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.UnitType", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.UnitType", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -309,6 +406,9 @@ namespace ECM.ReservationSystem.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -331,14 +431,20 @@ namespace ECM.ReservationSystem.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UpdatedByUserId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.ToTable("UnitTypes");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.AvailableDate", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.AvailableDate", b =>
                 {
-                    b.HasOne("ECM.ReservationSystem.Models.Entities.City", "City")
+                    b.HasOne("ECM.ReservationSystem.Domain.Entities.City", "City")
                         .WithMany()
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -347,9 +453,9 @@ namespace ECM.ReservationSystem.Migrations
                     b.Navigation("City");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.Pricing", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.Pricing", b =>
                 {
-                    b.HasOne("ECM.ReservationSystem.Models.Entities.Unit", "Unit")
+                    b.HasOne("ECM.ReservationSystem.Domain.Entities.Unit", "Unit")
                         .WithMany("Pricings")
                         .HasForeignKey("UnitId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -358,9 +464,9 @@ namespace ECM.ReservationSystem.Migrations
                     b.Navigation("Unit");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.Reservation", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.Reservation", b =>
                 {
-                    b.HasOne("ECM.ReservationSystem.Models.Entities.Unit", "Unit")
+                    b.HasOne("ECM.ReservationSystem.Domain.Entities.Unit", "Unit")
                         .WithMany("Reservations")
                         .HasForeignKey("UnitId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -369,9 +475,9 @@ namespace ECM.ReservationSystem.Migrations
                     b.Navigation("Unit");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.TransportationCost", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.TransportationCost", b =>
                 {
-                    b.HasOne("ECM.ReservationSystem.Models.Entities.City", "City")
+                    b.HasOne("ECM.ReservationSystem.Domain.Entities.City", "City")
                         .WithMany("TransportationCosts")
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -380,15 +486,15 @@ namespace ECM.ReservationSystem.Migrations
                     b.Navigation("City");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.Unit", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.Unit", b =>
                 {
-                    b.HasOne("ECM.ReservationSystem.Models.Entities.City", "City")
+                    b.HasOne("ECM.ReservationSystem.Domain.Entities.City", "City")
                         .WithMany("Units")
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ECM.ReservationSystem.Models.Entities.UnitType", "UnitType")
+                    b.HasOne("ECM.ReservationSystem.Domain.Entities.UnitType", "UnitType")
                         .WithMany("Units")
                         .HasForeignKey("UnitTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -399,21 +505,21 @@ namespace ECM.ReservationSystem.Migrations
                     b.Navigation("UnitType");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.City", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.City", b =>
                 {
                     b.Navigation("TransportationCosts");
 
                     b.Navigation("Units");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.Unit", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.Unit", b =>
                 {
                     b.Navigation("Pricings");
 
                     b.Navigation("Reservations");
                 });
 
-            modelBuilder.Entity("ECM.ReservationSystem.Models.Entities.UnitType", b =>
+            modelBuilder.Entity("ECM.ReservationSystem.Domain.Entities.UnitType", b =>
                 {
                     b.Navigation("Units");
                 });

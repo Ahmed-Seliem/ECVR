@@ -1,5 +1,5 @@
 ﻿using ECM.ReservationSystem.Data;
-using ECM.ReservationSystem.Models.Entities;
+using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Models.ViewModels.Admin;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -94,7 +94,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PricingViewModel viewModel)
         {
-         
+
             var validationContext = new ValidationContext(viewModel);
             var validationResults = new List<ValidationResult>();
             bool isValid = Validator.TryValidateObject(viewModel, validationContext, validationResults, true);

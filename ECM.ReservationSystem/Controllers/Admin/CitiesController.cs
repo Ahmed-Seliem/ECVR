@@ -1,5 +1,5 @@
-﻿using ECM.ReservationSystem.Data;
-using ECM.ReservationSystem.Models.Entities;
+using ECM.ReservationSystem.Data;
+using ECM.ReservationSystem.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -56,7 +56,6 @@ public class CitiesController : Controller
     {
         if (ModelState.IsValid)
         {
-            city.CreatedAt = DateTime.Now;
             _context.Add(city);
             await _context.SaveChangesAsync();
             TempData["Success"] = "تم إضافة المدينة بنجاح";
@@ -82,7 +81,7 @@ public class CitiesController : Controller
     // POST: Admin/Cities/Edit/5
     [HttpPost("Edit/{id}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,NameAr,IsActive,CreatedAt")] City city)
+    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,NameAr,IsActive")] City city)
     {
         if (id != city.Id)
             return NotFound();
@@ -150,3 +149,4 @@ public class CitiesController : Controller
         return _context.Cities.Any(e => e.Id == id);
     }
 }
+

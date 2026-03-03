@@ -20,7 +20,7 @@ namespace ECM.ReservationSystem.Models.DTOs
         public DateTime CheckOutDate { get; set; }
 
         [Required]
-        [Range(1, 30)]
+        [Range(1, 6)]
         public int NumberOfGuests { get; set; }
 
         public bool IsTransportationRequired { get; set; }

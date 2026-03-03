@@ -1,4 +1,4 @@
-﻿@model ECM.ReservationSystem.Models.ViewModels.Admin.DashboardViewModel
+@model ECM.ReservationSystem.Models.ViewModels.Admin.DashboardViewModel
 @{
     ViewData["Title"] = "لوحة التحكم";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -238,18 +238,18 @@
                                             @{
                                                 var statusClass = reservation.Status switch
                                                 {
-                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.TemporaryHold => "warning",
-                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Confirmed => "info",
-                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Paid => "success",
-                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Cancelled => "danger",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.TemporaryHold => "warning",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Confirmed => "info",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Paid => "success",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Cancelled => "danger",
                                                     _ => "secondary"
                                                 };
                                                 var statusText = reservation.Status switch
                                                 {
-                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.TemporaryHold => "حجز مؤقت",
-                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Confirmed => "مؤكد",
-                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Paid => "مدفوع",
-                                                    ECM.ReservationSystem.Models.Entities.ReservationStatus.Cancelled => "ملغي",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.TemporaryHold => "حجز مؤقت",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Confirmed => "مؤكد",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Paid => "مدفوع",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Cancelled => "ملغي",
                                                     _ => reservation.Status.ToString()
                                                 };
                                             }

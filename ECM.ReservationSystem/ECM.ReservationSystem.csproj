@@ -30,8 +30,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ECM.ReservationSystem.Domain\ECM.ReservationSystem.Domain.csproj" />
     <ProjectReference Include="..\ECM.ReservationSystem.Application\ECM.ReservationSystem.Application.csproj" />
     <ProjectReference Include="..\ECM.ReservationSystem.Infrastructure\ECM.ReservationSystem.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Views\Admin\" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿using ECM.ReservationSystem.Models.Entities;
+using ECM.ReservationSystem.Domain.Entities;
 
 namespace ECM.ReservationSystem.Models.DTOs
 {
