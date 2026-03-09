@@ -143,6 +143,7 @@ namespace ECM.ReservationSystem.Services.Implementations
             {
                 EmployeeNumber = request.EmployeeNumber,
                 EmployeeName = request.EmployeeName,
+                Year = request.CheckInDate.Year.ToString(),
                 UnitId = request.UnitId,
                 CheckInDate = request.CheckInDate,
                 CheckOutDate = request.CheckOutDate,

@@ -29,6 +29,17 @@ builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 
 var allowInsecureHttp = builder.Configuration.GetValue<bool>("Settings:AllowHttp", false); // true if your public URL is http://...
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:4053")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 
 
 
@@ -243,7 +254,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseSerilogRequestLogging();
-
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
