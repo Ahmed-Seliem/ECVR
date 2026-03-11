@@ -404,7 +404,59 @@ public class ReservationsApiController : ControllerBase
             }
         }
 
+        if (weeks.Any())
+        {
+            return weeks;
+        }
+
+        // Fallback for newly added cities/units when no availability windows were configured yet.
+        var unitYears = await _context.Units
+            .Where(u => u.IsActive && u.CityId == cityId)
+            .Select(u => u.Year)
+            .Where(y => y > 0)
+            .Distinct()
+            .OrderBy(y => y)
+            .ToListAsync();
+
+        foreach (var year in unitYears)
+        {
+            var startDate = GetFirstFridayOfYear(year);
+            var endDate = new DateTime(year, 12, 31);
+
+            for (var start = startDate; start <= endDate; start = start.AddDays(7))
+            {
+                var end = start.AddDays(6);
+                if (end > endDate)
+                {
+                    end = endDate;
+                }
+
+                var id = $"{cityId}-{start:yyyyMMdd}";
+                weeks.Add(new WeekOption
+                {
+                    Id = id,
+                    CityId = cityId,
+                    StartDate = start,
+                    EndDate = end,
+                    WeekNumber = weekNumber,
+                    DisplayName = $"Week {weekNumber} ({start:yyyy-MM-dd} - {end:yyyy-MM-dd})"
+                });
+                weekNumber++;
+            }
+        }
+
         return weeks;
+    }
+
+    private static DateTime GetFirstFridayOfYear(int year)
+    {
+        var date = new DateTime(year, 1, 1);
+        while (date.DayOfWeek != DayOfWeek.Friday)
+        {
+            date = date.AddDays(1);
+        }
+
+        return date;
     }
 
     private async Task<WeekOption?> ResolveWeekAsync(string weekId)

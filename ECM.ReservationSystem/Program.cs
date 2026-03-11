@@ -28,15 +28,36 @@ builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 });
 
 var allowInsecureHttp = builder.Configuration.GetValue<bool>("Settings:AllowHttp", false); // true if your public URL is http://...
+var configuredCorsOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>()
+    ?.Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .ToArray() ?? Array.Empty<string>();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:4053")
-                  .AllowAnyHeader()
+            policy.AllowAnyHeader()
                   .AllowAnyMethod();
+
+            if (configuredCorsOrigins.Length > 0)
+            {
+                policy.WithOrigins(configuredCorsOrigins)
+                      .SetIsOriginAllowedToAllowWildcardSubdomains();
+                return;
+            }
+
+            policy.SetIsOriginAllowed(origin =>
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                {
+                    return false;
+                }
+
+                return uri.IsLoopback || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase);
+            });
         });
 });
 
