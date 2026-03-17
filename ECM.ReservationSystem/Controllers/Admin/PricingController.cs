@@ -45,6 +45,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                     WeeklyRentDefaultCapacity = p.WeeklyRentDefaultCapacity,
                     AdditionalPersonCost = p.AdditionalPersonCost,
                     InsuranceAmount = p.InsuranceAmount,
+                    TransportationCostPerPerson = p.TransportationCostPerPerson,
                     FloorType = p.FloorType,
                     EffectiveFrom = p.EffectiveFrom,
                     EffectiveTo = p.EffectiveTo,
@@ -130,6 +131,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                     WeeklyRentDefaultCapacity = viewModel.WeeklyRentDefaultCapacity,
                     AdditionalPersonCost = viewModel.AdditionalPersonCost,
                     InsuranceAmount = viewModel.InsuranceAmount,
+                    TransportationCostPerPerson = viewModel.TransportationCostPerPerson,
                     FloorType = viewModel.FloorType,
                     EffectiveFrom = viewModel.EffectiveFrom,
                     EffectiveTo = viewModel.EffectiveTo,
@@ -165,6 +167,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 WeeklyRentDefaultCapacity = pricing.WeeklyRentDefaultCapacity,
                 AdditionalPersonCost = pricing.AdditionalPersonCost,
                 InsuranceAmount = pricing.InsuranceAmount,
+                TransportationCostPerPerson = pricing.TransportationCostPerPerson,
                 FloorType = pricing.FloorType,
                 EffectiveFrom = pricing.EffectiveFrom,
                 EffectiveTo = pricing.EffectiveTo,
@@ -216,6 +219,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                     pricing.WeeklyRentDefaultCapacity = viewModel.WeeklyRentDefaultCapacity;
                     pricing.AdditionalPersonCost = viewModel.AdditionalPersonCost;
                     pricing.InsuranceAmount = viewModel.InsuranceAmount;
+                    pricing.TransportationCostPerPerson = viewModel.TransportationCostPerPerson;
                     pricing.FloorType = viewModel.FloorType;
                     pricing.EffectiveFrom = viewModel.EffectiveFrom;
                     pricing.EffectiveTo = viewModel.EffectiveTo;
@@ -263,6 +267,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 WeeklyRentDefaultCapacity = pricing.WeeklyRentDefaultCapacity,
                 AdditionalPersonCost = pricing.AdditionalPersonCost,
                 InsuranceAmount = pricing.InsuranceAmount,
+                TransportationCostPerPerson = pricing.TransportationCostPerPerson,
                 FloorType = pricing.FloorType,
                 EffectiveFrom = pricing.EffectiveFrom,
                 EffectiveTo = pricing.EffectiveTo,
@@ -300,6 +305,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 WeeklyRentDefaultCapacity = pricing.WeeklyRentDefaultCapacity,
                 AdditionalPersonCost = pricing.AdditionalPersonCost,
                 InsuranceAmount = pricing.InsuranceAmount,
+                TransportationCostPerPerson = pricing.TransportationCostPerPerson,
                 FloorType = pricing.FloorType,
                 EffectiveFrom = pricing.EffectiveFrom,
                 EffectiveTo = pricing.EffectiveTo,

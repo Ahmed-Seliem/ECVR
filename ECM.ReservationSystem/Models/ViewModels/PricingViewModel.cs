@@ -7,9 +7,9 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "سعر الإيجار الأسبوعي للسعة الافتراضية مطلوب")]
+        [Required(ErrorMessage = "سعر الإيجار الأسبوعي مطلوب")]
         [Range(0.01, 999999.99, ErrorMessage = "سعر الإيجار يجب أن يكون أكبر من صفر")]
-        [Display(Name = "سعر الإيجار الأسبوعي (6 أشخاص)")]
+        [Display(Name = "السعر الأسبوعي")]
         public decimal WeeklyRentDefaultCapacity { get; set; }
 
         [Required(ErrorMessage = "تكلفة الشخص الإضافي مطلوبة")]
@@ -21,6 +21,10 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         [Range(0, 999999.99, ErrorMessage = "مبلغ التأمين لا يمكن أن يكون سالب")]
         [Display(Name = "مبلغ التأمين")]
         public decimal InsuranceAmount { get; set; }
+
+        [Range(0, 999999.99, ErrorMessage = "سعر النقل للفرد لا يمكن أن يكون سالب")]
+        [Display(Name = "سعر النقل للفرد")]
+        public decimal TransportationCostPerPerson { get; set; }
 
         [Required(ErrorMessage = "نوع الدور مطلوب")]
         [Display(Name = "نوع الدور")]
@@ -42,13 +46,11 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         [Display(Name = "الوحدة")]
         public int UnitId { get; set; }
 
-  
         public string? UnitName { get; set; }
         public string? CityName { get; set; }
         public string? UnitTypeName { get; set; }
         public string? FloorTypeDisplay { get; set; }
 
-        // Validation method
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (EffectiveTo.HasValue && EffectiveTo <= EffectiveFrom)

@@ -17,6 +17,7 @@ public class Unit : AuditableEntity
     public int FloorNumber { get; set; }
     public int Year { get; set; } = DateTime.Now.Year;
     public bool IsActive { get; set; } = true;
+    public bool IsForPensioners { get; set; }
 
     public int CityId { get; set; }
     public int UnitTypeId { get; set; }
@@ -25,6 +26,7 @@ public class Unit : AuditableEntity
     public UnitType? UnitType { get; set; }
     public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
     public ICollection<Pricing> Pricings { get; set; } = new List<Pricing>();
+    public ICollection<UnitScheduleSlot> ScheduleSlots { get; set; } = new List<UnitScheduleSlot>();
 }
 
 public enum FloorType

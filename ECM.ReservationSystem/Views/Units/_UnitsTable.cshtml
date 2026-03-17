@@ -10,8 +10,8 @@
                     <th>الاسم</th>
                     <th>المدينة</th>
                     <th>النوع</th>
+                    <th>المعاشات</th>
                     <th>السعة</th>
-                    <th>الدور</th>
                     <th>السنة</th>
                     <th>الحالة</th>
                     <th>الإجراءات</th>
@@ -25,8 +25,17 @@
                         <td>@unit.Name</td>
                         <td>@unit.City?.Name</td>
                         <td>@unit.UnitType?.Name</td>
+                        <td>
+                            @if (unit.IsForPensioners)
+                            {
+                                <span class="badge bg-info">نعم</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-dark">لا</span>
+                            }
+                        </td>
                         <td>@unit.DefaultCapacity / @unit.MaxCapacity</td>
-                        <td>@unit.FloorNumber</td>
                         <td>@unit.Year</td>
                         <td>
                             @if (unit.IsActive)
@@ -55,15 +64,14 @@
                                         data-floornumber="@unit.FloorNumber"
                                         data-year="@unit.Year"
                                         data-active="@unit.IsActive"
+                                        data-isforpensioners="@unit.IsForPensioners"
                                         data-cityid="@unit.CityId"
                                         data-unittypeid="@unit.UnitTypeId"
-                                        data-createdat="@unit.CreatedAt.ToString("o")">
+                                        data-createdat="@unit.CreatedAt.ToString("o")"
+                                        data-createdbyuserid="@unit.CreatedByUserId">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-danger js-delete-unit"
-                                        data-id="@unit.Id"
-                                        data-name="@unit.Name">
+                                <button type="button" class="btn btn-sm btn-outline-danger js-delete-unit" data-id="@unit.Id" data-name="@unit.Name">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>

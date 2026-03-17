@@ -14,6 +14,9 @@ public class Pricing : AuditableEntity
     [Column(TypeName = "decimal(18,2)")]
     public decimal InsuranceAmount { get; set; }
 
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TransportationCostPerPerson { get; set; }
+
     public FloorType FloorType { get; set; }
     public DateTime EffectiveFrom { get; set; }
     public DateTime? EffectiveTo { get; set; }

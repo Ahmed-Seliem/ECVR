@@ -52,14 +52,14 @@ public class ReservationsApiController : ControllerBase
     }
 
     [HttpGet("weeks/{cityId:int}")]
-    public async Task<IActionResult> GetWeeks(int cityId)
+    public async Task<IActionResult> GetWeeks(int cityId, [FromQuery] bool? isForManagement = null)
     {
         if (cityId <= 0)
         {
             return BadRequest(new { message = "cityId is required." });
         }
 
-        var weeks = await BuildWeeksAsync(cityId);
+        var weeks = await BuildWeeksAsync(cityId, isForManagement);
         return Ok(weeks.Select(w => new
         {
             id = w.Id,
@@ -72,13 +72,14 @@ public class ReservationsApiController : ControllerBase
     [HttpPost("weeks")]
     public Task<IActionResult> GetWeeksPost([FromBody] WeeksRequest request)
     {
-        return GetWeeks(request.CityId);
+        return GetWeeks(request.CityId, request.IsForManagement);
     }
 
     [HttpGet("floors-properties/{weekId}/flat")]
     public async Task<IActionResult> GetFloorsAndProperties(
         string weekId,
-        [FromQuery] int passengers = 0)
+        [FromQuery] int passengers = 0,
+        [FromQuery] bool? isForManagement = null)
     {
         if (passengers < 0 || passengers > MaxGuestsLimit)
         {
@@ -99,7 +100,8 @@ public class ReservationsApiController : ControllerBase
             selectedWeek.CityId,
             year,
             checkInDate,
-            checkOutDate);
+            checkOutDate,
+            isForManagement);
 
         var passengerCountForPricing = Math.Max(1, passengers);
         var withTransfer = passengers > 0;
@@ -134,7 +136,7 @@ public class ReservationsApiController : ControllerBase
     [HttpPost("floors-properties/flat")]
     public Task<IActionResult> GetFloorsAndPropertiesPost([FromBody] FloorsPropertiesRequest request)
     {
-        return GetFloorsAndProperties(request.WeekId, request.Passengers);
+        return GetFloorsAndProperties(request.WeekId, request.Passengers, request.IsForManagement);
     }
 
     [HttpGet("last-trip/{employeeNumber}")]
@@ -281,7 +283,8 @@ public class ReservationsApiController : ControllerBase
         [FromQuery] DateTime? checkInDate,
         [FromQuery] DateTime? checkOutDate,
         [FromQuery] int numberOfGuests = 1,
-        [FromQuery] bool isTransportationRequired = false)
+        [FromQuery] bool isTransportationRequired = false,
+        [FromQuery] bool? isForManagement = null)
     {
         if (cityId <= 0 || year <= 0)
         {
@@ -298,7 +301,7 @@ public class ReservationsApiController : ControllerBase
             return BadRequest(new { message = "تاريخ المغادرة يجب أن يكون بعد تاريخ الوصول." });
         }
 
-        var availableUnits = await _reservationService.GetAvailableUnitsAsync(cityId, year, checkInDate, checkOutDate);
+        var availableUnits = await _reservationService.GetAvailableUnitsAsync(cityId, year, checkInDate, checkOutDate, isForManagement);
         var lastTravelDate = await _context.AvailableDates
             .Where(a => a.CityId == cityId && a.IsActive)
             .OrderByDescending(a => a.AvailableTo)
@@ -362,52 +365,46 @@ public class ReservationsApiController : ControllerBase
         return Ok(reservation);
     }
 
-    private async Task<List<WeekOption>> BuildWeeksAsync(int cityId)
+    private async Task<List<WeekOption>> BuildWeeksAsync(int cityId, bool? isForManagement = null)
     {
-        var currentDate = DateTime.UtcNow.Date;
-        var availabilityWindows = await _context.AvailableDates
-            .Where(a => a.CityId == cityId && a.IsActive && a.IsBookingOpen && a.BookingOpenFrom <= currentDate && a.BookingOpenTo >= currentDate)
-            .OrderBy(a => a.AvailableFrom)
-            .ToListAsync();
+        var scheduleQuery = _context.UnitScheduleSlots
+            .Include(s => s.Unit)
+            .ThenInclude(u => u!.UnitType)
+            .Where(s => s.IsActive && s.Unit.CityId == cityId && s.Unit.IsActive);
 
-        if (!availabilityWindows.Any())
+        if (isForManagement.HasValue)
         {
-            availabilityWindows = await _context.AvailableDates
-                .Where(a => a.CityId == cityId && a.IsActive)
-                .OrderBy(a => a.AvailableFrom)
-                .ToListAsync();
+            scheduleQuery = scheduleQuery.Where(s => s.Unit.UnitType != null && s.Unit.UnitType.IsForManagement == isForManagement.Value);
         }
 
         var weeks = new List<WeekOption>();
-        var weekNumber = 1;
-        foreach (var window in availabilityWindows)
-        {
-            for (var start = window.AvailableFrom.Date; start <= window.AvailableTo.Date; start = start.AddDays(7))
-            {
-                var end = start.AddDays(6);
-                if (end > window.AvailableTo.Date)
-                {
-                    end = window.AvailableTo.Date;
-                }
+        var scheduledWeeks = await scheduleQuery
+            .Select(s => new { s.SlotStartDate, s.SlotEndDate })
+            .Distinct()
+            .OrderBy(s => s.SlotStartDate)
+            .ToListAsync();
 
-                var id = $"{cityId}-{start:yyyyMMdd}";
+        if (scheduledWeeks.Any())
+        {
+            var weekNumber = 1;
+            foreach (var week in scheduledWeeks)
+            {
+                var id = $"{cityId}-{week.SlotStartDate:yyyyMMdd}";
                 weeks.Add(new WeekOption
                 {
                     Id = id,
                     CityId = cityId,
-                    StartDate = start,
-                    EndDate = end,
+                    StartDate = week.SlotStartDate,
+                    EndDate = week.SlotEndDate,
                     WeekNumber = weekNumber,
-                    DisplayName = $"Week {weekNumber} ({start:yyyy-MM-dd} - {end:yyyy-MM-dd})"
+                    DisplayName = $"Week {weekNumber} ({week.SlotStartDate:yyyy-MM-dd} - {week.SlotEndDate:yyyy-MM-dd})"
                 });
                 weekNumber++;
             }
-        }
-
-        if (weeks.Any())
-        {
             return weeks;
         }
+
+        var fallbackWeekNumber = 1;
 
         // Fallback for newly added cities/units when no availability windows were configured yet.
         var unitYears = await _context.Units
@@ -438,10 +435,10 @@ public class ReservationsApiController : ControllerBase
                     CityId = cityId,
                     StartDate = start,
                     EndDate = end,
-                    WeekNumber = weekNumber,
-                    DisplayName = $"Week {weekNumber} ({start:yyyy-MM-dd} - {end:yyyy-MM-dd})"
+                    WeekNumber = fallbackWeekNumber,
+                    DisplayName = $"Week {fallbackWeekNumber} ({start:yyyy-MM-dd} - {end:yyyy-MM-dd})"
                 });
-                weekNumber++;
+                fallbackWeekNumber++;
             }
         }
 
@@ -490,12 +487,14 @@ public class ReservationsApiController : ControllerBase
     public sealed class WeeksRequest
     {
         public int CityId { get; set; }
+        public bool? IsForManagement { get; set; }
     }
 
     public sealed class FloorsPropertiesRequest
     {
         public string WeekId { get; set; } = string.Empty;
         public int Passengers { get; set; }
+        public bool? IsForManagement { get; set; }
     }
 
     public sealed class ReservationCostRequest

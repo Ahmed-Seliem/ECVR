@@ -17,7 +17,6 @@ namespace ECM.ReservationSystem.Controllers.Admin
             _context = context;
         }
 
-        // GET: Admin/Units
         [HttpGet("")]
         public async Task<IActionResult> Index(int? cityId, int? unitTypeId, int? year)
         {
@@ -27,187 +26,149 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 .AsQueryable();
 
             if (cityId.HasValue)
+            {
                 query = query.Where(u => u.CityId == cityId.Value);
+            }
 
             if (unitTypeId.HasValue)
+            {
                 query = query.Where(u => u.UnitTypeId == unitTypeId.Value);
+            }
 
             if (year.HasValue)
+            {
                 query = query.Where(u => u.Year == year.Value);
+            }
 
-            var units = await query.OrderBy(u => u.City.Name)
+            var units = await query
+                .OrderBy(u => u.City!.Name)
                 .ThenBy(u => u.Name)
                 .ToListAsync();
 
             ViewBag.Cities = new SelectList(await _context.Cities.Where(c => c.IsActive).ToListAsync(), "Id", "Name", cityId);
             ViewBag.UnitTypes = new SelectList(await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync(), "Id", "Name", unitTypeId);
             ViewBag.Years = new SelectList(GetAvailableYears(), year);
-            ViewBag.FloorTypes = new SelectList(new[]
-            {
-                new { Value = (int)FloorType.GroundFloor, Text = "دور أرضي" },
-                new { Value = (int)FloorType.MiddleFloor, Text = "دور متكرر" },
-                new { Value = (int)FloorType.TopFloor, Text = "دور أخير" }
-            }, "Value", "Text");
-
-            ViewBag.CurrentFilters = new { cityId, unitTypeId, year };
+            ViewBag.FloorTypes = new SelectList(GetFloorTypeOptions(), "Value", "Text");
 
             return View(units);
         }
 
-        // GET: Admin/Units/Create
         [HttpGet("Create")]
         public async Task<IActionResult> Create()
         {
             await PopulateDropdowns();
-
-            // Debug: verify dropdown data exists
-            var cities = await _context.Cities.Where(c => c.IsActive).CountAsync();
-            var unitTypes = await _context.UnitTypes.Where(ut => ut.IsActive).CountAsync();
-
-            System.Diagnostics.Debug.WriteLine($"Cities Count: {cities}");
-            System.Diagnostics.Debug.WriteLine($"UnitTypes Count: {unitTypes}");
-
             return View();
         }
 
-        // POST: Admin/Units/Create
         [HttpPost("Create")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Unit unit)
         {
-            // Debug: print incoming values
-            System.Diagnostics.Debug.WriteLine($"=== Unit Create Debug ===");
-            System.Diagnostics.Debug.WriteLine($"Name: {unit.Name}");
-            System.Diagnostics.Debug.WriteLine($"Code: {unit.Code}");
-            System.Diagnostics.Debug.WriteLine($"CityId: {unit.CityId}");
-            System.Diagnostics.Debug.WriteLine($"UnitTypeId: {unit.UnitTypeId}");
-            System.Diagnostics.Debug.WriteLine($"FloorType: {unit.FloorType}");
-            System.Diagnostics.Debug.WriteLine($"FloorNumber: {unit.FloorNumber}");
-            System.Diagnostics.Debug.WriteLine($"DefaultCapacity: {unit.DefaultCapacity}");
-            System.Diagnostics.Debug.WriteLine($"MaxCapacity: {unit.MaxCapacity}");
-            System.Diagnostics.Debug.WriteLine($"Year: {unit.Year}");
-            System.Diagnostics.Debug.WriteLine($"IsActive: {unit.IsActive}");
+            await ValidateUnitAsync(unit);
 
-            // Debug: print model state errors
             if (!ModelState.IsValid)
             {
-                System.Diagnostics.Debug.WriteLine("=== ModelState Errors ===");
-                foreach (var modelError in ModelState)
-                {
-                    var key = modelError.Key;
-                    var errors = modelError.Value.Errors;
-                    foreach (var error in errors)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Field: {key}, Error: {error.ErrorMessage}");
-                    }
-                }
+                await PopulateDropdowns();
+                return View(unit);
             }
 
-            // Business rule: max capacity must be >= default capacity
-            if (unit.MaxCapacity > 0 && unit.DefaultCapacity > 0 && unit.MaxCapacity < unit.DefaultCapacity)
-            {
-                ModelState.AddModelError("MaxCapacity", "السعة القصوى يجب أن تكون أكبر من أو تساوي السعة الافتراضية");
-            }
-
-            // Business rule: Code must be unique when provided
-            if (!string.IsNullOrWhiteSpace(unit.Code) && await _context.Units.AnyAsync(u => u.Code == unit.Code))
-            {
-                ModelState.AddModelError("Code", "كود الوحدة موجود مسبقاً، يرجى اختيار كود آخر");
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Add(unit);
-                    await _context.SaveChangesAsync();
-
-                    System.Diagnostics.Debug.WriteLine($"Unit saved successfully with ID: {unit.Id}");
-
-                    TempData["Success"] = "تم إضافة الوحدة بنجاح";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error saving unit: {ex.Message}");
-                    ModelState.AddModelError("", $"حدث خطأ أثناء الحفظ: {ex.Message}");
-                }
-            }
-
-            await PopulateDropdowns();
-            return View(unit);
+            _context.Add(unit);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "تم إضافة الوحدة بنجاح";
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Admin/Units/Edit/5
         [HttpGet("Edit/{id}")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
+            {
                 return NotFound();
+            }
 
-            var unit = await _context.Units.FindAsync(id);
+            var unit = await _context.Units
+                .Include(u => u.City)
+                .Include(u => u.UnitType)
+                .FirstOrDefaultAsync(u => u.Id == id.Value);
+
             if (unit == null)
+            {
                 return NotFound();
+            }
 
-            await PopulateDropdowns();
+            await PopulateDropdowns(unit.CityId, unit.UnitTypeId, unit.Year);
+            ViewData["CurrentCity"] = unit.City?.Name;
+            ViewData["CurrentUnitType"] = unit.UnitType?.Name;
             return View(unit);
         }
 
-        // POST: Admin/Units/Edit/5
         [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Code,Description,DefaultCapacity,MaxCapacity,FloorType,FloorNumber,Year,IsActive,CityId,UnitTypeId")] Unit unit)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Code,Description,DefaultCapacity,MaxCapacity,FloorType,FloorNumber,Year,IsActive,IsForPensioners,CityId,UnitTypeId,CreatedAt,CreatedByUserId")] Unit unit)
         {
             if (id != unit.Id)
-                return NotFound();
-
-            if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(unit);
-                    await _context.SaveChangesAsync();
-                    TempData["Success"] = "تم تحديث الوحدة بنجاح";
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!UnitExists(unit.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
-            await PopulateDropdowns();
-            return View(unit);
+
+            await ValidateUnitAsync(unit, id);
+
+            if (!ModelState.IsValid)
+            {
+                await PopulateDropdowns(unit.CityId, unit.UnitTypeId, unit.Year);
+                return View(unit);
+            }
+
+            try
+            {
+                _context.Update(unit);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "تم تحديث الوحدة بنجاح";
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UnitExists(unit.Id))
+                {
+                    return NotFound();
+                }
+
+                throw;
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Admin/Units/Details/5
         [HttpGet("Details/{id}")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
+            {
                 return NotFound();
+            }
 
             var unit = await _context.Units
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
                 .Include(u => u.Pricings)
                 .Include(u => u.Reservations)
+                .Include(u => u.ScheduleSlots)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (unit == null)
+            {
                 return NotFound();
+            }
 
             return View(unit);
         }
 
-        // GET: Admin/Units/Delete/5
         [HttpGet("Delete/{id}")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
+            {
                 return NotFound();
+            }
 
             var unit = await _context.Units
                 .Include(u => u.City)
@@ -215,19 +176,22 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (unit == null)
+            {
                 return NotFound();
+            }
 
             return View(unit);
         }
 
-        // POST: Admin/Units/Delete/5
         [HttpPost("Delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var unit = await _context.Units.FindAsync(id);
             if (unit == null)
+            {
                 return NotFound();
+            }
 
             _context.Units.Remove(unit);
             await _context.SaveChangesAsync();
@@ -237,7 +201,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
         }
 
         [HttpGet("Availability")]
-        public async Task<IActionResult> UnitsAvailability(int? cityId, int? year)
+        public async Task<IActionResult> UnitsAvailability(int? cityId, int? unitTypeId, int? unitId, int? year, bool? isForManagement)
         {
             var currentYear = year ?? DateTime.Now.Year;
 
@@ -245,116 +209,311 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
                 .Include(u => u.Reservations)
+                .Include(u => u.ScheduleSlots)
                 .Where(u => u.IsActive && u.Year == currentYear);
 
             if (cityId.HasValue)
+            {
                 query = query.Where(u => u.CityId == cityId.Value);
+            }
 
-            var units = await query.ToListAsync();
+            if (unitTypeId.HasValue)
+            {
+                query = query.Where(u => u.UnitTypeId == unitTypeId.Value);
+            }
 
-            var viewModels = units.Select(unit => new UnitAvailabilityViewModel
+            if (unitId.HasValue)
+            {
+                query = query.Where(u => u.Id == unitId.Value);
+            }
+
+            if (isForManagement.HasValue)
+            {
+                query = query.Where(u => u.UnitType != null && u.UnitType.IsForManagement == isForManagement.Value);
+            }
+
+            var units = await query
+                .OrderBy(u => u.City!.Name)
+                .ThenBy(u => u.UnitType!.Name)
+                .ThenBy(u => u.Name)
+                .ToListAsync();
+
+            var viewModel = new UnitsAvailabilityPageViewModel
+            {
+                Year = currentYear,
+                CityId = cityId,
+                UnitTypeId = unitTypeId,
+                UnitId = unitId,
+                IsForManagement = isForManagement,
+                Units = units.Select(BuildAvailabilityViewModel).ToList()
+            };
+
+            ViewBag.Cities = new SelectList(await _context.Cities.Where(c => c.IsActive).ToListAsync(), "Id", "Name", cityId);
+            ViewBag.UnitTypes = new SelectList(await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync(), "Id", "Name", unitTypeId);
+            ViewBag.Units = new SelectList(await GetUnitsForAvailabilityFilterAsync(cityId, unitTypeId, currentYear, isForManagement), "Id", "DisplayName", unitId);
+            ViewBag.AvailableYears = GetAvailableYears();
+            ViewBag.AudienceOptions = new SelectList(new[]
+            {
+                new { Value = "", Text = "الكل" },
+                new { Value = "false", Text = "وحدات الموظفين" },
+                new { Value = "true", Text = "وحدات الإدارة" }
+            }, "Value", "Text", isForManagement?.ToString().ToLowerInvariant());
+
+            return View(viewModel);
+        }
+
+        [HttpPost("Availability/CreateSchedule")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateSchedule(CreateUnitScheduleRequest request)
+        {
+            if (request.UnitId <= 0)
+            {
+                TempData["Error"] = "اختر الوحدة أولاً.";
+                return RedirectToAction(nameof(UnitsAvailability), new { year = request.Year });
+            }
+
+            if (request.StartMonth < 1 || request.StartMonth > 12 || request.EndMonth < 1 || request.EndMonth > 12 || request.EndMonth < request.StartMonth)
+            {
+                TempData["Error"] = "فترة الجدولة غير صحيحة.";
+                return RedirectToAction(nameof(UnitsAvailability), new { unitId = request.UnitId, year = request.Year });
+            }
+
+            var unit = await _context.Units.FindAsync(request.UnitId);
+            if (unit == null)
+            {
+                TempData["Error"] = "الوحدة غير موجودة.";
+                return RedirectToAction(nameof(UnitsAvailability), new { year = request.Year });
+            }
+
+            var startDate = GetFirstFridayOnOrAfter(new DateTime(request.Year, request.StartMonth, 1));
+            var lastDay = new DateTime(request.Year, request.EndMonth, DateTime.DaysInMonth(request.Year, request.EndMonth));
+
+            var newSlots = new List<UnitScheduleSlot>();
+            for (var slotStart = startDate; slotStart <= lastDay; slotStart = slotStart.AddDays(7))
+            {
+                var slotEnd = slotStart.AddDays(6);
+                if (slotEnd > lastDay)
+                {
+                    break;
+                }
+
+                var exists = await _context.UnitScheduleSlots.AnyAsync(s =>
+                    s.UnitId == request.UnitId &&
+                    s.SlotStartDate == slotStart &&
+                    s.SlotEndDate == slotEnd);
+
+                if (!exists)
+                {
+                    newSlots.Add(new UnitScheduleSlot
+                    {
+                        UnitId = request.UnitId,
+                        Year = request.Year,
+                        SlotStartDate = slotStart,
+                        SlotEndDate = slotEnd,
+                        IsActive = true,
+                        Notes = request.Notes
+                    });
+                }
+            }
+
+            if (newSlots.Any())
+            {
+                _context.UnitScheduleSlots.AddRange(newSlots);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"تم إنشاء {newSlots.Count} أسبوع للوحدة.";
+            }
+            else
+            {
+                TempData["Info"] = "لا توجد أسابيع جديدة لإضافتها في الفترة المختارة.";
+            }
+
+            return RedirectToAction(nameof(UnitsAvailability), new
+            {
+                unitId = request.UnitId,
+                year = request.Year,
+                cityId = request.CityId,
+                unitTypeId = request.UnitTypeId,
+                isForManagement = request.IsForManagement
+            });
+        }
+
+        [HttpPost("Availability/DeleteSlot/{slotId}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSlot(int slotId, int? cityId, int? unitTypeId, int? unitId, int? year, bool? isForManagement)
+        {
+            var slot = await _context.UnitScheduleSlots
+                .Include(s => s.Unit)
+                .ThenInclude(u => u!.Reservations)
+                .FirstOrDefaultAsync(s => s.Id == slotId);
+
+            if (slot == null)
+            {
+                TempData["Error"] = "الـ slot غير موجود.";
+                return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
+            }
+
+            var hasReservation = slot.Unit.Reservations.Any(r =>
+                r.Status != ReservationStatus.Cancelled &&
+                r.CheckInDate < slot.SlotEndDate.AddDays(1) &&
+                r.CheckOutDate > slot.SlotStartDate);
+
+            if (hasReservation)
+            {
+                TempData["Error"] = "لا يمكن حذف slot عليه حجز.";
+                return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
+            }
+
+            _context.UnitScheduleSlots.Remove(slot);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "تم حذف الـ slot بنجاح.";
+
+            return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
+        }
+
+        private UnitAvailabilityViewModel BuildAvailabilityViewModel(Unit unit)
+        {
+            var weekAvailabilities = unit.ScheduleSlots
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.SlotStartDate)
+                .Select(slot =>
+                {
+                    var reservation = unit.Reservations
+                        .Where(r => r.Status != ReservationStatus.Cancelled
+                                    && r.CheckInDate < slot.SlotEndDate.AddDays(1)
+                                    && r.CheckOutDate > slot.SlotStartDate)
+                        .OrderByDescending(r => r.CreatedAt)
+                        .FirstOrDefault();
+
+                    return new WeekAvailabilityViewModel
+                    {
+                        SlotId = slot.Id,
+                        WeekStartDate = slot.SlotStartDate,
+                        WeekEndDate = slot.SlotEndDate,
+                        IsScheduled = true,
+                        IsAvailable = reservation == null,
+                        IsReserved = reservation != null,
+                        ReservationStatus = reservation?.Status.ToString() ?? string.Empty,
+                        EmployeeName = reservation?.EmployeeName ?? string.Empty,
+                        Notes = slot.Notes ?? string.Empty
+                    };
+                })
+                .ToList();
+
+            return new UnitAvailabilityViewModel
             {
                 UnitId = unit.Id,
                 UnitName = unit.Name,
-                CityName = unit.City.Name,
-                UnitTypeName = unit.UnitType.Name,
+                CityName = unit.City?.Name ?? string.Empty,
+                UnitTypeName = unit.UnitType?.Name ?? string.Empty,
                 FloorType = unit.FloorType,
                 Year = unit.Year,
-                WeekAvailabilities = GetWeekAvailabilities(unit, currentYear)
-            }).ToList();
-
-            ViewBag.Cities = await _context.Cities.Where(c => c.IsActive).ToListAsync();
-            ViewBag.CurrentCityId = cityId;
-            ViewBag.CurrentYear = currentYear;
-            ViewBag.AvailableYears = GetAvailableYears();
-
-            return View(viewModels);
+                IsForPensioners = unit.IsForPensioners,
+                IsForManagement = unit.UnitType?.IsForManagement ?? false,
+                WeekAvailabilities = weekAvailabilities
+            };
         }
 
-        private List<WeekAvailabilityViewModel> GetWeekAvailabilities(Unit unit, int year)
+        private async Task ValidateUnitAsync(Unit unit, int? currentUnitId = null)
         {
-            var weekAvailabilities = new List<WeekAvailabilityViewModel>();
-            var startDate = new DateTime(year, 1, 1);
-            var endDate = new DateTime(year, 12, 31);
-
-            // Find first Friday of the year
-            while (startDate.DayOfWeek != DayOfWeek.Friday)
+            if (unit.MaxCapacity > 0 && unit.DefaultCapacity > 0 && unit.MaxCapacity < unit.DefaultCapacity)
             {
-                startDate = startDate.AddDays(1);
+                ModelState.AddModelError(nameof(Unit.MaxCapacity), "السعة القصوى يجب أن تكون أكبر من أو تساوي السعة الافتراضية");
             }
 
-            var currentDate = startDate;
-            while (currentDate <= endDate)
+            if (!string.IsNullOrWhiteSpace(unit.Code))
             {
-                var weekEnd = currentDate.AddDays(6); // Friday to Thursday (7 days)
-
-                var reservation = unit.Reservations
-                    .FirstOrDefault(r => r.CheckInDate <= currentDate && r.CheckOutDate >= weekEnd
-                                        && (r.Status == ReservationStatus.Confirmed
-                                           || r.Status == ReservationStatus.Paid
-                                           || r.Status == ReservationStatus.TemporaryHold));
-
-                weekAvailabilities.Add(new WeekAvailabilityViewModel
+                var codeExists = await _context.Units.AnyAsync(u => u.Code == unit.Code && (!currentUnitId.HasValue || u.Id != currentUnitId.Value));
+                if (codeExists)
                 {
-                    WeekStartDate = currentDate,
-                    WeekEndDate = weekEnd,
-                    IsAvailable = reservation == null,
-                    IsReserved = reservation != null,
-                    ReservationStatus = reservation?.Status.ToString(),
-                    EmployeeName = reservation?.EmployeeName
-                });
-
-                currentDate = currentDate.AddDays(7); // Move to next Friday
+                    ModelState.AddModelError(nameof(Unit.Code), "كود الوحدة موجود مسبقاً");
+                }
             }
-
-            return weekAvailabilities;
         }
 
-        private async Task PopulateDropdowns()
+        private async Task PopulateDropdowns(int? cityId = null, int? unitTypeId = null, int? year = null)
         {
-            var cities = await _context.Cities.Where(c => c.IsActive).ToListAsync();
-            var unitTypes = await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync();
+            ViewBag.Cities = new SelectList(await _context.Cities.Where(c => c.IsActive).ToListAsync(), "Id", "Name", cityId);
+            ViewBag.UnitTypes = new SelectList(await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync(), "Id", "Name", unitTypeId);
+            ViewBag.FloorTypes = new SelectList(GetFloorTypeOptions(), "Value", "Text");
+            ViewBag.Years = new SelectList(GetAvailableYears(), year);
+        }
 
-            ViewBag.Cities = new SelectList(cities, "Id", "Name");
-            ViewBag.UnitTypes = new SelectList(unitTypes, "Id", "Name");
+        private async Task<List<object>> GetUnitsForAvailabilityFilterAsync(int? cityId, int? unitTypeId, int year, bool? isForManagement)
+        {
+            var query = _context.Units
+                .Include(u => u.City)
+                .Include(u => u.UnitType)
+                .Where(u => u.IsActive && u.Year == year)
+                .AsQueryable();
 
-            // Floor types
-            var floorTypes = new[]
+            if (cityId.HasValue)
+            {
+                query = query.Where(u => u.CityId == cityId.Value);
+            }
+
+            if (unitTypeId.HasValue)
+            {
+                query = query.Where(u => u.UnitTypeId == unitTypeId.Value);
+            }
+
+            if (isForManagement.HasValue)
+            {
+                query = query.Where(u => u.UnitType != null && u.UnitType.IsForManagement == isForManagement.Value);
+            }
+
+            return await query
+                .OrderBy(u => u.City!.Name)
+                .ThenBy(u => u.Name)
+                .Select(u => new
+                {
+                    u.Id,
+                    DisplayName = $"{u.City!.Name} - {u.UnitType!.Name} - {u.Name}"
+                })
+                .Cast<object>()
+                .ToListAsync();
+        }
+
+        private static List<object> GetFloorTypeOptions()
+        {
+            return new List<object>
             {
                 new { Value = (int)FloorType.GroundFloor, Text = "دور أرضي" },
                 new { Value = (int)FloorType.MiddleFloor, Text = "دور متكرر" },
                 new { Value = (int)FloorType.TopFloor, Text = "دور أخير" }
             };
-
-            ViewBag.FloorTypes = new SelectList(floorTypes, "Value", "Text");
-            ViewBag.Years = new SelectList(GetAvailableYears());
-
-            // Debug
-            System.Diagnostics.Debug.WriteLine($"Cities loaded: {cities.Count}");
-            System.Diagnostics.Debug.WriteLine($"UnitTypes loaded: {unitTypes.Count}");
         }
 
         private List<int> GetAvailableYears()
         {
             var currentYear = DateTime.Now.Year;
-            return Enumerable.Range(currentYear, 5).ToList(); // Current year + next 4 years
+            return Enumerable.Range(currentYear, 5).ToList();
         }
 
-        private string GetFloorTypeDisplayName(FloorType floorType)
+        private static DateTime GetFirstFridayOnOrAfter(DateTime date)
         {
-            return floorType switch
+            while (date.DayOfWeek != DayOfWeek.Friday)
             {
-                FloorType.GroundFloor => "دور أرضي",
-                FloorType.MiddleFloor => "دور متكرر",
-                FloorType.TopFloor => "دور أخير",
-                _ => floorType.ToString()
-            };
+                date = date.AddDays(1);
+            }
+
+            return date;
         }
 
         private bool UnitExists(int id)
         {
             return _context.Units.Any(e => e.Id == id);
         }
+
+        public class CreateUnitScheduleRequest
+        {
+            public int UnitId { get; set; }
+            public int Year { get; set; }
+            public int StartMonth { get; set; }
+            public int EndMonth { get; set; }
+            public string? Notes { get; set; }
+            public int? CityId { get; set; }
+            public int? UnitTypeId { get; set; }
+            public bool? IsForManagement { get; set; }
+        }
     }
 }
-

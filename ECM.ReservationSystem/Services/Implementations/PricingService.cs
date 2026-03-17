@@ -37,8 +37,14 @@ namespace ECM.ReservationSystem.Services.Implementations
             return pricing.CalculateWeeklyRent(numberOfGuests);
         }
 
-        public async Task<decimal> GetTransportationCostAsync(int cityId)
+        public async Task<decimal> GetTransportationCostAsync(int cityId, int unitId, FloorType floorType, int numberOfGuests = 1)
         {
+            var pricing = await GetCurrentPricingAsync(unitId, floorType);
+            if (pricing != null && pricing.TransportationCostPerPerson > 0)
+            {
+                return pricing.TransportationCostPerPerson * Math.Max(1, numberOfGuests);
+            }
+
             var currentDate = DateTime.Now.Date;
 
             var transportationCost = await _context.TransportationCosts
@@ -67,7 +73,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 var unit = await _context.Units.FindAsync(unitId);
                 if (unit != null)
                 {
-                    transportationCost = await GetTransportationCostAsync(unit.CityId);
+                    transportationCost = await GetTransportationCostAsync(unit.CityId, unitId, floorType, numberOfGuests);
                 }
             }
 

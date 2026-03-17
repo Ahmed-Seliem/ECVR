@@ -11,6 +11,7 @@
                     <th>السعر الأسبوعي</th>
                     <th>الشخص الإضافي</th>
                     <th>التأمين</th>
+                    <th>النقل للفرد</th>
                     <th>فترة السريان</th>
                     <th>الحالة</th>
                     <th>الإجراءات</th>
@@ -28,6 +29,7 @@
                         <td class="fw-bold text-success">@item.WeeklyRentDefaultCapacity.ToString("N2") ج</td>
                         <td class="fw-bold text-warning">@item.AdditionalPersonCost.ToString("N2") ج</td>
                         <td class="fw-bold text-primary">@item.InsuranceAmount.ToString("N2") ج</td>
+                        <td class="fw-bold text-dark">@item.TransportationCostPerPerson.ToString("N2") ج</td>
                         <td>
                             <div>من: @item.EffectiveFrom.ToString("yyyy/MM/dd")</div>
                             @if (item.EffectiveTo.HasValue)
@@ -62,6 +64,7 @@
                                         data-weekly="@item.WeeklyRentDefaultCapacity"
                                         data-additional="@item.AdditionalPersonCost"
                                         data-insurance="@item.InsuranceAmount"
+                                        data-transportation="@item.TransportationCostPerPerson"
                                         data-effectivefrom="@item.EffectiveFrom.ToString("yyyy-MM-dd")"
                                         data-effectiveto="@(item.EffectiveTo?.ToString("yyyy-MM-dd") ?? string.Empty)"
                                         data-active="@item.IsActive">

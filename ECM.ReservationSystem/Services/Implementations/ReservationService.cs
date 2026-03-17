@@ -18,16 +18,20 @@ namespace ECM.ReservationSystem.Services.Implementations
             _pricingService = pricingService;
         }
 
-        public async Task<List<UnitAvailabilityDto>> GetAvailableUnitsAsync(int cityId, int year, DateTime? checkInDate = null, DateTime? checkOutDate = null)
+        public async Task<List<UnitAvailabilityDto>> GetAvailableUnitsAsync(int cityId, int year, DateTime? checkInDate = null, DateTime? checkOutDate = null, bool? isForManagement = null)
         {
             var query = _context.Units
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
                 .Include(u => u.Pricings)
                 .Include(u => u.Reservations)
+                .Include(u => u.ScheduleSlots)
                 .Where(u => u.IsActive && u.CityId == cityId && u.Year == year);
 
-        
+            if (isForManagement.HasValue)
+            {
+                query = query.Where(u => u.UnitType != null && u.UnitType.IsForManagement == isForManagement.Value);
+            }
 
             var units = await query.ToListAsync();
             var availableUnits = new List<UnitAvailabilityDto>();
@@ -35,15 +39,56 @@ namespace ECM.ReservationSystem.Services.Implementations
             foreach (var unit in units)
             {
                 bool isAvailable = true;
+                List<AvailableWeekDto> availableWeeks = new();
 
-                // Check availability for specific dates if provided
                 if (checkInDate.HasValue && checkOutDate.HasValue)
                 {
+                    var hasScheduledSlot = unit.ScheduleSlots.Any(s =>
+                        s.IsActive &&
+                        s.SlotStartDate.Date == checkInDate.Value.Date &&
+                        s.SlotEndDate.Date.AddDays(1) == checkOutDate.Value.Date);
+
+                    if (!hasScheduledSlot)
+                    {
+                        isAvailable = false;
+                    }
+
                     isAvailable = !await _context.Reservations
                         .AnyAsync(r => r.UnitId == unit.Id
                                       && r.Status != ReservationStatus.Cancelled
                                       && r.CheckInDate < checkOutDate.Value
-                                      && r.CheckOutDate > checkInDate.Value);
+                                      && r.CheckOutDate > checkInDate.Value)
+                                  && isAvailable;
+                }
+                else
+                {
+                    var activeSlots = unit.ScheduleSlots
+                        .Where(s => s.IsActive && s.Year == year)
+                        .OrderBy(s => s.SlotStartDate)
+                        .ToList();
+
+                    if (activeSlots.Any())
+                    {
+                        foreach (var slot in activeSlots)
+                        {
+                            var isSlotBooked = unit.Reservations.Any(r =>
+                                r.Status != ReservationStatus.Cancelled &&
+                                r.CheckInDate < slot.SlotEndDate.Date.AddDays(1) &&
+                                r.CheckOutDate > slot.SlotStartDate.Date);
+
+                            if (!isSlotBooked)
+                            {
+                                availableWeeks.Add(new AvailableWeekDto
+                                {
+                                    WeekStartDate = slot.SlotStartDate,
+                                    WeekEndDate = slot.SlotEndDate,
+                                    IsBookingOpen = true
+                                });
+                            }
+                        }
+
+                        isAvailable = availableWeeks.Any();
+                    }
                 }
 
                 if (isAvailable)
@@ -60,10 +105,14 @@ namespace ECM.ReservationSystem.Services.Implementations
                         DefaultCapacity = unit.DefaultCapacity,
                         MaxCapacity = unit.MaxCapacity,
                         Year = unit.Year,
+                        IsForPensioners = unit.IsForPensioners,
+                        IsForManagement = unit.UnitType?.IsForManagement ?? false,
                         WeeklyRentDefaultCapacity = pricing?.WeeklyRentDefaultCapacity ?? 0,
                         AdditionalPersonCost = pricing?.AdditionalPersonCost ?? 0,
                         InsuranceAmount = pricing?.InsuranceAmount ?? 0,
-                        IsAvailable = isAvailable
+                        TransportationCostPerPerson = pricing?.TransportationCostPerPerson ?? 0,
+                        IsAvailable = isAvailable,
+                        AvailableWeeks = availableWeeks
                     });
                 }
             }
@@ -88,6 +137,17 @@ namespace ECM.ReservationSystem.Services.Implementations
             }
 
             // Check availability
+            var hasScheduledSlot = await _context.UnitScheduleSlots
+                .AnyAsync(s => s.UnitId == unitId
+                               && s.IsActive
+                               && s.SlotStartDate.Date == checkInDate.Date
+                               && s.SlotEndDate.Date.AddDays(1) == checkOutDate.Date);
+
+            if (!hasScheduledSlot)
+            {
+                return new CostCalculationDto { IsAvailable = false, Message = "الوحدة غير متاحة ضمن الجدولة المحددة." };
+            }
+
             var isAvailable = !await _context.Reservations
                 .AnyAsync(r => r.UnitId == unitId
                               && r.Status != ReservationStatus.Cancelled
@@ -102,7 +162,9 @@ namespace ECM.ReservationSystem.Services.Implementations
             // Calculate costs
             var weeklyRent = await _pricingService.CalculateWeeklyRentAsync(unitId, unit.FloorType, numberOfGuests);
             var pricing = await _pricingService.GetCurrentPricingAsync(unitId, unit.FloorType);
-            var transportationCost = isTransportationRequired ? await _pricingService.GetTransportationCostAsync(unit.CityId) : 0;
+            var transportationCost = isTransportationRequired
+                ? await _pricingService.GetTransportationCostAsync(unit.CityId, unitId, unit.FloorType, numberOfGuests)
+                : 0;
 
             return new CostCalculationDto
             {

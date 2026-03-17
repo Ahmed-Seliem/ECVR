@@ -26,6 +26,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Pricing> Pricings { get; set; }
     public DbSet<TransportationCost> TransportationCosts { get; set; }
     public DbSet<AvailableDate> AvailableDates { get; set; }
+    public DbSet<UnitScheduleSlot> UnitScheduleSlots { get; set; }
 
     public override int SaveChanges()
     {
@@ -83,6 +84,12 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(p => p.UnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<UnitScheduleSlot>()
+            .HasOne(s => s.Unit)
+            .WithMany(u => u.ScheduleSlots)
+            .HasForeignKey(s => s.UnitId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<TransportationCost>()
             .HasOne(tc => tc.City)
             .WithMany(c => c.TransportationCosts)
@@ -102,6 +109,14 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Pricing>()
             .Property(p => p.InsuranceAmount)
             .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<Pricing>()
+            .Property(p => p.TransportationCostPerPerson)
+            .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<UnitScheduleSlot>()
+            .HasIndex(s => new { s.UnitId, s.SlotStartDate, s.SlotEndDate })
+            .IsUnique();
     }
 
     private void ApplyAuditInfo()

@@ -10,9 +10,12 @@
         public int DefaultCapacity { get; set; }
         public int MaxCapacity { get; set; }
         public int Year { get; set; }
+        public bool IsForPensioners { get; set; }
+        public bool IsForManagement { get; set; }
         public decimal WeeklyRentDefaultCapacity { get; set; }
         public decimal AdditionalPersonCost { get; set; }
         public decimal InsuranceAmount { get; set; }
+        public decimal TransportationCostPerPerson { get; set; }
         public bool IsAvailable { get; set; }
         public List<AvailableWeekDto> AvailableWeeks { get; set; } = new();
     }
