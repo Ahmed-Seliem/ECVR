@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ECM.ReservationSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260317160234_AddUnitSchedulesTransportationAndPensioners")]
+    [Migration("20260317173910_AddUnitSchedulesTransportationAndPensioners")]
     partial class AddUnitSchedulesTransportationAndPensioners
     {
         /// <inheritdoc />
@@ -421,6 +421,10 @@ namespace ECM.ReservationSystem.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");

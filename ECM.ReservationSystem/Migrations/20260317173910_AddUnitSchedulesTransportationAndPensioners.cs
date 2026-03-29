@@ -33,6 +33,7 @@ namespace ECM.ReservationSystem.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UnitId = table.Column<int>(type: "int", nullable: false),
                     Year = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SlotStartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SlotEndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),

@@ -282,6 +282,24 @@ body.sidebar-collapsed .sidebar .nav li a {
     border-radius: 8px;
     height: 46px;
     line-height: 42px;
+    display: flex;
+    align-items: center;
+}
+
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 42px;
+    padding-right: 14px;
+    padding-left: 32px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 42px;
+    left: 8px;
+    right: auto;
 }
 
 .select2-container--default.select2-container--focus .select2-selection--single {
@@ -423,9 +441,39 @@ body.sidebar-collapsed .sidebar .nav li a {
         padding: 16px;
     }
 
+    .form-select,
+    .form-control,
+    .select2-container--default .select2-selection--single {
+        min-height: 44px;
+    }
+
+    .table-responsive {
+        max-height: none;
+    }
+
     body.sidebar-collapsed .aside {
         width: 280px;
     }
+}
+
+.schedule-slot {
+    min-width: 240px;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid transparent;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.slot-available {
+    background: color-mix(in srgb, var(--secondary-color) 12%, #ffffff);
+    border-color: color-mix(in srgb, var(--secondary-color) 35%, #ffffff);
+    color: var(--dark-color);
+}
+
+.slot-booked {
+    background: color-mix(in srgb, var(--primary-color) 12%, #ffffff);
+    border-color: color-mix(in srgb, var(--primary-color) 35%, #ffffff);
+    color: var(--dark-color);
 }
 
 /* Page Title */

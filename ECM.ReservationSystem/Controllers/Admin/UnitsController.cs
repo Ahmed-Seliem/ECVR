@@ -308,11 +308,26 @@ namespace ECM.ReservationSystem.Controllers.Admin
                     {
                         UnitId = request.UnitId,
                         Year = request.Year,
+                        Name = BuildSlotName(slotStart, slotEnd, request.SlotName),
                         SlotStartDate = slotStart,
                         SlotEndDate = slotEnd,
                         IsActive = true,
                         Notes = request.Notes
                     });
+                }
+                else
+                {
+                    var existingSlot = await _context.UnitScheduleSlots.FirstAsync(s =>
+                        s.UnitId == request.UnitId &&
+                        s.SlotStartDate == slotStart &&
+                        s.SlotEndDate == slotEnd);
+
+                    if (!existingSlot.IsActive)
+                    {
+                        existingSlot.IsActive = true;
+                        existingSlot.Name = BuildSlotName(slotStart, slotEnd, request.SlotName);
+                        existingSlot.Notes = request.Notes;
+                    }
                 }
             }
 
@@ -363,9 +378,9 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
             }
 
-            _context.UnitScheduleSlots.Remove(slot);
+            slot.IsActive = false;
             await _context.SaveChangesAsync();
-            TempData["Success"] = "تم حذف الـ slot بنجاح.";
+            TempData["Success"] = "تم إلغاء الـ slot بنجاح.";
 
             return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
         }
@@ -387,6 +402,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                     return new WeekAvailabilityViewModel
                     {
                         SlotId = slot.Id,
+                        SlotName = slot.Name,
                         WeekStartDate = slot.SlotStartDate,
                         WeekEndDate = slot.SlotEndDate,
                         IsScheduled = true,
@@ -499,6 +515,14 @@ namespace ECM.ReservationSystem.Controllers.Admin
             return date;
         }
 
+        private static string BuildSlotName(DateTime startDate, DateTime endDate, string? customName)
+        {
+            var defaultName = $"{startDate:dd/MM/yyyy} إلى {endDate:dd/MM/yyyy}";
+            return string.IsNullOrWhiteSpace(customName)
+                ? defaultName
+                : $"{customName.Trim()} | {defaultName}";
+        }
+
         private bool UnitExists(int id)
         {
             return _context.Units.Any(e => e.Id == id);
@@ -510,6 +534,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             public int Year { get; set; }
             public int StartMonth { get; set; }
             public int EndMonth { get; set; }
+            public string? SlotName { get; set; }
             public string? Notes { get; set; }
             public int? CityId { get; set; }
             public int? UnitTypeId { get; set; }

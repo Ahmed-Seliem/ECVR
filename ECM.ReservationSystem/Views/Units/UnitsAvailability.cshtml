@@ -52,7 +52,7 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-primary text-white">
-        <strong>Create Schedule</strong>
+        <strong>إنشاء الجدول</strong>
     </div>
     <div class="card-body">
         <form method="post" action="/Admin/Units/Availability/CreateSchedule" class="row g-3 align-items-end">
@@ -92,8 +92,12 @@
                 <label class="form-label">ملاحظات</label>
                 <input name="Notes" class="form-control" />
             </div>
+            <div class="col-md-4">
+                <label class="form-label">اسم الفترة</label>
+                <input name="SlotName" class="form-control" placeholder="مثال: الأسبوع الأول" />
+            </div>
             <div class="col-12">
-                <button type="submit" class="btn btn-primary">Add Slots</button>
+                <button type="submit" class="btn btn-primary">إضافة الـ Slots</button>
             </div>
         </form>
     </div>
@@ -127,11 +131,12 @@
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         @foreach (var slot in item.WeekAvailabilities)
                         {
-                            var cardClass = slot.IsReserved ? "border-danger bg-danger-subtle" : "border-success bg-success-subtle";
-                            <div class="border rounded px-3 py-2 @cardClass" style="min-width:220px;">
-                                <div class="fw-bold">@slot.WeekStartDate.ToString("dd/MM/yyyy")</div>
+                            var cardClass = slot.IsReserved ? "schedule-slot slot-booked" : "schedule-slot slot-available";
+                            <div class="@cardClass">
+                                <div class="fw-bold">@slot.SlotName</div>
+                                <div>@slot.WeekStartDate.ToString("dd/MM/yyyy")</div>
                                 <div>إلى @slot.WeekEndDate.ToString("dd/MM/yyyy")</div>
-                                <div class="mt-1 fw-semibold">@(slot.IsReserved ? "Booked" : "Available")</div>
+                                <div class="mt-1 fw-semibold">@(slot.IsReserved ? "محجوز" : "متاح")</div>
                                 @if (slot.IsReserved)
                                 {
                                     <div class="small">@slot.EmployeeName</div>
@@ -174,11 +179,11 @@
                                         <td>
                                             @if (slot.IsReserved)
                                             {
-                                                <span class="badge bg-danger">Booked</span>
+                                                <span class="badge bg-danger">محجوز</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-success">Available</span>
+                                                <span class="badge bg-success">متاح</span>
                                             }
                                         </td>
                                         <td>@(string.IsNullOrWhiteSpace(slot.EmployeeName) ? "-" : slot.EmployeeName)</td>

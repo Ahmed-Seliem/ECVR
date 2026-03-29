@@ -9,6 +9,7 @@ public class UnitScheduleSlot : AuditableEntity
     public Unit Unit { get; set; } = null!;
 
     public int Year { get; set; }
+    public string Name { get; set; } = string.Empty;
     public DateTime SlotStartDate { get; set; }
     public DateTime SlotEndDate { get; set; }
     public bool IsActive { get; set; } = true;

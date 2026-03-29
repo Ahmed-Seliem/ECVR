@@ -40,22 +40,12 @@ namespace ECM.ReservationSystem.Services.Implementations
         public async Task<decimal> GetTransportationCostAsync(int cityId, int unitId, FloorType floorType, int numberOfGuests = 1)
         {
             var pricing = await GetCurrentPricingAsync(unitId, floorType);
-            if (pricing != null && pricing.TransportationCostPerPerson > 0)
+            if (pricing == null || pricing.TransportationCostPerPerson <= 0)
             {
-                return pricing.TransportationCostPerPerson * Math.Max(1, numberOfGuests);
+                return 0;
             }
 
-            var currentDate = DateTime.Now.Date;
-
-            var transportationCost = await _context.TransportationCosts
-                .Where(tc => tc.CityId == cityId
-                            && tc.IsActive
-                            && tc.EffectiveFrom <= currentDate
-                            && (tc.EffectiveTo == null || tc.EffectiveTo >= currentDate))
-                .OrderByDescending(tc => tc.EffectiveFrom)
-                .FirstOrDefaultAsync();
-
-            return transportationCost?.RoundTripCost ?? 0;
+            return pricing.TransportationCostPerPerson * Math.Max(1, numberOfGuests);
         }
 
         public async Task<decimal> CalculateTotalCostAsync(int unitId, FloorType floorType, int numberOfGuests, bool includeTransportation)

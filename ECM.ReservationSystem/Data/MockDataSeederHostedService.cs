@@ -1,4 +1,4 @@
-﻿using ECM.ReservationSystem.Domain.Entities;
+using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.OpenIdSettings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -45,122 +45,141 @@ public class MockDataSeederHostedService : IHostedService
             _logger.LogInformation("Existing data cleared before reseeding.");
         }
 
-        var now = DateTime.UtcNow;
-        var currentYear = DateTime.UtcNow.Year;
-        var random = new Random(20260302);
+        var currentYear = 2026;
 
         var cities = new[]
         {
-            new City { Name = "Alexandria", NameAr = "الإسكندرية", IsActive = true },
-            new City { Name = "Marsa Matrouh", NameAr = "مرسى مطروح", IsActive = true },
-            new City { Name = "Ras Sedr", NameAr = "رأس سدر", IsActive = true }
+            new City { Name = "العين السخنة", NameAr = "العين السخنة", IsActive = true },
+            new City { Name = "مرسى مطروح", NameAr = "مرسى مطروح", IsActive = true },
+            new City { Name = "رأس سدر", NameAr = "رأس سدر", IsActive = true }
         };
         db.Cities.AddRange(cities);
 
         var unitTypes = new[]
         {
-            new UnitType { Name = "Apartment", NameAr = "شقة", Description = "وحدة شاطئية", IsForManagement = false, IsActive = true },
-            new UnitType { Name = "Villa", NameAr = "فيلا", Description = "وحدة عائلية", IsForManagement = false, IsActive = true },
-            new UnitType { Name = "Chalet", NameAr = "شاليه", Description = "وحدة مصيفية", IsForManagement = false, IsActive = true }
+            new UnitType { Name = "شقة", NameAr = "شقة", Description = "وحدة مناسبة للموظفين", IsForManagement = false, IsActive = true },
+            new UnitType { Name = "فيلا", NameAr = "فيلا", Description = "وحدة مناسبة للإدارة", IsForManagement = true, IsActive = true },
+            new UnitType { Name = "شاليه", NameAr = "شاليه", Description = "وحدة مميزة للإدارة", IsForManagement = true, IsActive = true }
         };
         db.UnitTypes.AddRange(unitTypes);
         await db.SaveChangesAsync(cancellationToken);
 
-        var units = new List<Unit>();
-        var floorTypes = new[] { FloorType.GroundFloor, FloorType.MiddleFloor, FloorType.TopFloor };
-        var codeCounter = 1;
-        foreach (var city in cities)
+        var units = new List<Unit>
         {
-            foreach (var type in unitTypes)
-            {
-                for (var i = 0; i < 3; i++)
-                {
-                    var floorType = floorTypes[i % floorTypes.Length];
-                    units.Add(new Unit
-                    {
-                        Name = $"{type.Name} {city.Name} {i + 1}",
-                        Code = $"U{codeCounter:0000}",
-                        Description = $"Mock unit {codeCounter}",
-                        DefaultCapacity = 6,
-                        MaxCapacity = 6,
-                        FloorType = floorType,
-                        FloorNumber = floorType == FloorType.GroundFloor ? 0 : i + 1,
-                        Year = currentYear,
-                        IsActive = true,
-                        CityId = city.Id,
-                        UnitTypeId = type.Id
-                    });
-                    codeCounter++;
-                }
-            }
-        }
+            new() { Name = "شقة الياسمين 1", Code = "SHQ-001", Description = "شقة عائلية بإطلالة مفتوحة", DefaultCapacity = 4, MaxCapacity = 6, FloorType = FloorType.MiddleFloor, FloorNumber = 2, Year = currentYear, IsActive = true, IsForPensioners = false, CityId = cities[0].Id, UnitTypeId = unitTypes[0].Id },
+            new() { Name = "شقة الروضة 2", Code = "SHQ-002", Description = "شقة هادئة قريبة من البحر", DefaultCapacity = 4, MaxCapacity = 6, FloorType = FloorType.TopFloor, FloorNumber = 3, Year = currentYear, IsActive = true, IsForPensioners = true, CityId = cities[1].Id, UnitTypeId = unitTypes[0].Id },
+            new() { Name = "فيلا النخيل", Code = "VIL-001", Description = "فيلا للإدارة بحديقة خاصة", DefaultCapacity = 6, MaxCapacity = 8, FloorType = FloorType.GroundFloor, FloorNumber = 0, Year = currentYear, IsActive = true, IsForPensioners = false, CityId = cities[0].Id, UnitTypeId = unitTypes[1].Id },
+            new() { Name = "فيلا المرجان", Code = "VIL-002", Description = "فيلا واسعة قريبة من الشاطئ", DefaultCapacity = 6, MaxCapacity = 8, FloorType = FloorType.GroundFloor, FloorNumber = 0, Year = currentYear, IsActive = true, IsForPensioners = false, CityId = cities[2].Id, UnitTypeId = unitTypes[1].Id },
+            new() { Name = "شاليه النسيم", Code = "CHL-001", Description = "شاليه مميز للإدارة", DefaultCapacity = 5, MaxCapacity = 7, FloorType = FloorType.MiddleFloor, FloorNumber = 1, Year = currentYear, IsActive = true, IsForPensioners = false, CityId = cities[1].Id, UnitTypeId = unitTypes[2].Id },
+            new() { Name = "شاليه اللوتس", Code = "CHL-002", Description = "شاليه بإطلالة مباشرة", DefaultCapacity = 5, MaxCapacity = 7, FloorType = FloorType.TopFloor, FloorNumber = 2, Year = currentYear, IsActive = true, IsForPensioners = true, CityId = cities[2].Id, UnitTypeId = unitTypes[2].Id }
+        };
         db.Units.AddRange(units);
+        await db.SaveChangesAsync(cancellationToken);
 
-        var availableDates = cities.Select(c => new AvailableDate
+        var availableDates = cities.Select(city => new AvailableDate
         {
-            CityId = c.Id,
+            CityId = city.Id,
             AvailableFrom = new DateTime(currentYear, 6, 1),
             AvailableTo = new DateTime(currentYear, 9, 30),
-            BookingOpenFrom = now.Date,
+            BookingOpenFrom = new DateTime(currentYear, 5, 1),
             BookingOpenTo = new DateTime(currentYear, 9, 25),
             IsBookingOpen = true,
             IsActive = true
         }).ToList();
         db.AvailableDates.AddRange(availableDates);
 
-        var transportationCosts = cities.Select((c, idx) => new TransportationCost
+        var pricings = new List<Pricing>();
+        foreach (var unit in units)
         {
-            CityId = c.Id,
-            RoundTripCost = 350 + (idx * 120),
-            EffectiveFrom = now.Date.AddMonths(-1),
-            EffectiveTo = null,
-            IsActive = true
-        }).ToList();
-        db.TransportationCosts.AddRange(transportationCosts);
-
+            pricings.Add(new Pricing
+            {
+                UnitId = unit.Id,
+                FloorType = unit.FloorType,
+                WeeklyRentDefaultCapacity = unit.UnitTypeId == unitTypes[0].Id ? 5200 : unit.UnitTypeId == unitTypes[1].Id ? 8800 : 7600,
+                AdditionalPersonCost = 650,
+                InsuranceAmount = 1500,
+                TransportationCostPerPerson = 180,
+                EffectiveFrom = new DateTime(currentYear, 1, 1),
+                EffectiveTo = null,
+                IsActive = true
+            });
+        }
+        db.Pricings.AddRange(pricings);
         await db.SaveChangesAsync(cancellationToken);
 
-        var pricings = units.Select(u => new Pricing
+        var scheduleSlots = new List<UnitScheduleSlot>();
+        foreach (var unit in units)
         {
-            UnitId = u.Id,
-            FloorType = u.FloorType,
-            WeeklyRentDefaultCapacity = 6500 + random.Next(0, 3000),
-            AdditionalPersonCost = 900,
-            InsuranceAmount = 1200 + random.Next(0, 500),
-            EffectiveFrom = now.Date.AddMonths(-1),
-            EffectiveTo = null,
-            IsActive = true
-        }).ToList();
-        db.Pricings.AddRange(pricings);
+            foreach (var slot in BuildSlotsForSummer(currentYear))
+            {
+                scheduleSlots.Add(new UnitScheduleSlot
+                {
+                    UnitId = unit.Id,
+                    Year = currentYear,
+                    Name = $"{slot.Name} - {unit.Name}",
+                    SlotStartDate = slot.StartDate,
+                    SlotEndDate = slot.EndDate,
+                    IsActive = true,
+                    Notes = "جدول صيف 2026"
+                });
+            }
+        }
+        db.UnitScheduleSlots.AddRange(scheduleSlots);
+        await db.SaveChangesAsync(cancellationToken);
 
         if (_options.SeedReservations)
         {
-            var sampleUnits = units.Take(8).ToList();
+            var targetSlots = await db.UnitScheduleSlots
+                .Include(s => s.Unit)
+                .OrderBy(s => s.UnitId)
+                .ThenBy(s => s.SlotStartDate)
+                .ToListAsync(cancellationToken);
+
             var reservations = new List<Reservation>();
-            for (var i = 0; i < sampleUnits.Count; i++)
+            var bookedSlots = targetSlots
+                .Where((_, index) => index % 5 == 0)
+                .Take(6)
+                .ToList();
+
+            var employeeNames = new[]
             {
-                var unit = sampleUnits[i];
-                var checkIn = new DateTime(currentYear, 7, 1).AddDays(i * 7);
-                var checkOut = checkIn.AddDays(6);
+                "أحمد محمد",
+                "مها علي",
+                "سارة حسن",
+                "خالد إبراهيم",
+                "ندى سمير",
+                "محمد شريف"
+            };
+
+            for (var i = 0; i < bookedSlots.Count; i++)
+            {
+                var slot = bookedSlots[i];
                 reservations.Add(new Reservation
                 {
-                    EmployeeNumber = $"EMP{1000 + i}",
-                    EmployeeName = $"Employee {i + 1}",
+                    EmployeeNumber = $"EMP-{100 + i}",
+                    EmployeeName = employeeNames[i],
                     Year = currentYear.ToString(),
-                    UnitId = unit.Id,
-                    CheckInDate = checkIn,
-                    CheckOutDate = checkOut,
-                    NumberOfGuests = random.Next(2, 7),
-                    WeeklyRent = 7000 + random.Next(0, 2500),
-                    InsuranceAmount = 1200,
-                    TransportationCost = i % 2 == 0 ? 350 : 0,
-                    TotalAmount = 8200 + random.Next(0, 2600),
-                    Status = i % 3 == 0 ? ReservationStatus.TemporaryHold : ReservationStatus.Confirmed,
+                    UnitId = slot.UnitId,
+                    CheckInDate = slot.SlotStartDate,
+                    CheckOutDate = slot.SlotEndDate.AddDays(1),
+                    NumberOfGuests = 4,
+                    WeeklyRent = 0,
+                    InsuranceAmount = 1500,
+                    TransportationCost = 720,
+                    TotalAmount = 0,
+                    Status = i % 2 == 0 ? ReservationStatus.Confirmed : ReservationStatus.Paid,
                     PaymentDeadline = DateTime.UtcNow.AddHours(24),
-                    IsTransportationRequired = i % 2 == 0,
-                    Notes = "Mock reservation",
-                    CaseSystemId = $"CASE-{Guid.NewGuid():N}".Substring(0, 12)
+                    IsTransportationRequired = true,
+                    Notes = $"حجز تجريبي على {slot.Name}",
+                    CaseSystemId = $"CASE-2026-{i + 1:000}"
                 });
+            }
+
+            foreach (var reservation in reservations)
+            {
+                var pricing = pricings.First(p => p.UnitId == reservation.UnitId);
+                reservation.WeeklyRent = pricing.WeeklyRentDefaultCapacity;
+                reservation.TotalAmount = reservation.WeeklyRent + reservation.InsuranceAmount + reservation.TransportationCost;
             }
 
             db.Reservations.AddRange(reservations);
@@ -172,12 +191,44 @@ public class MockDataSeederHostedService : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
+    private static IEnumerable<(DateTime StartDate, DateTime EndDate, string Name)> BuildSlotsForSummer(int year)
+    {
+        var slots = new List<(DateTime StartDate, DateTime EndDate, string Name)>();
+        var startDate = GetFirstFridayOnOrAfter(new DateTime(year, 6, 1));
+        var endDate = new DateTime(year, 9, 30);
+        var slotCounter = 1;
+
+        for (var current = startDate; current <= endDate; current = current.AddDays(7))
+        {
+            var slotEnd = current.AddDays(6);
+            if (slotEnd > endDate)
+            {
+                break;
+            }
+
+            slots.Add((current, slotEnd, $"الأسبوع {slotCounter:00}"));
+            slotCounter++;
+        }
+
+        return slots;
+    }
+
+    private static DateTime GetFirstFridayOnOrAfter(DateTime date)
+    {
+        while (date.DayOfWeek != DayOfWeek.Friday)
+        {
+            date = date.AddDays(1);
+        }
+
+        return date;
+    }
+
     private static async Task ClearSeededDataAsync(ApplicationDbContext db, CancellationToken cancellationToken)
     {
         db.Reservations.RemoveRange(db.Reservations);
+        db.UnitScheduleSlots.RemoveRange(db.UnitScheduleSlots);
         db.Pricings.RemoveRange(db.Pricings);
         db.Units.RemoveRange(db.Units);
-        db.TransportationCosts.RemoveRange(db.TransportationCosts);
         db.AvailableDates.RemoveRange(db.AvailableDates);
         db.UnitTypes.RemoveRange(db.UnitTypes);
         db.Cities.RemoveRange(db.Cities);

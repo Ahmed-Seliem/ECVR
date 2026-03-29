@@ -18,6 +18,7 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
     public class WeekAvailabilityViewModel
     {
         public int? SlotId { get; set; }
+        public string SlotName { get; set; } = string.Empty;
         public DateTime WeekStartDate { get; set; }
         public DateTime WeekEndDate { get; set; }
         public bool IsAvailable { get; set; }
