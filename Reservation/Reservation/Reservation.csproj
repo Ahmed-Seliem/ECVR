@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Intalio.Case.Core">
+      <HintPath>..\..\..\..\..\Documents\Tests Api\TestCodeActivity3\TestCodeActivity3\Packages\Intalio.Case.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Intalio.Case.Portal">
+      <HintPath>..\..\..\..\..\Documents\Tests Api\LCA\LCA\pak\Intalio.Case.Portal.dll</HintPath>
+    </Reference>
+    <Reference Include="Intalio.Case.Portal.Core">
+      <HintPath>..\..\..\..\..\Documents\Tests Api\TestCodeActivity3\TestCodeActivity3\Packages\Intalio.Case.Portal.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Intalio.Core">
+      <HintPath>..\..\..\..\..\Documents\Tests Api\TestCodeActivity3\Packages\Intalio.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Intalio.Core.UI">
+      <HintPath>..\..\..\..\..\Documents\Tests Api\TestCodeActivity3\TestCodeActivity3\Packages\Intalio.Core.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore">
+      <HintPath>Pak\Microsoft.EntityFrameworkCore.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore.Relational">
+      <HintPath>Pak\Microsoft.EntityFrameworkCore.Relational.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore.SqlServer">
+      <HintPath>Pak\Microsoft.EntityFrameworkCore.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyModel">
+      <HintPath>Pak\Microsoft.Extensions.DependencyModel.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

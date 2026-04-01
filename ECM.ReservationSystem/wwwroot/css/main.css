@@ -1,15 +1,41 @@
-
+﻿
 :root {
     --primary-color: #AD8128;
-    --secondary-color: #439C46;
-    --success-color: #00AE8D;
+    --secondary-color: #00AE8D;
+    --success-color: #439C46;
     --warning-color: #f6c23e;
     --danger-color: #e74c3c;
     --dark-color: #2c3e50;
     --light-color: #f8f9fa;
     --gray-color: #6c757d;
 }
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
 
+.bg-secondary {
+    background-color: var(--secondary-color) !important;
+}
+
+.bg-success {
+    background-color: var(--success-color) !important;
+}
+
+.bg-warning {
+    background-color: var(--warning-color) !important;
+}
+
+.bg-danger {
+    background-color: var(--danger-color) !important;
+}
+
+.bg-dark {
+    background-color: var(--dark-color) !important;
+}
+
+.bg-light {
+    background-color: var(--light-color) !important;
+}
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f5f6fa;
@@ -25,7 +51,7 @@ body {
 }
 
 .topnavbar {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(135deg, var(--primary-color));
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     border: none;
     height: 60px;
@@ -97,7 +123,7 @@ body.sidebar-collapsed .aside {
 
                 .sidebar .nav li a:hover,
                 .sidebar .nav li.active a {
-                    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                    background: linear-gradient(135deg, var(--primary-color));
                     color: white;
                     transform: translateX(-5px);
                 }
@@ -145,7 +171,7 @@ body.sidebar-collapsed .sidebar .nav li a {
 }
 
 .panel-heading {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(135deg, var(--secondary-color));
     color: white;
     padding: 20px 25px;
     font-weight: 600;
@@ -238,11 +264,11 @@ body.sidebar-collapsed .sidebar .nav li a {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(135deg, var(--secondary-color));
 }
 
     .btn-primary:hover {
-        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        background: linear-gradient(135deg,  var(--primary-color));
         transform: translateY(-2px);
     }
 
@@ -352,7 +378,7 @@ body.sidebar-collapsed .sidebar .nav li a {
 
         .dataTables_wrapper .dataTables_paginate .page-item.active .page-link,
         .dataTables_wrapper .dataTables_paginate .paginate_button.active a {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+            background: linear-gradient(135deg, var(--secondary-color)) !important;
             border-color: transparent !important;
             color: #fff !important;
         }
@@ -457,24 +483,23 @@ body.sidebar-collapsed .sidebar .nav li a {
 }
 
 .schedule-slot {
-    min-width: 240px;
+    min-width: 275px;
     border-radius: 12px;
     padding: 14px 16px;
-    border: 1px solid transparent;
+    border: 5px solid transparent;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
 }
 
 .slot-available {
-    background: color-mix(in srgb, var(--secondary-color) 12%, #ffffff);
-    border-color: color-mix(in srgb, var(--secondary-color) 35%, #ffffff);
-    color: var(--dark-color);
+    background: ;
+    border-color: color-mix(in srgb, #10b981 35%, #ffffff);
 }
 
 .slot-booked {
-    background: color-mix(in srgb, var(--primary-color) 12%, #ffffff);
-    border-color: color-mix(in srgb, var(--primary-color) 35%, #ffffff);
-    color: var(--dark-color);
+    background: color-mix(in srgb, red 40%, #fff);
+    border-color: color-mix(in srgb, #dc3545 60%, #ffffff);
 }
+
 
 /* Page Title */
 .page-title {
@@ -493,13 +518,13 @@ body.sidebar-collapsed .sidebar .nav li a {
         right: 0;
         width: 50px;
         height: 3px;
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        background: linear-gradient(135deg, var(--primary-color));
         border-radius: 2px;
     }
 
 /* Footer */
 footer {
-    background: var(--dark-color);
+    background: var(--gray-color);
     color: white;
     text-align: center;
     padding: 15px;
