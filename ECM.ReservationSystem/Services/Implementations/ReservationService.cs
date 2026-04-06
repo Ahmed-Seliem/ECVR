@@ -1,8 +1,8 @@
-using Microsoft.EntityFrameworkCore;
 using ECM.ReservationSystem.Data;
-using ECM.ReservationSystem.Models.DTOs;
 using ECM.ReservationSystem.Domain.Entities;
+using ECM.ReservationSystem.Models.DTOs;
 using ECM.ReservationSystem.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECM.ReservationSystem.Services.Implementations
 {
@@ -225,7 +225,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 IsTransportationRequired = request.IsTransportationRequired,
                 Notes = request.Notes,
                 Status = ReservationStatus.TemporaryHold,
-                PaymentDeadline = DateTime.Now.AddHours(24),
+                PaymentDeadline = AddBusinessDays(DateTime.Now, 3),
                 CaseSystemId = request.CaseSystemId
             };
 
@@ -340,6 +340,26 @@ namespace ECM.ReservationSystem.Services.Implementations
                 _context.UpdateRange(expiredReservations);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        private static DateTime AddBusinessDays(DateTime startDate, int businessDays)
+        {
+            var current = startDate;
+            var addedDays = 0;
+
+            while (addedDays < businessDays)
+            {
+                current = current.AddDays(1);
+
+                if (current.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
+                {
+                    continue;
+                }
+
+                addedDays++;
+            }
+
+            return current;
         }
 
         public async Task<ReservationResponseDto> GetReservationAsync(int reservationId)

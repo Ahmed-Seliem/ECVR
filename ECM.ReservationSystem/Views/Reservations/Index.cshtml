@@ -44,8 +44,8 @@
                 </select>
             </div>
             <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-outline-primary w-100"> بحث</button>
-                <a href="/Admin/Reservations" class="btn btn-outline-secondary w-100"> مسح</a>
+                <button type="submit" class="btn btn-outline-primary w-100">بحث</button>
+                <a href="/Admin/Reservations" class="btn btn-outline-secondary w-100">مسح</a>
             </div>
         </form>
     </div>
@@ -60,6 +60,7 @@
                         <th>#</th>
                         <th>الموظف</th>
                         <th>الوحدة</th>
+                        <th>Document Id</th>
                         <th>الفترة</th>
                         <th>الأفراد</th>
                         <th>المبلغ</th>
@@ -70,18 +71,33 @@
                 <tbody>
                     @foreach (var r in Model)
                     {
+                        var documentId = "";
+                        if (!string.IsNullOrWhiteSpace(r.CaseSystemId) && r.CaseSystemId.Contains("DOC:"))
+                        {
+                            var parts = r.CaseSystemId.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                            var docPart = parts.FirstOrDefault(p => p.StartsWith("DOC:"));
+                            documentId = docPart?.Replace("DOC:", "") ?? "";
+                        }
+
                         <tr>
                             <td>@r.Id</td>
                             <td>@r.EmployeeName <br /><small class="text-muted">@r.EmployeeNumber</small></td>
                             <td>@r.Unit?.Name <br /><small class="text-muted">@r.Unit?.City?.Name</small></td>
+                            <td>@(string.IsNullOrWhiteSpace(documentId) ? "-" : documentId)</td>
                             <td>@r.CheckInDate.ToString("dd/MM/yyyy") - @r.CheckOutDate.ToString("dd/MM/yyyy")</td>
                             <td>@r.NumberOfGuests</td>
                             <td>@r.TotalAmount.ToString("N2")</td>
                             <td><span class="badge bg-info">@r.Status</span></td>
-                            <td>
+                            <td class="d-flex gap-1">
                                 <a href="/Admin/Reservations/Details/@r.Id" class="btn btn-sm btn-outline-info">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                <form method="post" action="/Admin/Reservations/Cancel/@r.Id" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="إلغاء الحجز">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     }

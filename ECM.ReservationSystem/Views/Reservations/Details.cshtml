@@ -3,6 +3,14 @@
 @{
     ViewData["Title"] = "تفاصيل الحجز";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    var documentId = "";
+    if (!string.IsNullOrWhiteSpace(Model.CaseSystemId) && Model.CaseSystemId.Contains("DOC:"))
+    {
+        var parts = Model.CaseSystemId.Split('|', StringSplitOptions.RemoveEmptyEntries);
+        var docPart = parts.FirstOrDefault(p => p.StartsWith("DOC:"));
+        documentId = docPart?.Replace("DOC:", "") ?? "";
+    }
 }
 
 <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
@@ -21,7 +29,8 @@
                     <dt class="col-sm-4">عدد الأفراد</dt><dd class="col-sm-8">@Model.NumberOfGuests</dd>
                     <dt class="col-sm-4">إجمالي المبلغ</dt><dd class="col-sm-8">@Model.TotalAmount.ToString("N2")</dd>
                     <dt class="col-sm-4">الحالة</dt><dd class="col-sm-8"><span class="badge bg-info">@Model.Status</span></dd>
-                    <dt class="col-sm-4">CASE Id</dt><dd class="col-sm-8">@Model.CaseSystemId</dd>
+                    <dt class="col-sm-4">Document Id</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(documentId) ? "-" : documentId)</dd>
+                    <dt class="col-sm-4">Reference</dt><dd class="col-sm-8">@Model.CaseSystemId</dd>
                     <dt class="col-sm-4">ملاحظات</dt><dd class="col-sm-8">@Model.Notes</dd>
                 </dl>
             </div>
@@ -37,6 +46,10 @@
                         <select class="form-select" name="status" asp-items="Html.GetEnumSelectList<ReservationStatus>()"></select>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">حفظ الحالة</button>
+                </form>
+                <form method="post" action="/Admin/Reservations/Cancel/@Model.Id" class="mt-2">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-danger w-100">إلغاء الحجز</button>
                 </form>
             </div>
         </div>

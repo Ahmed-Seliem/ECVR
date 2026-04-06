@@ -86,6 +86,24 @@ namespace ECM.ReservationSystem.Controllers.Admin
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [HttpPost("Cancel/{id}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var reservation = await _context.Reservations.FindAsync(id);
+            if (reservation == null)
+            {
+                return NotFound();
+            }
+
+            reservation.Status = ReservationStatus.Cancelled;
+            _context.Update(reservation);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "تم إلغاء الحجز بنجاح";
+            return RedirectToAction(nameof(Index));
+        }
+
         private List<int> GetAvailableYears()
         {
             var currentYear = DateTime.Now.Year;
