@@ -15,7 +15,7 @@ namespace Reservation
         {
             try
             {
-
+                string ReservationUrl = workflowItem.Properties["ReservationUrl"].Value.ToString();
                 long documentId = Convert.ToInt64(workflowItem.Properties["DocumentId"].Value);
                 long workFlowId = workflowItem.ActivityInstance.ActivityDefinition.WorkflowDefinition.WorkflowId;
                 int documentTypeBaseId = 0;
@@ -31,6 +31,8 @@ namespace Reservation
                 var formData = string.Empty;
                 Intalio.Case.Portal.Core.DAL.Document document = new Intalio.Case.Portal.Core.DAL.Document().FindIncludeDocumentTypeIncludeForm(documentId);
                 formData = document.DocumentPortal.Form;
+
+
 
                 string folderPath = Filepath; // change this to your desired location
                 string filePath = Path.Combine(folderPath, $"FormData_{documentId}.txt");

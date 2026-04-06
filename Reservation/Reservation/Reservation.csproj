@@ -8,19 +8,19 @@
 
   <ItemGroup>
     <Reference Include="Intalio.Case.Core">
-      <HintPath>..\..\..\..\..\Documents\Tests Api\TestCodeActivity3\TestCodeActivity3\Packages\Intalio.Case.Core.dll</HintPath>
+      <HintPath>Pak\Intalio.Case.Core.dll</HintPath>
     </Reference>
     <Reference Include="Intalio.Case.Portal">
-      <HintPath>..\..\..\..\..\Documents\Tests Api\LCA\LCA\pak\Intalio.Case.Portal.dll</HintPath>
+      <HintPath>Pak\Intalio.Case.Portal.dll</HintPath>
     </Reference>
     <Reference Include="Intalio.Case.Portal.Core">
-      <HintPath>..\..\..\..\..\Documents\Tests Api\TestCodeActivity3\TestCodeActivity3\Packages\Intalio.Case.Portal.Core.dll</HintPath>
+      <HintPath>Pak\Intalio.Case.Portal.Core.dll</HintPath>
     </Reference>
     <Reference Include="Intalio.Core">
-      <HintPath>..\..\..\..\..\Documents\Tests Api\TestCodeActivity3\Packages\Intalio.Core.dll</HintPath>
+      <HintPath>Pak\Intalio.Core.dll</HintPath>
     </Reference>
     <Reference Include="Intalio.Core.UI">
-      <HintPath>..\..\..\..\..\Documents\Tests Api\TestCodeActivity3\TestCodeActivity3\Packages\Intalio.Core.UI.dll</HintPath>
+      <HintPath>Pak\Intalio.Core.UI.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.EntityFrameworkCore">
       <HintPath>Pak\Microsoft.EntityFrameworkCore.dll</HintPath>
@@ -35,5 +35,7 @@
       <HintPath>Pak\Microsoft.Extensions.DependencyModel.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+ 
 
 </Project>

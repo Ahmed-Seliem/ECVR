@@ -18,7 +18,13 @@ namespace ECM.ReservationSystem.Services.Implementations
             _pricingService = pricingService;
         }
 
-        public async Task<List<UnitAvailabilityDto>> GetAvailableUnitsAsync(int cityId, int year, DateTime? checkInDate = null, DateTime? checkOutDate = null, bool? isForManagement = null)
+        public async Task<List<UnitAvailabilityDto>> GetAvailableUnitsAsync(
+            int cityId,
+            int year,
+            DateTime? checkInDate = null,
+            DateTime? checkOutDate = null,
+            bool? isForManagement = null,
+            bool? isForPensioners = null)
         {
             var query = _context.Units
                 .Include(u => u.City)
@@ -31,6 +37,11 @@ namespace ECM.ReservationSystem.Services.Implementations
             if (isForManagement.HasValue)
             {
                 query = query.Where(u => u.UnitType != null && u.UnitType.IsForManagement == isForManagement.Value);
+            }
+
+            if (isForPensioners.HasValue)
+            {
+                query = query.Where(u => u.IsForPensioners == isForPensioners.Value);
             }
 
             var units = await query.ToListAsync();
@@ -136,7 +147,6 @@ namespace ECM.ReservationSystem.Services.Implementations
                 return new CostCalculationDto { IsAvailable = false, Message = "الوحدة غير موجودة" };
             }
 
-            // Check availability
             var hasScheduledSlot = await _context.UnitScheduleSlots
                 .AnyAsync(s => s.UnitId == unitId
                                && s.IsActive
@@ -159,7 +169,6 @@ namespace ECM.ReservationSystem.Services.Implementations
                 return new CostCalculationDto { IsAvailable = false, Message = "الوحدة غير متاحة في هذه التواريخ" };
             }
 
-            // Calculate costs
             var weeklyRent = await _pricingService.CalculateWeeklyRentAsync(unitId, unit.FloorType, numberOfGuests);
             var pricing = await _pricingService.GetCurrentPricingAsync(unitId, unit.FloorType);
             var transportationCost = isTransportationRequired
@@ -184,7 +193,6 @@ namespace ECM.ReservationSystem.Services.Implementations
 
         public async Task<ReservationResponseDto> CreateReservationAsync(ReservationRequestDto request)
         {
-            // Validate unit availability
             var costCalculation = await CalculateCostAsync(
                 request.UnitId,
                 request.CheckInDate,
@@ -217,7 +225,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 IsTransportationRequired = request.IsTransportationRequired,
                 Notes = request.Notes,
                 Status = ReservationStatus.TemporaryHold,
-                PaymentDeadline = DateTime.Now.AddHours(24), // 24 hours to pay
+                PaymentDeadline = DateTime.Now.AddHours(24),
                 CaseSystemId = request.CaseSystemId
             };
 
@@ -251,9 +259,38 @@ namespace ECM.ReservationSystem.Services.Implementations
         {
             var reservation = await _context.Reservations.FindAsync(reservationId);
             if (reservation == null || reservation.Status != ReservationStatus.TemporaryHold)
+            {
                 return false;
+            }
 
             reservation.Status = ReservationStatus.Confirmed;
+
+            _context.Update(reservation);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ConfirmPaymentAsync(int reservationId)
+        {
+            var reservation = await _context.Reservations.FindAsync(reservationId);
+            if (reservation == null)
+            {
+                return false;
+            }
+
+            reservation.Status = ReservationStatus.Paid;
+            reservation.PaymentDeadline = null;
+
+            var slot = await _context.UnitScheduleSlots.FirstOrDefaultAsync(s =>
+                s.UnitId == reservation.UnitId &&
+                s.IsActive &&
+                s.SlotStartDate.Date == reservation.CheckInDate.Date &&
+                s.SlotEndDate.Date.AddDays(1) == reservation.CheckOutDate.Date);
+
+            if (slot != null)
+            {
+                slot.IsPaid = true;
+            }
 
             _context.Update(reservation);
             await _context.SaveChangesAsync();
@@ -264,9 +301,21 @@ namespace ECM.ReservationSystem.Services.Implementations
         {
             var reservation = await _context.Reservations.FindAsync(reservationId);
             if (reservation == null)
+            {
                 return false;
+            }
 
             reservation.Status = ReservationStatus.Cancelled;
+
+            var slot = await _context.UnitScheduleSlots.FirstOrDefaultAsync(s =>
+                s.UnitId == reservation.UnitId &&
+                s.SlotStartDate.Date == reservation.CheckInDate.Date &&
+                s.SlotEndDate.Date.AddDays(1) == reservation.CheckOutDate.Date);
+
+            if (slot != null)
+            {
+                slot.IsPaid = false;
+            }
 
             _context.Update(reservation);
             await _context.SaveChangesAsync();

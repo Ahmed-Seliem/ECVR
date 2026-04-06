@@ -13,6 +13,7 @@ public class UnitScheduleSlot : AuditableEntity
     public DateTime SlotStartDate { get; set; }
     public DateTime SlotEndDate { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsPaid { get; set; }
     public string? Notes { get; set; }
 
     [NotMapped]
