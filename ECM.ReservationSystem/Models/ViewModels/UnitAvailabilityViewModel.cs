@@ -22,6 +22,7 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         public DateTime WeekStartDate { get; set; }
         public DateTime WeekEndDate { get; set; }
         public bool IsAvailable { get; set; }
+        public bool IsPending { get; set; }
         public bool IsReserved { get; set; }
         public bool IsScheduled { get; set; }
         public string ReservationStatus { get; set; } = string.Empty;

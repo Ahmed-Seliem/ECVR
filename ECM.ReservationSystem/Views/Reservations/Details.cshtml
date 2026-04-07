@@ -3,14 +3,6 @@
 @{
     ViewData["Title"] = "تفاصيل الحجز";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
-
-    var documentId = "";
-    if (!string.IsNullOrWhiteSpace(Model.CaseSystemId) && Model.CaseSystemId.Contains("DOC:"))
-    {
-        var parts = Model.CaseSystemId.Split('|', StringSplitOptions.RemoveEmptyEntries);
-        var docPart = parts.FirstOrDefault(p => p.StartsWith("DOC:"));
-        documentId = docPart?.Replace("DOC:", "") ?? "";
-    }
 }
 
 <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
@@ -29,7 +21,7 @@
                     <dt class="col-sm-4">عدد الأفراد</dt><dd class="col-sm-8">@Model.NumberOfGuests</dd>
                     <dt class="col-sm-4">إجمالي المبلغ</dt><dd class="col-sm-8">@Model.TotalAmount.ToString("N2")</dd>
                     <dt class="col-sm-4">الحالة</dt><dd class="col-sm-8"><span class="badge bg-info">@Model.Status</span></dd>
-                    <dt class="col-sm-4">Document Id</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(documentId) ? "-" : documentId)</dd>
+                    <dt class="col-sm-4">Document Id</dt><dd class="col-sm-8">@(Model.DocumentId?.ToString() ?? "-")</dd>
                     <dt class="col-sm-4">Reference</dt><dd class="col-sm-8">@Model.CaseSystemId</dd>
                     <dt class="col-sm-4">ملاحظات</dt><dd class="col-sm-8">@Model.Notes</dd>
                 </dl>

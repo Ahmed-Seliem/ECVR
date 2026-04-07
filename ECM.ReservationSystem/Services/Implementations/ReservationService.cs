@@ -226,7 +226,8 @@ namespace ECM.ReservationSystem.Services.Implementations
                 Notes = request.Notes,
                 Status = ReservationStatus.TemporaryHold,
                 PaymentDeadline = AddBusinessDays(DateTime.Now, 3),
-                CaseSystemId = request.CaseSystemId
+                CaseSystemId = request.CaseSystemId,
+                DocumentId = request.DocumentId
             };
 
             _context.Reservations.Add(reservation);
@@ -251,7 +252,8 @@ namespace ECM.ReservationSystem.Services.Implementations
                 IsTransportationRequired = reservation.IsTransportationRequired,
                 Notes = reservation.Notes,
                 CreatedAt = reservation.CreatedAt,
-                CaseSystemId = reservation.CaseSystemId
+                CaseSystemId = reservation.CaseSystemId,
+                DocumentId = reservation.DocumentId
             };
         }
 
@@ -315,6 +317,54 @@ namespace ECM.ReservationSystem.Services.Implementations
             if (slot != null)
             {
                 slot.IsPaid = false;
+            }
+
+            _context.Update(reservation);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateWorkflowStatusAsync(long documentId, ReservationStatus status, string? notes = null)
+        {
+            if (documentId <= 0 || (status != ReservationStatus.Approved && status != ReservationStatus.Cancelled))
+            {
+                return false;
+            }
+
+            var reservation = await _context.Reservations
+                .OrderByDescending(r => r.CreatedAt)
+                .FirstOrDefaultAsync(r => r.DocumentId == documentId);
+
+            if (reservation == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(notes))
+            {
+                reservation.Notes = string.IsNullOrWhiteSpace(reservation.Notes)
+                    ? notes.Trim()
+                    : $"{reservation.Notes} | WorkflowNotes: {notes.Trim()}";
+            }
+
+            if (status == ReservationStatus.Cancelled)
+            {
+                reservation.Status = ReservationStatus.Cancelled;
+
+                var slot = await _context.UnitScheduleSlots.FirstOrDefaultAsync(s =>
+                    s.UnitId == reservation.UnitId &&
+                    s.SlotStartDate.Date == reservation.CheckInDate.Date &&
+                    s.SlotEndDate.Date.AddDays(1) == reservation.CheckOutDate.Date);
+
+                if (slot != null)
+                {
+                    slot.IsPaid = false;
+                }
+            }
+            else
+            {
+                reservation.Status = ReservationStatus.Approved;
+                reservation.PaymentDeadline = null;
             }
 
             _context.Update(reservation);
@@ -391,7 +441,8 @@ namespace ECM.ReservationSystem.Services.Implementations
                 IsTransportationRequired = reservation.IsTransportationRequired,
                 Notes = reservation.Notes,
                 CreatedAt = reservation.CreatedAt,
-                CaseSystemId = reservation.CaseSystemId
+                CaseSystemId = reservation.CaseSystemId,
+                DocumentId = reservation.DocumentId
             };
         }
 
@@ -423,7 +474,8 @@ namespace ECM.ReservationSystem.Services.Implementations
                 IsTransportationRequired = r.IsTransportationRequired,
                 Notes = r.Notes,
                 CreatedAt = r.CreatedAt,
-                CaseSystemId = r.CaseSystemId
+                CaseSystemId = r.CaseSystemId,
+                DocumentId = r.DocumentId
             }).ToList();
         }
     }

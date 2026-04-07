@@ -28,5 +28,6 @@ namespace ECM.ReservationSystem.Models.DTOs
         public string Notes { get; set; }
 
         public string CaseSystemId { get; set; }
+        public long? DocumentId { get; set; }
     }
 }

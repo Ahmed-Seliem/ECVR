@@ -17,6 +17,7 @@ namespace ECM.ReservationSystem.Services.Interfaces
         Task<bool> ConfirmReservationAsync(int reservationId);
         Task<bool> ConfirmPaymentAsync(int reservationId);
         Task<bool> CancelReservationAsync(int reservationId);
+        Task<bool> UpdateWorkflowStatusAsync(long documentId, ReservationStatus status, string? notes = null);
         Task CleanupExpiredHoldsAsync();
         Task<ReservationResponseDto> GetReservationAsync(int reservationId);
         Task<List<ReservationResponseDto>> GetReservationsByEmployeeAsync(string employeeNumber);

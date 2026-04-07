@@ -399,6 +399,9 @@ namespace ECM.ReservationSystem.Controllers.Admin
                         .OrderByDescending(r => r.CreatedAt)
                         .FirstOrDefault();
 
+                    var isPending = reservation?.Status == ReservationStatus.TemporaryHold;
+                    var isReserved = reservation is not null && !isPending;
+
                     return new WeekAvailabilityViewModel
                     {
                         SlotId = slot.Id,
@@ -407,7 +410,8 @@ namespace ECM.ReservationSystem.Controllers.Admin
                         WeekEndDate = slot.SlotEndDate,
                         IsScheduled = true,
                         IsAvailable = reservation == null,
-                        IsReserved = reservation != null,
+                        IsPending = isPending,
+                        IsReserved = isReserved,
                         ReservationStatus = reservation?.Status.ToString() ?? string.Empty,
                         EmployeeName = reservation?.EmployeeName ?? string.Empty,
                         Notes = slot.Notes ?? string.Empty

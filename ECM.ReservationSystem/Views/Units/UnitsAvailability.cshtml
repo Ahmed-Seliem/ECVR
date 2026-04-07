@@ -19,13 +19,9 @@
                 الفلاتر
             </button>
         </h2>
-        <div id="collapseFilters"
-             class="accordion-collapse collapse"
-             data-bs-parent="#filtersAccordion">
+        <div id="collapseFilters" class="accordion-collapse collapse" data-bs-parent="#filtersAccordion">
             <div class="accordion-body">
-
                 <form method="get" class="row g-3">
-
                     <div class="col-md-4">
                         <label class="form-label">السنة</label>
                         <select name="year" class="form-select select2">
@@ -62,13 +58,11 @@
                         </select>
                     </div>
 
-                    <div class="col-md-4 d-flex gap-2 align-items-end">
+                    <div class="col-md-4 d-flex gap-3 align-items-end">
                         <button type="submit" class="btn btn-primary w-50">بحث</button>
                         <a href="/Admin/Units/Availability" class="btn btn-secondary w-50">مسح</a>
                     </div>
-
                 </form>
-
             </div>
         </div>
     </div>
@@ -86,18 +80,9 @@
                 إنشاء الجدول
             </button>
         </h2>
-
-        <div id="collapseCreate"
-             class="accordion-collapse collapse"
-             aria-labelledby="headingCreate"
-             data-bs-parent="#createAccordion">
-
+        <div id="collapseCreate" class="accordion-collapse collapse" aria-labelledby="headingCreate" data-bs-parent="#createAccordion">
             <div class="accordion-body">
-
-                <form method="post"
-                      action="/Admin/Units/Availability/CreateSchedule"
-                      class="row g-3 align-items-end">
-
+                <form method="post" action="/Admin/Units/Availability/CreateSchedule" class="row g-3 align-items-end">
                     @Html.AntiForgeryToken()
 
                     <input type="hidden" name="CityId" value="@Model.CityId" />
@@ -106,21 +91,14 @@
 
                     <div class="col-md-4">
                         <label class="form-label">الوحدة</label>
-                        <select name="UnitId"
-                                asp-items="ViewBag.Units"
-                                class="form-select select2"
-                                required>
+                        <select name="UnitId" asp-items="ViewBag.Units" class="form-select select2" required>
                             <option value="">اختر الوحدة</option>
                         </select>
                     </div>
 
                     <div class="col-md-2">
                         <label class="form-label">السنة</label>
-                        <input name="Year"
-                               class="form-control"
-                               type="number"
-                               value="@Model.Year"
-                               required />
+                        <input name="Year" class="form-control" type="number" value="@Model.Year" required />
                     </div>
 
                     <div class="col-md-2">
@@ -150,19 +128,13 @@
 
                     <div class="col-md-4">
                         <label class="form-label">اسم الفترة</label>
-                        <input name="SlotName"
-                               class="form-control"
-                               placeholder="مثال: الأسبوع الأول" />
+                        <input name="SlotName" class="form-control" placeholder="مثال: صيف 2026" />
                     </div>
 
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-primary">
-                            إضافة الـ Slots
-                        </button>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">إضافة الفترات </button>
                     </div>
-
                 </form>
-
             </div>
         </div>
     </div>
@@ -171,16 +143,14 @@
 @if (Model.Units.Any())
 {
     <div class="accordion" id="unitsAccordion">
-
         @foreach (var item in Model.Units)
         {
             var available = item.WeekAvailabilities.Count(w => w.IsAvailable);
+            var pending = item.WeekAvailabilities.Count(w => w.IsPending);
             var reserved = item.WeekAvailabilities.Count(w => w.IsReserved);
             var collapseId = "collapseUnit" + item.UnitId;
 
             <div class="accordion-item shadow-sm mb-3">
-
-                <!-- Header -->
                 <h2 class="accordion-header" id="heading-@item.UnitId">
                     <button class="accordion-button collapsed fw-bold"
                             type="button"
@@ -188,18 +158,15 @@
                             data-bs-target="#@collapseId"
                             aria-expanded="false"
                             aria-controls="@collapseId">
-
                         <div class="w-100 d-flex justify-content-between align-items-center flex-wrap gap-2">
-
                             <div>
                                 <strong>@item.UnitName</strong>
-                                <span class="text-muted">
-                                    | @item.CityName - @item.UnitTypeName
-                                </span>
+                                <span class="text-muted">| @item.CityName - @item.UnitTypeName</span>
                             </div>
 
                             <div class="d-flex gap-2">
                                 <span class="badge bg-success">متاح: @available</span>
+                                <span class="badge bg-warning text-dark">قيد الحجز: @pending</span>
                                 <span class="badge bg-danger">محجوز: @reserved</span>
 
                                 @if (item.IsForPensioners)
@@ -211,38 +178,36 @@
                                     @(item.IsForManagement ? "الإدارة" : "الموظفين")
                                 </span>
                             </div>
-
                         </div>
                     </button>
                 </h2>
 
-                <!-- Body -->
-                <div id="@collapseId"
-                     class="accordion-collapse collapse"
-                     aria-labelledby="heading-@item.UnitId"
-                     data-bs-parent="#unitsAccordion">
-
+                <div id="@collapseId" class="accordion-collapse collapse" aria-labelledby="heading-@item.UnitId" data-bs-parent="#unitsAccordion">
                     <div class="accordion-body">
-
                         @if (item.WeekAvailabilities.Any())
                         {
-                            <!-- Cards -->
                             <div class="d-flex flex-wrap gap-2 mb-3">
                                 @foreach (var slot in item.WeekAvailabilities)
                                 {
                                     var cardClass = slot.IsReserved
-                                    ? "schedule-slot slot-booked"
-                                    : "schedule-slot slot-available";
+                                        ? "schedule-slot slot-booked"
+                                        : slot.IsPending
+                                            ? "schedule-slot slot-pending"
+                                            : "schedule-slot slot-available";
+
+                                    var statusText = slot.IsReserved
+                                        ? "محجوز"
+                                        : slot.IsPending
+                                            ? "قيد الحجز"
+                                            : "متاح";
 
                                     <div class="@cardClass">
                                         <div class="fw-bold">@slot.SlotName</div>
                                         <div>@slot.WeekStartDate.ToString("dd/MM/yyyy")</div>
                                         <div>إلى @slot.WeekEndDate.ToString("dd/MM/yyyy")</div>
-                                        <div class="mt-1 fw-semibold">
-                                            @(slot.IsReserved ? "محجوز" : "متاح")
-                                        </div>
+                                        <div class="mt-1 fw-semibold">@statusText</div>
 
-                                        @if (slot.IsReserved)
+                                        @if (slot.IsReserved || slot.IsPending)
                                         {
                                             <div class="small">@slot.EmployeeName</div>
                                         }
@@ -252,21 +217,17 @@
                                             <div class="small text-muted">@slot.Notes</div>
                                         }
 
-                                        @if (!slot.IsReserved && slot.SlotId.HasValue)
+                                        @if (slot.IsAvailable && slot.SlotId.HasValue)
                                         {
-                                            <form method="post"
-                                                  action="/Admin/Units/Availability/DeleteSlot/@slot.SlotId"
-                                                  class="mt-2">
+                                            <form method="post" action="/Admin/Units/Availability/DeleteSlot/@slot.SlotId" class="mt-2">
                                                 @Html.AntiForgeryToken()
-
                                                 <input type="hidden" name="cityId" value="@Model.CityId" />
                                                 <input type="hidden" name="unitTypeId" value="@Model.UnitTypeId" />
                                                 <input type="hidden" name="unitId" value="@item.UnitId" />
                                                 <input type="hidden" name="year" value="@Model.Year" />
                                                 <input type="hidden" name="isForManagement" value="@Model.IsForManagement" />
 
-                                                <button type="submit"
-                                                        class="btn btn-sm btn-outline-danger">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
                                                     <b>حذف</b>
                                                 </button>
                                             </form>
@@ -275,7 +236,6 @@
                                 }
                             </div>
 
-                            <!-- Table -->
                             <div class="table-responsive">
                                 <table class="table table-sm table-bordered align-middle">
                                     <thead>
@@ -290,33 +250,25 @@
                                         @foreach (var slot in item.WeekAvailabilities)
                                         {
                                             <tr>
-                                                <td>
-                                                    @slot.WeekStartDate.ToString("yyyy-MM-dd")
-                                                    إلى
-                                                    @slot.WeekEndDate.ToString("yyyy-MM-dd")
-                                                </td>
+                                                <td>@slot.WeekStartDate.ToString("yyyy-MM-dd") إلى @slot.WeekEndDate.ToString("yyyy-MM-dd")</td>
                                                 <td>
                                                     @if (slot.IsReserved)
                                                     {
                                                         <span class="badge bg-danger">محجوز</span>
                                                     }
+                                                    else if (slot.IsPending)
+                                                    {
+                                                        <span class="badge bg-warning text-dark">قيد الحجز</span>
+                                                    }
                                                     else
                                                     {
                                                         <span class="badge bg-success">متاح</span>
                                                     }
-                                            </td>
-                                            <td>
-                                                @(string.IsNullOrWhiteSpace(slot.EmployeeName)
-                                                                                    ? "-"
-                                                                                    : slot.EmployeeName)
-                                                                                                    </td>
-                                                                                                    <td>
-                                                @(string.IsNullOrWhiteSpace(slot.Notes)
-                                                                                    ? "-"
-                                                                                    : slot.Notes)
-                                </td>
-                            </tr>
-                                                        }
+                                                </td>
+                                                <td>@(string.IsNullOrWhiteSpace(slot.EmployeeName) ? "-" : slot.EmployeeName)</td>
+                                                <td>@(string.IsNullOrWhiteSpace(slot.Notes) ? "-" : slot.Notes)</td>
+                                            </tr>
+                                        }
                                     </tbody>
                                 </table>
                             </div>
@@ -327,13 +279,10 @@
                                 لا توجد slots مجدولة لهذه الوحدة في السنة المختارة.
                             </div>
                         }
-
                     </div>
                 </div>
-
             </div>
         }
-
     </div>
 }
 else

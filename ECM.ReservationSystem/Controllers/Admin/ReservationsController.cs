@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
+using ECM.ReservationSystem.Services.Interfaces;
 
 namespace ECM.ReservationSystem.Controllers.Admin
 {
@@ -10,10 +11,12 @@ namespace ECM.ReservationSystem.Controllers.Admin
     public class ReservationsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IReservationService _reservationService;
 
-        public ReservationsController(ApplicationDbContext context)
+        public ReservationsController(ApplicationDbContext context, IReservationService reservationService)
         {
             _context = context;
+            _reservationService = reservationService;
         }
 
         // GET: Admin/Reservations
@@ -77,10 +80,21 @@ namespace ECM.ReservationSystem.Controllers.Admin
             if (reservation == null)
                 return NotFound();
 
-            reservation.Status = status;
+            if (status == ReservationStatus.Paid)
+            {
+                await _reservationService.ConfirmPaymentAsync(id);
+            }
+            else if (status == ReservationStatus.Cancelled)
+            {
+                await _reservationService.CancelReservationAsync(id);
+            }
+            else
+            {
+                reservation.Status = status;
 
-            _context.Update(reservation);
-            await _context.SaveChangesAsync();
+                _context.Update(reservation);
+                await _context.SaveChangesAsync();
+            }
 
             TempData["Success"] = "تم تحديث حالة الحجز بنجاح";
             return RedirectToAction(nameof(Details), new { id });
@@ -90,15 +104,13 @@ namespace ECM.ReservationSystem.Controllers.Admin
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(int id)
         {
-            var reservation = await _context.Reservations.FindAsync(id);
-            if (reservation == null)
+            var reservationExists = await _context.Reservations.AnyAsync(r => r.Id == id);
+            if (!reservationExists)
             {
                 return NotFound();
             }
 
-            reservation.Status = ReservationStatus.Cancelled;
-            _context.Update(reservation);
-            await _context.SaveChangesAsync();
+            await _reservationService.CancelReservationAsync(id);
 
             TempData["Success"] = "تم إلغاء الحجز بنجاح";
             return RedirectToAction(nameof(Index));

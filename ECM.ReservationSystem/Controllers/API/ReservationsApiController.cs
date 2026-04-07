@@ -278,7 +278,8 @@ public class ReservationsApiController : ControllerBase
             NumberOfGuests = request.NumberOfGuests,
             IsTransportationRequired = request.IsTransportationRequired,
             Notes = request.Notes ?? string.Empty,
-            CaseSystemId = BuildReferenceId(request)
+            CaseSystemId = BuildReferenceId(request),
+            DocumentId = request.DocumentId
         };
 
         try
@@ -290,6 +291,44 @@ public class ReservationsApiController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    [HttpPost("update-reservation")]
+    public async Task<IActionResult> UpdateReservation([FromBody] UpdateReservationStatusRequest request)
+    {
+        if (request.DocumentId <= 0)
+        {
+            return BadRequest(new { message = "documentId is required." });
+        }
+
+        if (request.ReservationStatus != ReservationStatus.Approved &&
+            request.ReservationStatus != ReservationStatus.Cancelled)
+        {
+            return BadRequest(new { message = "reservationStatus must be Approved or Cancelled." });
+        }
+
+        var success = await _reservationService.UpdateWorkflowStatusAsync(
+            request.DocumentId,
+            request.ReservationStatus,
+            request.Notes);
+
+        if (!success)
+        {
+            return NotFound(new { message = "Reservation not found for the provided documentId." });
+        }
+
+        var updatedReservation = await _context.Reservations
+            .AsNoTracking()
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstAsync(r => r.DocumentId == request.DocumentId);
+
+        return Ok(new
+        {
+            reservationId = updatedReservation.Id,
+            referenceId = updatedReservation.CaseSystemId,
+            documentId = updatedReservation.DocumentId,
+            status = updatedReservation.Status.ToString()
+        });
     }
 
     private static string BuildReferenceId(ReservationSubmissionRequest request)
@@ -449,6 +488,13 @@ public class ReservationsApiController : ControllerBase
         public string? CaseSystemId { get; set; }
         public long? WorkflowId { get; set; }
         public long? DocumentId { get; set; }
+    }
+
+    public sealed class UpdateReservationStatusRequest
+    {
+        public long DocumentId { get; set; }
+        public ReservationStatus ReservationStatus { get; set; }
+        public string? Notes { get; set; }
     }
 
     private readonly record struct AudienceFilter(bool? IsForManagement, bool? IsForPensioners);

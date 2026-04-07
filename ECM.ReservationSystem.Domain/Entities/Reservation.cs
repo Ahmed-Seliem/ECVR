@@ -25,6 +25,7 @@ public class Reservation : AuditableEntity
 
     public int NumberOfGuests { get; set; }
     public string CaseSystemId { get; set; } = string.Empty;
+    public long? DocumentId { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal WeeklyRent { get; set; }

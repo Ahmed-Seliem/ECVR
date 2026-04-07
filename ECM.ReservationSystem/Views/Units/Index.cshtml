@@ -47,8 +47,8 @@
                 <input type="number" name="year" class="form-control" value="@Context.Request.Query["year"]" />
             </div>
             <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-outline-primary w-100">بحث</button>
-                <a href="/Admin/Units" class="btn btn-outline-secondary w-100">مسح</a>
+                <button type="submit" class="btn btn-primary w-50">بحث</button>
+                <a href="/Admin/Units" class="btn btn-secondary w-50">مسح</a>
             </div>
         </form>
     </div>
@@ -75,18 +75,6 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">الاسم</label>
-                            <input name="Name" class="form-control" required />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">الكود</label>
-                            <input name="Code" class="form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">السنة</label>
-                            <input name="Year" type="number" class="form-control" value="@DateTime.Now.Year" required />
-                        </div>
                         <div class="col-md-6">
                             <label class="form-label">المدينة</label>
                             <select name="CityId" class="form-select select2 modal-select" data-parent="#createUnitModal" required>
@@ -113,6 +101,19 @@
                                 }
                             </select>
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label">اسم الوحدة </label>
+                            <input name="Name" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">كود الوحدة </label>
+                            <input name="Code" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">السنة</label>
+                            <input name="Year" type="number" class="form-control" value="@DateTime.Now.Year" required />
+                        </div>
+    
                         <div class="col-md-3">
                             <label class="form-label">نوع الدور</label>
                             <select name="FloorType" class="form-select" required>

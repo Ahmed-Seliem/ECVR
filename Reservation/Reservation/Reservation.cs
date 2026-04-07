@@ -11,76 +11,28 @@ namespace Reservation
 
         public override void Complete(WorkflowItem workflowItem)
         {
-            throw new NotImplementedException();
+            ProcessWorkflowItem(workflowItem);
         }
 
         public override void Execute(WorkflowItem workflowItem)
         {
+            ProcessWorkflowItem(workflowItem);
+        }
+
+        private static void ProcessWorkflowItem(WorkflowItem workflowItem)
+        {
             try
             {
-                var reservationUrl = workflowItem.Properties["ReservationURL"].Value?.ToString() ?? string.Empty;
-                var documentId = Convert.ToInt64(workflowItem.Properties["DocumentId"].Value);
-                var workFlowId = workflowItem.ActivityInstance.ActivityDefinition.WorkflowDefinition.WorkflowId;
+                var reservationUrl = GetPropertyValue(workflowItem, "ReservationURL");
+                var workflowId = workflowItem.ActivityInstance.ActivityDefinition.WorkflowDefinition.WorkflowId;
+                var currentDocumentId = GetLongPropertyValue(workflowItem, "DocumentId");
+                var formData = ResolveFormData(workflowItem, currentDocumentId);
 
-                string? filePath = null;
-                if (workflowItem.Properties["Filepath"]?.Value != null)
-                {
-                    var folderPath = workflowItem.Properties["Filepath"].Value.ToString();
-                    if (!string.IsNullOrWhiteSpace(folderPath))
-                    {
-                        if (!Directory.Exists(folderPath))
-                        {
-                            Directory.CreateDirectory(folderPath);
-                        }
+                using var json = JsonDocument.Parse(formData);
+                var root = json.RootElement;
+                var submitRequest = BuildSubmitRequest(root, workflowId, currentDocumentId);
 
-                        filePath = Path.Combine(folderPath, $"FormData_{documentId}.txt");
-                    }
-                }
-
-                var document = new Intalio.Case.Portal.Core.DAL.Document().FindIncludeDocumentTypeIncludeForm(documentId);
-                var formData = document.DocumentPortal.Form;
-
-                if (!string.IsNullOrWhiteSpace(filePath))
-                {
-                    File.WriteAllText(filePath, formData);
-                }
-
-                var submission = JsonSerializer.Deserialize<ReservationWorkflowSubmission>(
-                    formData,
-                    new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-
-                if (submission == null)
-                {
-                    throw new InvalidOperationException("Workflow form data could not be parsed.");
-                }
-
-                var payload = new ReservationSubmitRequest
-                {
-                    EmployeeNumber = submission.Number ?? string.Empty,
-                    EmployeeName = submission.Name ?? string.Empty,
-                    UnitId = submission.PropertyWithFloor,
-                    WeekId = submission.Weeks ?? string.Empty,
-                    NumberOfGuests = submission.Passengers > 0 ? submission.Passengers : 1,
-                    IsTransportationRequired = submission.Passengers > 0,
-                    Notes = BuildNotes(submission),
-                    WorkflowId = workFlowId,
-                    DocumentId = documentId
-                };
-
-                var submitUrl = BuildSubmitUrl(reservationUrl);
-                var requestBody = JsonSerializer.Serialize(payload);
-                using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-                using var response = HttpClient.PostAsync(submitUrl, content).GetAwaiter().GetResult();
-                var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new InvalidOperationException(
-                        $"Reservation submit failed with status {(int)response.StatusCode}. Response: {responseBody}");
-                }
+                SendPostRequest(BuildUrl(reservationUrl, "/api/Reservation/submit"), submitRequest);
             }
             catch (Exception ex)
             {
@@ -89,57 +41,149 @@ namespace Reservation
             }
         }
 
-        private static string BuildSubmitUrl(string reservationUrl)
+        private static string ResolveFormData(WorkflowItem workflowItem, long currentDocumentId)
+        {
+            var directFormData = GetPropertyValue(workflowItem, "FormData");
+            if (!string.IsNullOrWhiteSpace(directFormData))
+            {
+                WriteDebugFormData(workflowItem, currentDocumentId, directFormData);
+                return directFormData;
+            }
+
+            var document = new Intalio.Case.Portal.Core.DAL.Document().FindIncludeDocumentTypeIncludeForm(currentDocumentId);
+            var formData = document.DocumentPortal.Form ?? "{}";
+            WriteDebugFormData(workflowItem, currentDocumentId, formData);
+            return formData;
+        }
+
+        private static void WriteDebugFormData(WorkflowItem workflowItem, long documentId, string formData)
+        {
+            var folderPath = GetPropertyValue(workflowItem, "Filepath");
+            if (string.IsNullOrWhiteSpace(folderPath))
+            {
+                return;
+            }
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            var filePath = Path.Combine(folderPath, $"FormData_{documentId}.txt");
+            File.WriteAllText(filePath, formData);
+        }
+
+        private static ReservationSubmitRequest BuildSubmitRequest(JsonElement root, long workflowId, long documentId)
+        {
+            var passengers = GetIntValue(root, "passengers") ?? 1;
+
+            return new ReservationSubmitRequest
+            {
+                EmployeeNumber = GetStringValue(root, "number") ?? string.Empty,
+                EmployeeName = GetStringValue(root, "name") ?? string.Empty,
+                UnitId = GetIntValue(root, "propertyWithFloor") ?? 0,
+                WeekId = GetStringValue(root, "weeks") ?? string.Empty,
+                NumberOfGuests = passengers > 0 ? passengers : 1,
+                IsTransportationRequired = passengers > 0,
+                Notes = BuildNotes(root),
+                WorkflowId = workflowId,
+                DocumentId = documentId
+            };
+        }
+
+        private static string BuildNotes(JsonElement root)
+        {
+            var parts = new List<string>();
+
+            var department = GetStringValue(root, "department");
+            if (!string.IsNullOrWhiteSpace(department))
+            {
+                parts.Add($"Department: {department}");
+            }
+
+            var employeeDepartment = GetStringValue(root, "employeeDepartment");
+            if (!string.IsNullOrWhiteSpace(employeeDepartment))
+            {
+                parts.Add($"EmployeeDepartment: {employeeDepartment}");
+            }
+
+            var cityId = GetIntValue(root, "city");
+            if (cityId.HasValue && cityId.Value > 0)
+            {
+                parts.Add($"CityId: {cityId.Value}");
+            }
+
+            var total = GetDecimalValue(root, "price");
+            if (total.HasValue)
+            {
+                parts.Add($"SubmittedTotal: {total.Value}");
+            }
+
+            return string.Join(" | ", parts);
+        }
+
+        private static void SendPostRequest<TPayload>(string url, TPayload payload)
+        {
+            var requestBody = JsonSerializer.Serialize(payload);
+            using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+            using var response = HttpClient.PostAsync(url, content).GetAwaiter().GetResult();
+            var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"Reservation request failed with status {(int)response.StatusCode}. Response: {responseBody}");
+            }
+        }
+
+        private static string BuildUrl(string reservationUrl, string path)
         {
             if (string.IsNullOrWhiteSpace(reservationUrl))
             {
                 throw new InvalidOperationException("ReservationUrl workflow property is required.");
             }
 
-            return reservationUrl.TrimEnd('/') + "/api/Reservation/submit";
+            return reservationUrl.TrimEnd('/') + path;
         }
 
-        private static string BuildNotes(ReservationWorkflowSubmission submission)
+        private static string GetPropertyValue(WorkflowItem workflowItem, string key)
         {
-            var parts = new List<string>();
-
-            if (!string.IsNullOrWhiteSpace(submission.Department))
-            {
-                parts.Add($"Department: {submission.Department}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(submission.EmployeeDepartment))
-            {
-                parts.Add($"EmployeeDepartment: {submission.EmployeeDepartment}");
-            }
-
-            if (submission.City > 0)
-            {
-                parts.Add($"CityId: {submission.City}");
-            }
-
-            if (submission.Price.HasValue)
-            {
-                parts.Add($"SubmittedTotal: {submission.Price.Value}");
-            }
-
-            return string.Join(" | ", parts);
+            return workflowItem.Properties[key]?.Value?.ToString() ?? string.Empty;
         }
 
-        private sealed class ReservationWorkflowSubmission
+        private static long GetLongPropertyValue(WorkflowItem workflowItem, string key)
         {
-            public string? Name { get; set; }
-            public string? Number { get; set; }
-            public string? Department { get; set; }
-            public string? EmployeeDepartment { get; set; }
-            public int City { get; set; }
-            public string? Weeks { get; set; }
-            public int PropertyWithFloor { get; set; }
-            public int Passengers { get; set; }
-            public decimal? Price { get; set; }
-            public decimal? UnitPrice { get; set; }
-            public decimal? InsurancePrice { get; set; }
-            public decimal? TransportationPrice { get; set; }
+            var rawValue = GetPropertyValue(workflowItem, key);
+            return long.TryParse(rawValue, out var parsedValue) ? parsedValue : 0;
+        }
+
+        private static string? GetStringValue(JsonElement root, string propertyName)
+        {
+            if (!root.TryGetProperty(propertyName, out var value))
+            {
+                return null;
+            }
+
+            return value.ValueKind switch
+            {
+                JsonValueKind.String => value.GetString(),
+                JsonValueKind.Number => value.ToString(),
+                JsonValueKind.True => "true",
+                JsonValueKind.False => "false",
+                _ => null
+            };
+        }
+
+        private static int? GetIntValue(JsonElement root, string propertyName)
+        {
+            var rawValue = GetStringValue(root, propertyName);
+            return int.TryParse(rawValue, out var parsedValue) ? parsedValue : null;
+        }
+
+        private static decimal? GetDecimalValue(JsonElement root, string propertyName)
+        {
+            var rawValue = GetStringValue(root, propertyName);
+            return decimal.TryParse(rawValue, out var parsedValue) ? parsedValue : null;
         }
 
         private sealed class ReservationSubmitRequest
