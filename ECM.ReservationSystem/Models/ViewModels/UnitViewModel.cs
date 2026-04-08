@@ -9,23 +9,23 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
 
         [Required(ErrorMessage = "اسم الوحدة مطلوب")]
         [Display(Name = "اسم الوحدة")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        [Display(Name = "رمز الوحدة")]
-        public string Code { get; set; }
+        [Display(Name = "رقم الوحدة")]
+        public string Code { get; set; } = string.Empty;
 
         [Display(Name = "الوصف")]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "السعة الافتراضية مطلوبة")]
-        [Range(1, 20, ErrorMessage = "السعة الافتراضية يجب أن تكون بين 1 و 20")]
-        [Display(Name = "السعة الافتراضية (6 أشخاص)")]
+        [Required(ErrorMessage = "السعة مطلوبة")]
+        [Range(1, 20, ErrorMessage = "السعة يجب أن تكون بين 1 و 20")]
+        [Display(Name = "السعة")]
         public int DefaultCapacity { get; set; } = 6;
 
-        [Required(ErrorMessage = "الحد الأقصى للسعة مطلوب")]
-        [Range(1, 30, ErrorMessage = "الحد الأقصى للسعة يجب أن يكون بين 1 و 30")]
-        [Display(Name = "الحد الأقصى للسعة")]
-        public int MaxCapacity { get; set; }
+        [Required(ErrorMessage = "عدد الغرف مطلوب")]
+        [Range(1, 20, ErrorMessage = "عدد الغرف يجب أن يكون بين 1 و 20")]
+        [Display(Name = "عدد الغرف")]
+        public int RoomCount { get; set; } = 1;
 
         [Required(ErrorMessage = "نوع الدور مطلوب")]
         [Display(Name = "نوع الدور")]
@@ -37,7 +37,7 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         public int FloorNumber { get; set; }
 
         [Required(ErrorMessage = "السنة مطلوبة")]
-        [Range(2024, 2030, ErrorMessage = "السنة يجب أن تكون بين 2024 و 2030")]
+        [Range(2024, 2035, ErrorMessage = "السنة يجب أن تكون بين 2024 و 2035")]
         [Display(Name = "السنة")]
         public int Year { get; set; }
 
@@ -52,9 +52,13 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         [Display(Name = "نوع الوحدة")]
         public int UnitTypeId { get; set; }
 
-        // For display purposes
-        public string CityName { get; set; }
-        public string UnitTypeName { get; set; }
-        public string FloorTypeDisplay { get; set; }
+        [Display(Name = "الواجهة")]
+        public int? UnitFacadeId { get; set; }
+
+        public bool IsForPensioners { get; set; }
+        public string CityName { get; set; } = string.Empty;
+        public string UnitTypeName { get; set; } = string.Empty;
+        public string FacadeName { get; set; } = string.Empty;
+        public string FloorTypeDisplay { get; set; } = string.Empty;
     }
 }

@@ -27,12 +27,6 @@ public class Pricing : AuditableEntity
 
     public decimal CalculateWeeklyRent(int numberOfGuests)
     {
-        if (numberOfGuests <= 6)
-        {
-            return WeeklyRentDefaultCapacity;
-        }
-
-        var additionalGuests = numberOfGuests - 6;
-        return WeeklyRentDefaultCapacity + (additionalGuests * AdditionalPersonCost);
+        return WeeklyRentDefaultCapacity;
     }
 }

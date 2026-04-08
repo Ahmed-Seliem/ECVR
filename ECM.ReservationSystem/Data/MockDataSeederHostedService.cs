@@ -45,7 +45,7 @@ public class MockDataSeederHostedService : IHostedService
             _logger.LogInformation("Existing data cleared before reseeding.");
         }
 
-        var currentYear = 2026;
+        const int currentYear = 2026;
 
         var cities = new[]
         {
@@ -57,21 +57,125 @@ public class MockDataSeederHostedService : IHostedService
 
         var unitTypes = new[]
         {
-            new UnitType { Name = "شقة", NameAr = "شقة", Description = "وحدة مناسبة للموظفين", IsForManagement = false, IsActive = true },
-            new UnitType { Name = "فيلا", NameAr = "فيلا", Description = "وحدة مناسبة للإدارة", IsForManagement = true, IsActive = true },
-            new UnitType { Name = "شاليه", NameAr = "شاليه", Description = "وحدة مميزة للإدارة", IsForManagement = true, IsActive = true }
+            new UnitType { Name = "Apartment", NameAr = "شقة", Description = "وحدة مناسبة للموظفين", IsForManagement = false, IsActive = true },
+            new UnitType { Name = "Villa", NameAr = "فيلا", Description = "وحدة مناسبة للإدارة", IsForManagement = true, IsActive = true },
+            new UnitType { Name = "Chalet", NameAr = "شاليه", Description = "وحدة مميزة للإدارة", IsForManagement = true, IsActive = true }
         };
         db.UnitTypes.AddRange(unitTypes);
+
+        var unitFacades = new[]
+        {
+            new UnitFacade { Name = "Sea", NameAr = "بحري", IsActive = true },
+            new UnitFacade { Name = "Garden", NameAr = "حديقة", IsActive = true },
+            new UnitFacade { Name = "Pool", NameAr = "حمام سباحة", IsActive = true }
+        };
+        db.UnitFacades.AddRange(unitFacades);
         await db.SaveChangesAsync(cancellationToken);
 
         var units = new List<Unit>
         {
-            new() { Name = "شقة الياسمين 1", Code = "SHQ-001", Description = "شقة عائلية بإطلالة مفتوحة", DefaultCapacity = 4, MaxCapacity = 6, FloorType = FloorType.MiddleFloor, FloorNumber = 2, Year = currentYear, IsActive = true, IsForPensioners = false, CityId = cities[0].Id, UnitTypeId = unitTypes[0].Id },
-            new() { Name = "شقة الروضة 2", Code = "SHQ-002", Description = "شقة هادئة قريبة من البحر", DefaultCapacity = 4, MaxCapacity = 6, FloorType = FloorType.TopFloor, FloorNumber = 3, Year = currentYear, IsActive = true, IsForPensioners = true, CityId = cities[1].Id, UnitTypeId = unitTypes[0].Id },
-            new() { Name = "فيلا النخيل", Code = "VIL-001", Description = "فيلا للإدارة بحديقة خاصة", DefaultCapacity = 6, MaxCapacity = 8, FloorType = FloorType.GroundFloor, FloorNumber = 0, Year = currentYear, IsActive = true, IsForPensioners = false, CityId = cities[0].Id, UnitTypeId = unitTypes[1].Id },
-            new() { Name = "فيلا المرجان", Code = "VIL-002", Description = "فيلا واسعة قريبة من الشاطئ", DefaultCapacity = 6, MaxCapacity = 8, FloorType = FloorType.GroundFloor, FloorNumber = 0, Year = currentYear, IsActive = true, IsForPensioners = false, CityId = cities[2].Id, UnitTypeId = unitTypes[1].Id },
-            new() { Name = "شاليه النسيم", Code = "CHL-001", Description = "شاليه مميز للإدارة", DefaultCapacity = 5, MaxCapacity = 7, FloorType = FloorType.MiddleFloor, FloorNumber = 1, Year = currentYear, IsActive = true, IsForPensioners = false, CityId = cities[1].Id, UnitTypeId = unitTypes[2].Id },
-            new() { Name = "شاليه اللوتس", Code = "CHL-002", Description = "شاليه بإطلالة مباشرة", DefaultCapacity = 5, MaxCapacity = 7, FloorType = FloorType.TopFloor, FloorNumber = 2, Year = currentYear, IsActive = true, IsForPensioners = true, CityId = cities[2].Id, UnitTypeId = unitTypes[2].Id }
+            new()
+            {
+                Name = "شقة الياسمين",
+                Code = "101",
+                Description = "شقة عائلية بإطلالة مفتوحة",
+                DefaultCapacity = 4,
+                MaxCapacity = 4,
+                RoomCount = 2,
+                UnitFacadeId = unitFacades[0].Id,
+                FloorType = FloorType.MiddleFloor,
+                FloorNumber = 2,
+                Year = currentYear,
+                IsActive = true,
+                IsForPensioners = false,
+                CityId = cities[0].Id,
+                UnitTypeId = unitTypes[0].Id
+            },
+            new()
+            {
+                Name = "شقة الروضة",
+                Code = "202",
+                Description = "شقة هادئة قريبة من البحر",
+                DefaultCapacity = 4,
+                MaxCapacity = 4,
+                RoomCount = 2,
+                UnitFacadeId = unitFacades[1].Id,
+                FloorType = FloorType.TopFloor,
+                FloorNumber = 3,
+                Year = currentYear,
+                IsActive = true,
+                IsForPensioners = true,
+                CityId = cities[1].Id,
+                UnitTypeId = unitTypes[0].Id
+            },
+            new()
+            {
+                Name = "فيلا النخيل",
+                Code = "V1",
+                Description = "فيلا للإدارة بحديقة خاصة",
+                DefaultCapacity = 6,
+                MaxCapacity = 6,
+                RoomCount = 4,
+                UnitFacadeId = unitFacades[1].Id,
+                FloorType = FloorType.GroundFloor,
+                FloorNumber = 0,
+                Year = currentYear,
+                IsActive = true,
+                IsForPensioners = false,
+                CityId = cities[0].Id,
+                UnitTypeId = unitTypes[1].Id
+            },
+            new()
+            {
+                Name = "فيلا المرجان",
+                Code = "V2",
+                Description = "فيلا واسعة قريبة من الشاطئ",
+                DefaultCapacity = 6,
+                MaxCapacity = 6,
+                RoomCount = 4,
+                UnitFacadeId = unitFacades[0].Id,
+                FloorType = FloorType.GroundFloor,
+                FloorNumber = 0,
+                Year = currentYear,
+                IsActive = true,
+                IsForPensioners = false,
+                CityId = cities[2].Id,
+                UnitTypeId = unitTypes[1].Id
+            },
+            new()
+            {
+                Name = "شاليه النسيم",
+                Code = "C1",
+                Description = "شاليه مميز للإدارة",
+                DefaultCapacity = 5,
+                MaxCapacity = 5,
+                RoomCount = 3,
+                UnitFacadeId = unitFacades[2].Id,
+                FloorType = FloorType.MiddleFloor,
+                FloorNumber = 1,
+                Year = currentYear,
+                IsActive = true,
+                IsForPensioners = false,
+                CityId = cities[1].Id,
+                UnitTypeId = unitTypes[2].Id
+            },
+            new()
+            {
+                Name = "شاليه اللوتس",
+                Code = "C2",
+                Description = "شاليه بإطلالة مباشرة",
+                DefaultCapacity = 5,
+                MaxCapacity = 5,
+                RoomCount = 3,
+                UnitFacadeId = unitFacades[0].Id,
+                FloorType = FloorType.TopFloor,
+                FloorNumber = 2,
+                Year = currentYear,
+                IsActive = true,
+                IsForPensioners = true,
+                CityId = cities[2].Id,
+                UnitTypeId = unitTypes[2].Id
+            }
         };
         db.Units.AddRange(units);
         await db.SaveChangesAsync(cancellationToken);
@@ -96,7 +200,7 @@ public class MockDataSeederHostedService : IHostedService
                 UnitId = unit.Id,
                 FloorType = unit.FloorType,
                 WeeklyRentDefaultCapacity = unit.UnitTypeId == unitTypes[0].Id ? 5200 : unit.UnitTypeId == unitTypes[1].Id ? 8800 : 7600,
-                AdditionalPersonCost = 650,
+                AdditionalPersonCost = 0,
                 InsuranceAmount = 1500,
                 TransportationCostPerPerson = 180,
                 EffectiveFrom = new DateTime(currentYear, 1, 1),
@@ -229,6 +333,7 @@ public class MockDataSeederHostedService : IHostedService
         db.UnitScheduleSlots.RemoveRange(db.UnitScheduleSlots);
         db.Pricings.RemoveRange(db.Pricings);
         db.Units.RemoveRange(db.Units);
+        db.UnitFacades.RemoveRange(db.UnitFacades);
         db.AvailableDates.RemoveRange(db.AvailableDates);
         db.UnitTypes.RemoveRange(db.UnitTypes);
         db.Cities.RemoveRange(db.Cities);

@@ -116,16 +116,22 @@
                             <span>المدن</span>
                         </a>
                     </li>
-                    <li class="@(IsActive("/Admin/ReservationTypes") ? "active" : "")">
+@*                     <li class="@(IsActive("/Admin/ReservationTypes") ? "active" : "")">
                         <a href="/Admin/ReservationTypes">
                             <i class="fas fa-tags"></i>
                             <span>أنواع الحجز</span>
                         </a>
-                    </li>
+                    </li> *@
                     <li class="@(IsActive("/Admin/UnitTypes") ? "active" : "")">
                         <a href="/Admin/UnitTypes">
                             <i class="fas fa-home"></i>
                             <span>أنواع الوحدات</span>
+                        </a>
+                    </li>
+                    <li class="@(IsActive("/Admin/UnitFacades") ? "active" : "")">
+                        <a href="/Admin/UnitFacades">
+                            <i class="fas fa-border-style"></i>
+                            <span>واجهات الوحدات</span>
                         </a>
                     </li>
                     <li class="@(IsActive("/Admin/Units") && !IsActive("/Admin/Units/Availability") ? "active" : "")">
@@ -134,16 +140,16 @@
                             <span>الوحدات</span>
                         </a>
                     </li>
+                    <li class="@(IsActive("/Admin/Pricings") || IsActive("/Admin/Pricing") ? "active" : "")">
+                        <a href="/Admin/Pricings">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span>تسعير الوحدات</span>
+                        </a>
+                    </li>
                     <li class="@(IsActive("/Admin/Units/Availability") ? "active" : "")">
                         <a href="/Admin/Units/Availability">
                             <i class="fas fa-calendar-alt"></i>
                             <span>جدولة الوحدات</span>
-                        </a>
-                    </li>
-                    <li class="@(IsActive("/Admin/Pricing") ? "active" : "")">
-                        <a href="/Admin/Pricing">
-                            <i class="fas fa-dollar-sign"></i>
-                            <span>التسعير</span>
                         </a>
                     </li>
                     <li class="@(IsActive("/Admin/Reservations") ? "active" : "")">

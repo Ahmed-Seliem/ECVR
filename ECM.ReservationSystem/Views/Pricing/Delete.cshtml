@@ -1,4 +1,4 @@
-﻿@model ECM.ReservationSystem.Models.ViewModels.Admin.PricingViewModel
+@model ECM.ReservationSystem.Models.ViewModels.Admin.PricingViewModel
 @{
     ViewData["Title"] = "حذف التسعيرة";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -10,7 +10,7 @@
         حذف التسعيرة
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/Admin/Pricing" class="btn btn-outline-secondary">
+        <a href="/Admin/Pricings" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-right"></i>
             العودة للقائمة
         </a>
@@ -34,14 +34,11 @@
             <dt class="col-sm-3">الوحدة</dt>
             <dd class="col-sm-9">@Model.UnitName</dd>
 
+            <dt class="col-sm-3">رقم الوحدة</dt>
+            <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.UnitNumber) ? "-" : Model.UnitNumber)</dd>
+
             <dt class="col-sm-3">المدينة</dt>
             <dd class="col-sm-9">@Model.CityName</dd>
-
-            <dt class="col-sm-3">نوع الوحدة</dt>
-            <dd class="col-sm-9">@Model.UnitTypeName</dd>
-
-            <dt class="col-sm-3">نوع الدور</dt>
-            <dd class="col-sm-9">@Model.FloorTypeDisplay</dd>
 
             <dt class="col-sm-3">السعر الأسبوعي</dt>
             <dd class="col-sm-9">@Model.WeeklyRentDefaultCapacity.ToString("N2") ج</dd>
@@ -63,7 +60,7 @@
     <div class="card-footer d-flex justify-content-end">
         <form asp-action="Delete" method="post">
             <input type="hidden" asp-for="Id" />
-            <a href="/Admin/Pricing" class="btn btn-outline-secondary me-2">
+            <a href="/Admin/Pricings" class="btn btn-outline-secondary me-2">
                 <i class="fas fa-times"></i>
                 إلغاء
             </a>

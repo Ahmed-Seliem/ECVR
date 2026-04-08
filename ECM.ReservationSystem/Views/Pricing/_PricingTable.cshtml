@@ -7,9 +7,7 @@
             <thead>
                 <tr>
                     <th>الوحدة</th>
-                    <th>نوع الدور</th>
                     <th>السعر الأسبوعي</th>
-                    <th>الشخص الإضافي</th>
                     <th>التأمين</th>
                     <th>النقل للفرد</th>
                     <th>فترة السريان</th>
@@ -22,12 +20,10 @@
                 {
                     <tr>
                         <td>
-                            <div class="fw-bold">@item.UnitName</div>
-                            <small class="text-muted">@item.CityName - @item.UnitTypeName</small>
+                            <div class="fw-bold">@(string.IsNullOrWhiteSpace(item.UnitNumber) ? item.UnitName : item.UnitNumber)</div>
+                            <small class="text-muted">@item.CityName</small>
                         </td>
-                        <td><span class="badge bg-info">@item.FloorTypeDisplay</span></td>
                         <td class="fw-bold text-success">@item.WeeklyRentDefaultCapacity.ToString("N2") ج</td>
-                        <td class="fw-bold text-warning">@item.AdditionalPersonCost.ToString("N2") ج</td>
                         <td class="fw-bold text-primary">@item.InsuranceAmount.ToString("N2") ج</td>
                         <td class="fw-bold text-dark">@item.TransportationCostPerPerson.ToString("N2") ج</td>
                         <td>
@@ -53,16 +49,14 @@
                         </td>
                         <td>
                             <div class="btn-group">
-                                <a href="/Admin/Pricing/Details/@item.Id" class="btn btn-sm btn-outline-info" title="التفاصيل">
+                                <a href="/Admin/Pricings/Details/@item.Id" class="btn btn-sm btn-outline-info" title="التفاصيل">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 <button type="button"
                                         class="btn btn-sm btn-outline-warning js-edit-pricing"
                                         data-id="@item.Id"
                                         data-unitid="@item.UnitId"
-                                        data-floortype="@((int)item.FloorType)"
                                         data-weekly="@item.WeeklyRentDefaultCapacity"
-                                        data-additional="@item.AdditionalPersonCost"
                                         data-insurance="@item.InsuranceAmount"
                                         data-transportation="@item.TransportationCostPerPerson"
                                         data-effectivefrom="@item.EffectiveFrom.ToString("yyyy-MM-dd")"
@@ -73,7 +67,7 @@
                                 <button type="button"
                                         class="btn btn-sm btn-outline-danger js-delete-pricing"
                                         data-id="@item.Id"
-                                        data-name="@item.UnitName">
+                                        data-name="@(string.IsNullOrWhiteSpace(item.UnitNumber) ? item.UnitName : item.UnitNumber)">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>

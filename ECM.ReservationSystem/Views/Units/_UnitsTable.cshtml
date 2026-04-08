@@ -6,12 +6,13 @@
         <table class="table table-striped table-hover datatable">
             <thead>
                 <tr>
-                    <th>الكود</th>
-                    <th>الاسم</th>
+                    <th>رقم الوحدة</th>
+                    <th>اسم الوحدة</th>
                     <th>المدينة</th>
                     <th>النوع</th>
-                    <th>المعاشات</th>
+                    <th>الواجهة</th>
                     <th>السعة</th>
+                    <th>الغرف</th>
                     <th>السنة</th>
                     <th>الحالة</th>
                     <th>الإجراءات</th>
@@ -25,17 +26,9 @@
                         <td>@unit.Name</td>
                         <td>@unit.City?.Name</td>
                         <td>@unit.UnitType?.Name</td>
-                        <td>
-                            @if (unit.IsForPensioners)
-                            {
-                                <span class="badge bg-info">نعم</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-light text-dark">لا</span>
-                            }
-                        </td>
-                        <td>@unit.DefaultCapacity / @unit.MaxCapacity</td>
+                        <td>@(unit.UnitFacade?.NameAr ?? unit.UnitFacade?.Name ?? "-")</td>
+                        <td>@unit.DefaultCapacity</td>
+                        <td>@unit.RoomCount</td>
                         <td>@unit.Year</td>
                         <td>
                             @if (unit.IsActive)
@@ -59,7 +52,7 @@
                                         data-code="@unit.Code"
                                         data-description="@unit.Description"
                                         data-defaultcapacity="@unit.DefaultCapacity"
-                                        data-maxcapacity="@unit.MaxCapacity"
+                                        data-roomcount="@unit.RoomCount"
                                         data-floortype="@((int)unit.FloorType)"
                                         data-floornumber="@unit.FloorNumber"
                                         data-year="@unit.Year"
@@ -67,6 +60,7 @@
                                         data-isforpensioners="@unit.IsForPensioners"
                                         data-cityid="@unit.CityId"
                                         data-unittypeid="@unit.UnitTypeId"
+                                        data-unitfacadeid="@unit.UnitFacadeId"
                                         data-createdat="@unit.CreatedAt.ToString("o")"
                                         data-createdbyuserid="@unit.CreatedByUserId">
                                     <i class="fas fa-edit"></i>

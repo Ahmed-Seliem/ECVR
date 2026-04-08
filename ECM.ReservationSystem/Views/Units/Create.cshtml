@@ -6,7 +6,7 @@
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">إضافة وحدة جديدة</h1>
-    <a href="/Admin/Units" class="btn btn-outline-secondary">العودة للقائمة</a>
+    <a href="/Admin/Units" class="btn btn-secondary">العودة للقائمة</a>
 </div>
 
 <div class="card shadow">
@@ -15,58 +15,65 @@
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label asp-for="Name" class="form-label"></label>
+                    <label asp-for="Name" class="form-label">اسم الوحدة</label>
                     <input asp-for="Name" class="form-control" />
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Code" class="form-label"></label>
+                    <label asp-for="Code" class="form-label">رقم الوحدة</label>
                     <input asp-for="Code" class="form-control" />
                     <span asp-validation-for="Code" class="text-danger"></span>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="CityId" class="form-label"></label>
+                <div class="col-md-4">
+                    <label asp-for="CityId" class="form-label">المدينة</label>
                     <select asp-for="CityId" asp-items="ViewBag.Cities" class="form-select">
                         <option value="">اختر المدينة</option>
                     </select>
                     <span asp-validation-for="CityId" class="text-danger"></span>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="UnitTypeId" class="form-label"></label>
+                <div class="col-md-4">
+                    <label asp-for="UnitTypeId" class="form-label">نوع الوحدة</label>
                     <select asp-for="UnitTypeId" asp-items="ViewBag.UnitTypes" class="form-select">
                         <option value="">اختر نوع الوحدة</option>
                     </select>
                     <span asp-validation-for="UnitTypeId" class="text-danger"></span>
                 </div>
+                <div class="col-md-4">
+                    <label asp-for="UnitFacadeId" class="form-label">الواجهة</label>
+                    <select asp-for="UnitFacadeId" asp-items="ViewBag.UnitFacades" class="form-select">
+                        <option value="">اختر الواجهة</option>
+                    </select>
+                    <span asp-validation-for="UnitFacadeId" class="text-danger"></span>
+                </div>
                 <div class="col-md-3">
-                    <label asp-for="FloorType" class="form-label"></label>
+                    <label asp-for="FloorType" class="form-label">نوع الدور</label>
                     <select asp-for="FloorType" asp-items="ViewBag.FloorTypes" class="form-select"></select>
                     <span asp-validation-for="FloorType" class="text-danger"></span>
                 </div>
                 <div class="col-md-3">
-                    <label asp-for="FloorNumber" class="form-label"></label>
+                    <label asp-for="FloorNumber" class="form-label">رقم الدور</label>
                     <input asp-for="FloorNumber" type="number" class="form-control" />
                     <span asp-validation-for="FloorNumber" class="text-danger"></span>
                 </div>
                 <div class="col-md-3">
-                    <label asp-for="DefaultCapacity" class="form-label"></label>
+                    <label asp-for="DefaultCapacity" class="form-label">السعة</label>
                     <input asp-for="DefaultCapacity" type="number" class="form-control" />
                     <span asp-validation-for="DefaultCapacity" class="text-danger"></span>
                 </div>
                 <div class="col-md-3">
-                    <label asp-for="MaxCapacity" class="form-label"></label>
-                    <input asp-for="MaxCapacity" type="number" class="form-control" />
-                    <span asp-validation-for="MaxCapacity" class="text-danger"></span>
+                    <label asp-for="RoomCount" class="form-label">عدد الغرف</label>
+                    <input asp-for="RoomCount" type="number" class="form-control" />
+                    <span asp-validation-for="RoomCount" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
-                    <label asp-for="Year" class="form-label"></label>
+                    <label asp-for="Year" class="form-label">السنة</label>
                     <select asp-for="Year" asp-items="ViewBag.Years" class="form-select"></select>
                     <span asp-validation-for="Year" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
                     <div class="form-check form-switch mt-4 pt-2">
                         <input asp-for="IsActive" class="form-check-input" type="checkbox" />
-                        <label asp-for="IsActive" class="form-check-label"></label>
+                        <label asp-for="IsActive" class="form-check-label">نشط</label>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -76,13 +83,13 @@
                     </div>
                 </div>
                 <div class="col-12">
-                    <label asp-for="Description" class="form-label"></label>
+                    <label asp-for="Description" class="form-label">الوصف</label>
                     <textarea asp-for="Description" class="form-control" rows="3"></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
             </div>
             <div class="mt-3 d-flex justify-content-end gap-2">
-                <a href="/Admin/Units" class="btn btn-outline-secondary">إلغاء</a>
+                <a href="/Admin/Units" class="btn btn-secondary">إلغاء</a>
                 <button type="submit" class="btn btn-primary">حفظ</button>
             </div>
         </form>

@@ -23,6 +23,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             var query = _context.Units
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
+                .Include(u => u.UnitFacade)
                 .AsQueryable();
 
             if (cityId.HasValue)
@@ -42,14 +43,12 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
             var units = await query
                 .OrderBy(u => u.City!.Name)
+                .ThenBy(u => u.UnitType!.Name)
+                .ThenBy(u => u.Code)
                 .ThenBy(u => u.Name)
                 .ToListAsync();
 
-            ViewBag.Cities = new SelectList(await _context.Cities.Where(c => c.IsActive).ToListAsync(), "Id", "Name", cityId);
-            ViewBag.UnitTypes = new SelectList(await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync(), "Id", "Name", unitTypeId);
-            ViewBag.Years = new SelectList(GetAvailableYears(), year);
-            ViewBag.FloorTypes = new SelectList(GetFloorTypeOptions(), "Value", "Text");
-
+            await PopulateListFiltersAsync(cityId, unitTypeId, year);
             return View(units);
         }
 
@@ -64,11 +63,12 @@ namespace ECM.ReservationSystem.Controllers.Admin
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Unit unit)
         {
+            NormalizeUnit(unit);
             await ValidateUnitAsync(unit);
 
             if (!ModelState.IsValid)
             {
-                await PopulateDropdowns();
+                await PopulateDropdowns(unit.CityId, unit.UnitTypeId, unit.Year, unit.UnitFacadeId);
                 return View(unit);
             }
 
@@ -89,6 +89,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             var unit = await _context.Units
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
+                .Include(u => u.UnitFacade)
                 .FirstOrDefaultAsync(u => u.Id == id.Value);
 
             if (unit == null)
@@ -96,26 +97,25 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 return NotFound();
             }
 
-            await PopulateDropdowns(unit.CityId, unit.UnitTypeId, unit.Year);
-            ViewData["CurrentCity"] = unit.City?.Name;
-            ViewData["CurrentUnitType"] = unit.UnitType?.Name;
+            await PopulateDropdowns(unit.CityId, unit.UnitTypeId, unit.Year, unit.UnitFacadeId);
             return View(unit);
         }
 
         [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Code,Description,DefaultCapacity,MaxCapacity,FloorType,FloorNumber,Year,IsActive,IsForPensioners,CityId,UnitTypeId,CreatedAt,CreatedByUserId")] Unit unit)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Code,Description,DefaultCapacity,MaxCapacity,RoomCount,FloorType,FloorNumber,Year,IsActive,IsForPensioners,CityId,UnitTypeId,UnitFacadeId,CreatedAt,CreatedByUserId")] Unit unit)
         {
             if (id != unit.Id)
             {
                 return NotFound();
             }
 
+            NormalizeUnit(unit);
             await ValidateUnitAsync(unit, id);
 
             if (!ModelState.IsValid)
             {
-                await PopulateDropdowns(unit.CityId, unit.UnitTypeId, unit.Year);
+                await PopulateDropdowns(unit.CityId, unit.UnitTypeId, unit.Year, unit.UnitFacadeId);
                 return View(unit);
             }
 
@@ -149,6 +149,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             var unit = await _context.Units
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
+                .Include(u => u.UnitFacade)
                 .Include(u => u.Pricings)
                 .Include(u => u.Reservations)
                 .Include(u => u.ScheduleSlots)
@@ -173,6 +174,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             var unit = await _context.Units
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
+                .Include(u => u.UnitFacade)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (unit == null)
@@ -187,14 +189,44 @@ namespace ECM.ReservationSystem.Controllers.Admin
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var unit = await _context.Units.FindAsync(id);
+            var unit = await _context.Units
+                .Include(u => u.Pricings)
+                .Include(u => u.Reservations)
+                .Include(u => u.ScheduleSlots)
+                .FirstOrDefaultAsync(u => u.Id == id);
             if (unit == null)
             {
                 return NotFound();
             }
 
-            _context.Units.Remove(unit);
-            await _context.SaveChangesAsync();
+            if (unit.Pricings.Any())
+            {
+                TempData["Error"] = "لا يمكن حذف الوحدة لأنها مرتبطة بتسعير. احذف التسعير أولاً.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (unit.Reservations.Any())
+            {
+                TempData["Error"] = "لا يمكن حذف الوحدة لأنها مرتبطة بحجوزات.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (unit.ScheduleSlots.Any())
+            {
+                TempData["Error"] = "لا يمكن حذف الوحدة لأنها مرتبطة بفترات جدول. احذف الفترات أولاً.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                _context.Units.Remove(unit);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                TempData["Error"] = "لا يمكن حذف الوحدة لوجود بيانات مرتبطة بها.";
+                return RedirectToAction(nameof(Index));
+            }
 
             TempData["Success"] = "تم حذف الوحدة بنجاح";
             return RedirectToAction(nameof(Index));
@@ -208,6 +240,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             var query = _context.Units
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
+                .Include(u => u.UnitFacade)
                 .Include(u => u.Reservations)
                 .Include(u => u.ScheduleSlots)
                 .Where(u => u.IsActive && u.Year == currentYear);
@@ -235,6 +268,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             var units = await query
                 .OrderBy(u => u.City!.Name)
                 .ThenBy(u => u.UnitType!.Name)
+                .ThenBy(u => u.Code)
                 .ThenBy(u => u.Name)
                 .ToListAsync();
 
@@ -363,7 +397,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
             if (slot == null)
             {
-                TempData["Error"] = "الـ slot غير موجود.";
+                TempData["Error"] = "الفترة غير موجودة.";
                 return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
             }
 
@@ -374,13 +408,13 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
             if (hasReservation)
             {
-                TempData["Error"] = "لا يمكن حذف slot عليه حجز.";
+                TempData["Error"] = "لا يمكن حذف فترة عليها حجز.";
                 return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
             }
 
             slot.IsActive = false;
             await _context.SaveChangesAsync();
-            TempData["Success"] = "تم إلغاء الـ slot بنجاح.";
+            TempData["Success"] = "تم إلغاء الفترة بنجاح.";
 
             return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
         }
@@ -422,7 +456,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             return new UnitAvailabilityViewModel
             {
                 UnitId = unit.Id,
-                UnitName = unit.Name,
+                UnitName = string.IsNullOrWhiteSpace(unit.Code) ? unit.Name : $"{unit.Code} - {unit.Name}",
                 CityName = unit.City?.Name ?? string.Empty,
                 UnitTypeName = unit.UnitType?.Name ?? string.Empty,
                 FloorType = unit.FloorType,
@@ -435,27 +469,45 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
         private async Task ValidateUnitAsync(Unit unit, int? currentUnitId = null)
         {
-            if (unit.MaxCapacity > 0 && unit.DefaultCapacity > 0 && unit.MaxCapacity < unit.DefaultCapacity)
+            if (string.IsNullOrWhiteSpace(unit.Code))
             {
-                ModelState.AddModelError(nameof(Unit.MaxCapacity), "السعة القصوى يجب أن تكون أكبر من أو تساوي السعة الافتراضية");
+                ModelState.AddModelError(nameof(Unit.Code), "رقم الوحدة مطلوب");
+            }
+
+            if (unit.RoomCount <= 0)
+            {
+                ModelState.AddModelError(nameof(Unit.RoomCount), "عدد الغرف يجب أن يكون أكبر من صفر");
             }
 
             if (!string.IsNullOrWhiteSpace(unit.Code))
             {
-                var codeExists = await _context.Units.AnyAsync(u => u.Code == unit.Code && (!currentUnitId.HasValue || u.Id != currentUnitId.Value));
+                var codeExists = await _context.Units.AnyAsync(u =>
+                    u.Code == unit.Code &&
+                    (!currentUnitId.HasValue || u.Id != currentUnitId.Value));
+
                 if (codeExists)
                 {
-                    ModelState.AddModelError(nameof(Unit.Code), "كود الوحدة موجود مسبقاً");
+                    ModelState.AddModelError(nameof(Unit.Code), "رقم الوحدة موجود مسبقاً");
                 }
             }
         }
 
-        private async Task PopulateDropdowns(int? cityId = null, int? unitTypeId = null, int? year = null)
+        private async Task PopulateDropdowns(int? cityId = null, int? unitTypeId = null, int? year = null, int? unitFacadeId = null)
         {
             ViewBag.Cities = new SelectList(await _context.Cities.Where(c => c.IsActive).ToListAsync(), "Id", "Name", cityId);
             ViewBag.UnitTypes = new SelectList(await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync(), "Id", "Name", unitTypeId);
+            ViewBag.UnitFacades = new SelectList(await _context.UnitFacades.Where(f => f.IsActive).ToListAsync(), "Id", "NameAr", unitFacadeId);
             ViewBag.FloorTypes = new SelectList(GetFloorTypeOptions(), "Value", "Text");
             ViewBag.Years = new SelectList(GetAvailableYears(), year);
+        }
+
+        private async Task PopulateListFiltersAsync(int? cityId = null, int? unitTypeId = null, int? year = null)
+        {
+            ViewBag.Cities = new SelectList(await _context.Cities.Where(c => c.IsActive).ToListAsync(), "Id", "Name", cityId);
+            ViewBag.UnitTypes = new SelectList(await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync(), "Id", "Name", unitTypeId);
+            ViewBag.UnitFacades = new SelectList(await _context.UnitFacades.Where(f => f.IsActive).ToListAsync(), "Id", "NameAr");
+            ViewBag.Years = new SelectList(GetAvailableYears(), year);
+            ViewBag.FloorTypes = new SelectList(GetFloorTypeOptions(), "Value", "Text");
         }
 
         private async Task<List<object>> GetUnitsForAvailabilityFilterAsync(int? cityId, int? unitTypeId, int year, bool? isForManagement)
@@ -483,11 +535,14 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
             return await query
                 .OrderBy(u => u.City!.Name)
+                .ThenBy(u => u.Code)
                 .ThenBy(u => u.Name)
                 .Select(u => new
                 {
                     u.Id,
-                    DisplayName = $"{u.City!.Name} - {u.UnitType!.Name} - {u.Name}"
+                    DisplayName = string.IsNullOrWhiteSpace(u.Code)
+                        ? $"{u.City!.Name} - {u.Name}"
+                        : $"{u.City!.Name} - {u.Code}"
                 })
                 .Cast<object>()
                 .ToListAsync();
@@ -501,6 +556,14 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 new { Value = (int)FloorType.MiddleFloor, Text = "دور متكرر" },
                 new { Value = (int)FloorType.TopFloor, Text = "دور أخير" }
             };
+        }
+
+        private static void NormalizeUnit(Unit unit)
+        {
+            unit.Code = unit.Code?.Trim();
+            unit.Name = unit.Name?.Trim() ?? string.Empty;
+            unit.Description = unit.Description?.Trim();
+            unit.MaxCapacity = unit.DefaultCapacity;
         }
 
         private List<int> GetAvailableYears()

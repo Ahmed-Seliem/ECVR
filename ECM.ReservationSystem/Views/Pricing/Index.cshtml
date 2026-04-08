@@ -6,7 +6,6 @@
 
     var filters = ViewBag.CurrentFilters;
     int? selectedUnitId = filters?.unitId;
-    int? selectedFloorType = filters?.floorType;
 }
 
 <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
@@ -18,7 +17,7 @@
     <div class="card-body">
         <form method="get">
             <div class="row g-3">
-                <div class="col-lg-5">
+                <div class="col-lg-9">
                     <label class="form-label">الوحدة</label>
                     <select name="unitId" class="form-select select2">
                         <option value="">كل الوحدات</option>
@@ -28,19 +27,9 @@
                         }
                     </select>
                 </div>
-                <div class="col-lg-4">
-                    <label class="form-label">نوع الدور</label>
-                    <select name="floorType" class="form-select select2">
-                        <option value="">كل الأدوار</option>
-                        @foreach (SelectListItem item in ViewBag.FloorTypes)
-                        {
-                            <option value="@item.Value" selected="@(item.Value == selectedFloorType?.ToString())">@item.Text</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-center gap-2 mt-auto">
+                <div class="col-lg-3 d-flex align-items-center gap-2 mt-auto">
                     <button type="submit" class="btn btn-primary w-50">بحث</button>
-                    <a href="/Admin/Pricing" class="btn btn-secondary w-50">مسح</a>
+                    <a href="/Admin/Pricings" class="btn btn-secondary w-50">مسح</a>
                 </div>
             </div>
         </form>
@@ -60,7 +49,7 @@
 <div class="modal fade" id="createPricingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form method="post" action="/Admin/Pricing/Create">
+            <form method="post" action="/Admin/Pricings/Create">
                 @Html.AntiForgeryToken()
                 <div class="modal-header">
                     <h5 class="modal-title">إضافة تسعيرة</h5>
@@ -68,7 +57,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label class="form-label">الوحدة</label>
                             <select name="UnitId" class="form-select select2 modal-select" data-parent="#createPricingModal" required>
                                 <option value="">اختر الوحدة</option>
@@ -78,29 +67,15 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">نوع الدور</label>
-                            <select name="FloorType" class="form-select select2 modal-select" data-parent="#createPricingModal" required>
-                                <option value="">اختر نوع الدور</option>
-                                @foreach (SelectListItem item in ViewBag.FloorTypes)
-                                {
-                                    <option value="@item.Value">@item.Text</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">السعر الأسبوعي</label>
                             <input name="WeeklyRentDefaultCapacity" type="number" step="0.01" min="0.01" class="form-control" required />
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">الشخص الإضافي</label>
-                            <input name="AdditionalPersonCost" type="number" step="0.01" min="0" class="form-control" required />
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">التأمين</label>
                             <input name="InsuranceAmount" type="number" step="0.01" min="0" class="form-control" required />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">النقل للفرد</label>
                             <input name="TransportationCostPerPerson" type="number" step="0.01" min="0" class="form-control" />
                         </div>
@@ -142,7 +117,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label class="form-label">الوحدة</label>
                             <select id="editPricingUnitId" name="UnitId" class="form-select select2 modal-select" data-parent="#editPricingModal" required>
                                 <option value="">اختر الوحدة</option>
@@ -152,29 +127,15 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">نوع الدور</label>
-                            <select id="editPricingFloorType" name="FloorType" class="form-select select2 modal-select" data-parent="#editPricingModal" required>
-                                <option value="">اختر نوع الدور</option>
-                                @foreach (SelectListItem item in ViewBag.FloorTypes)
-                                {
-                                    <option value="@item.Value">@item.Text</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">السعر الأسبوعي</label>
                             <input id="editPricingWeekly" name="WeeklyRentDefaultCapacity" type="number" step="0.01" min="0.01" class="form-control" required />
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">الشخص الإضافي</label>
-                            <input id="editPricingAdditional" name="AdditionalPersonCost" type="number" step="0.01" min="0" class="form-control" required />
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">التأمين</label>
                             <input id="editPricingInsurance" name="InsuranceAmount" type="number" step="0.01" min="0" class="form-control" required />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">النقل للفرد</label>
                             <input id="editPricingTransportation" name="TransportationCostPerPerson" type="number" step="0.01" min="0" class="form-control" />
                         </div>
@@ -245,15 +206,13 @@
 
                 $('#editPricingId').val(id);
                 $('#editPricingUnitId').val(btn.data('unitid')).trigger('change');
-                $('#editPricingFloorType').val(btn.data('floortype')).trigger('change');
                 $('#editPricingWeekly').val(btn.data('weekly'));
-                $('#editPricingAdditional').val(btn.data('additional'));
                 $('#editPricingInsurance').val(btn.data('insurance'));
                 $('#editPricingTransportation').val(btn.data('transportation'));
                 $('#editPricingEffectiveFrom').val(btn.data('effectivefrom'));
                 $('#editPricingEffectiveTo').val(btn.data('effectiveto'));
                 $('#editPricingIsActive').prop('checked', btn.data('active') === true || btn.data('active') === 'True');
-                $('#editPricingForm').attr('action', '/Admin/Pricing/Edit/' + id);
+                $('#editPricingForm').attr('action', '/Admin/Pricings/Edit/' + id);
 
                 editModal.show();
             });
@@ -274,7 +233,7 @@
 
                     const form = document.createElement('form');
                     form.method = 'post';
-                    form.action = '/Admin/Pricing/Delete/' + id;
+                    form.action = '/Admin/Pricings/Delete/' + id;
 
                     const token = document.querySelector('#pricingDeleteTokenForm input[name="__RequestVerificationToken"]').value;
                     const tokenInput = document.createElement('input');

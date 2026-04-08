@@ -1,21 +1,15 @@
 using System.ComponentModel.DataAnnotations;
-using ECM.ReservationSystem.Domain.Entities;
 
 namespace ECM.ReservationSystem.Models.ViewModels.Admin
 {
-    public class PricingViewModel
+    public class PricingViewModel : IValidatableObject
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "سعر الإيجار الأسبوعي مطلوب")]
-        [Range(0.01, 999999.99, ErrorMessage = "سعر الإيجار يجب أن يكون أكبر من صفر")]
+        [Required(ErrorMessage = "السعر الأسبوعي مطلوب")]
+        [Range(0.01, 999999.99, ErrorMessage = "السعر الأسبوعي يجب أن يكون أكبر من صفر")]
         [Display(Name = "السعر الأسبوعي")]
         public decimal WeeklyRentDefaultCapacity { get; set; }
-
-        [Required(ErrorMessage = "تكلفة الشخص الإضافي مطلوبة")]
-        [Range(0, 999999.99, ErrorMessage = "تكلفة الشخص الإضافي لا يمكن أن تكون سالبة")]
-        [Display(Name = "تكلفة الشخص الإضافي")]
-        public decimal AdditionalPersonCost { get; set; }
 
         [Required(ErrorMessage = "مبلغ التأمين مطلوب")]
         [Range(0, 999999.99, ErrorMessage = "مبلغ التأمين لا يمكن أن يكون سالب")]
@@ -25,10 +19,6 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         [Range(0, 999999.99, ErrorMessage = "سعر النقل للفرد لا يمكن أن يكون سالب")]
         [Display(Name = "سعر النقل للفرد")]
         public decimal TransportationCostPerPerson { get; set; }
-
-        [Required(ErrorMessage = "نوع الدور مطلوب")]
-        [Display(Name = "نوع الدور")]
-        public FloorType FloorType { get; set; }
 
         [Required(ErrorMessage = "تاريخ بداية السريان مطلوب")]
         [Display(Name = "تاريخ بداية السريان")]
@@ -48,8 +38,7 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
 
         public string? UnitName { get; set; }
         public string? CityName { get; set; }
-        public string? UnitTypeName { get; set; }
-        public string? FloorTypeDisplay { get; set; }
+        public string? UnitNumber { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

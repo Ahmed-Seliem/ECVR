@@ -5,6 +5,7 @@
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     var cities = ViewBag.Cities as SelectList;
     var unitTypes = ViewBag.UnitTypes as SelectList;
+    var unitFacades = ViewBag.UnitFacades as SelectList;
     var floorTypes = ViewBag.FloorTypes as SelectList;
 }
 
@@ -16,7 +17,7 @@
 <div class="card shadow-sm mb-3">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">المدينة</label>
                 <select name="cityId" class="form-select select2">
                     <option value="">جميع المدن</option>
@@ -29,7 +30,7 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">نوع الوحدة</label>
                 <select name="unitTypeId" class="form-select select2">
                     <option value="">جميع الأنواع</option>
@@ -42,11 +43,11 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">السنة</label>
                 <input type="number" name="year" class="form-control" value="@Context.Request.Query["year"]" />
             </div>
-            <div class="col-md-3 d-flex gap-2">
+            <div class="col-md-2 d-flex gap-2">
                 <button type="submit" class="btn btn-primary w-50">بحث</button>
                 <a href="/Admin/Units" class="btn btn-secondary w-50">مسح</a>
             </div>
@@ -75,7 +76,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">المدينة</label>
                             <select name="CityId" class="form-select select2 modal-select" data-parent="#createUnitModal" required>
                                 <option value="">اختر المدينة</option>
@@ -88,7 +89,7 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">نوع الوحدة</label>
                             <select name="UnitTypeId" class="form-select select2 modal-select" data-parent="#createUnitModal" required>
                                 <option value="">اختر النوع</option>
@@ -102,18 +103,30 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">اسم الوحدة </label>
+                            <label class="form-label">الواجهة</label>
+                            <select name="UnitFacadeId" class="form-select select2 modal-select" data-parent="#createUnitModal">
+                                <option value="">اختر الواجهة</option>
+                                @if (unitFacades != null)
+                                {
+                                    foreach (var facade in unitFacades)
+                                    {
+                                        <option value="@facade.Value">@facade.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">اسم الوحدة</label>
                             <input name="Name" class="form-control" required />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">كود الوحدة </label>
-                            <input name="Code" class="form-control" />
+                            <label class="form-label">رقم الوحدة</label>
+                            <input name="Code" class="form-control" required />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">السنة</label>
                             <input name="Year" type="number" class="form-control" value="@DateTime.Now.Year" required />
                         </div>
-    
                         <div class="col-md-3">
                             <label class="form-label">نوع الدور</label>
                             <select name="FloorType" class="form-select" required>
@@ -131,12 +144,13 @@
                             <input name="FloorNumber" type="number" class="form-control" min="0" value="0" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">السعة الافتراضية</label>
+                            <label class="form-label">السعة</label>
                             <input name="DefaultCapacity" type="number" class="form-control" min="1" value="6" />
+                            <input name="MaxCapacity" type="hidden" value="6" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">السعة القصوى</label>
-                            <input name="MaxCapacity" type="number" class="form-control" min="1" value="10" />
+                            <label class="form-label">عدد الغرف</label>
+                            <input name="RoomCount" type="number" class="form-control" min="1" value="1" />
                         </div>
                         <div class="col-md-6">
                             <div class="form-check form-switch mt-4">
@@ -186,14 +200,14 @@
                             <input id="editUnitName" name="Name" class="form-control" required />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">الكود</label>
-                            <input id="editUnitCode" name="Code" class="form-control" />
+                            <label class="form-label">رقم الوحدة</label>
+                            <input id="editUnitCode" name="Code" class="form-control" required />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">السنة</label>
                             <input id="editUnitYear" name="Year" type="number" class="form-control" required />
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">المدينة</label>
                             <select id="editUnitCityId" name="CityId" class="form-select select2 modal-select" data-parent="#editUnitModal" required>
                                 @if (cities != null)
@@ -205,7 +219,7 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">نوع الوحدة</label>
                             <select id="editUnitTypeId" name="UnitTypeId" class="form-select select2 modal-select" data-parent="#editUnitModal" required>
                                 @if (unitTypes != null)
@@ -213,6 +227,19 @@
                                     foreach (var type in unitTypes)
                                     {
                                         <option value="@type.Value">@type.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">الواجهة</label>
+                            <select id="editUnitFacadeId" name="UnitFacadeId" class="form-select select2 modal-select" data-parent="#editUnitModal">
+                                <option value="">اختر الواجهة</option>
+                                @if (unitFacades != null)
+                                {
+                                    foreach (var facade in unitFacades)
+                                    {
+                                        <option value="@facade.Value">@facade.Text</option>
                                     }
                                 }
                             </select>
@@ -234,12 +261,13 @@
                             <input id="editUnitFloorNumber" name="FloorNumber" type="number" class="form-control" min="0" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">السعة الافتراضية</label>
+                            <label class="form-label">السعة</label>
                             <input id="editUnitDefaultCapacity" name="DefaultCapacity" type="number" class="form-control" min="1" />
+                            <input id="editUnitMaxCapacity" name="MaxCapacity" type="hidden" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">السعة القصوى</label>
-                            <input id="editUnitMaxCapacity" name="MaxCapacity" type="number" class="form-control" min="1" />
+                            <label class="form-label">عدد الغرف</label>
+                            <input id="editUnitRoomCount" name="RoomCount" type="number" class="form-control" min="1" />
                         </div>
                         <div class="col-md-6">
                             <div class="form-check form-switch mt-4">
@@ -295,10 +323,12 @@
                 $('#editUnitYear').val(row.data('year'));
                 $('#editUnitCityId').val(String(row.data('cityid'))).trigger('change');
                 $('#editUnitTypeId').val(String(row.data('unittypeid'))).trigger('change');
+                $('#editUnitFacadeId').val(row.data('unitfacadeid') ? String(row.data('unitfacadeid')) : '').trigger('change');
                 $('#editUnitFloorType').val(String(row.data('floortype')));
                 $('#editUnitFloorNumber').val(row.data('floornumber'));
                 $('#editUnitDefaultCapacity').val(row.data('defaultcapacity'));
-                $('#editUnitMaxCapacity').val(row.data('maxcapacity'));
+                $('#editUnitMaxCapacity').val(row.data('defaultcapacity'));
+                $('#editUnitRoomCount').val(row.data('roomcount'));
                 $('#editUnitIsActive').prop('checked', row.data('active') === true || row.data('active') === 'True');
                 $('#editUnitIsForPensioners').prop('checked', row.data('isforpensioners') === true || row.data('isforpensioners') === 'True');
                 $('#editUnitForm').attr('action', '/Admin/Units/Edit/' + id);

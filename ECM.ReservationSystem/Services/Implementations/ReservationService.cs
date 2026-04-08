@@ -29,6 +29,7 @@ namespace ECM.ReservationSystem.Services.Implementations
             var query = _context.Units
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
+                .Include(u => u.UnitFacade)
                 .Include(u => u.Pricings)
                 .Include(u => u.Reservations)
                 .Include(u => u.ScheduleSlots)
@@ -104,7 +105,7 @@ namespace ECM.ReservationSystem.Services.Implementations
 
                 if (isAvailable)
                 {
-                    var pricing = await _pricingService.GetCurrentPricingAsync(unit.Id, unit.FloorType);
+                    var pricing = await _pricingService.GetCurrentPricingAsync(unit.Id);
 
                     availableUnits.Add(new UnitAvailabilityDto
                     {
@@ -112,14 +113,15 @@ namespace ECM.ReservationSystem.Services.Implementations
                         UnitName = unit.Name,
                         CityName = unit.City.Name,
                         UnitTypeName = unit.UnitType.Name,
-                        FloorType = unit.FloorType.ToString(),
-                        DefaultCapacity = unit.DefaultCapacity,
-                        MaxCapacity = unit.MaxCapacity,
+                        UnitNumber = unit.Code ?? string.Empty,
+                        FacadeName = unit.UnitFacade?.NameAr ?? unit.UnitFacade?.Name ?? string.Empty,
+                        FloorNumber = unit.FloorNumber,
+                        Capacity = unit.DefaultCapacity,
+                        RoomCount = unit.RoomCount,
                         Year = unit.Year,
                         IsForPensioners = unit.IsForPensioners,
                         IsForManagement = unit.UnitType?.IsForManagement ?? false,
                         WeeklyRentDefaultCapacity = pricing?.WeeklyRentDefaultCapacity ?? 0,
-                        AdditionalPersonCost = pricing?.AdditionalPersonCost ?? 0,
                         InsuranceAmount = pricing?.InsuranceAmount ?? 0,
                         TransportationCostPerPerson = pricing?.TransportationCostPerPerson ?? 0,
                         IsAvailable = isAvailable,
@@ -169,10 +171,10 @@ namespace ECM.ReservationSystem.Services.Implementations
                 return new CostCalculationDto { IsAvailable = false, Message = "الوحدة غير متاحة في هذه التواريخ" };
             }
 
-            var weeklyRent = await _pricingService.CalculateWeeklyRentAsync(unitId, unit.FloorType, numberOfGuests);
-            var pricing = await _pricingService.GetCurrentPricingAsync(unitId, unit.FloorType);
+            var weeklyRent = await _pricingService.CalculateWeeklyRentAsync(unitId, numberOfGuests);
+            var pricing = await _pricingService.GetCurrentPricingAsync(unitId);
             var transportationCost = isTransportationRequired
-                ? await _pricingService.GetTransportationCostAsync(unit.CityId, unitId, unit.FloorType, numberOfGuests)
+                ? await _pricingService.GetTransportationCostAsync(unit.CityId, unitId, numberOfGuests)
                 : 0;
 
             return new CostCalculationDto

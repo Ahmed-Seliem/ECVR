@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<City> Cities { get; set; }
     public DbSet<UnitType> UnitTypes { get; set; }
     public DbSet<Unit> Units { get; set; }
+    public DbSet<UnitFacade> UnitFacades { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<ReservationType> ReservationTypes { get; set; }
     public DbSet<Pricing> Pricings { get; set; }
@@ -60,6 +61,10 @@ public class ApplicationDbContext : DbContext
             .HasIndex(c => c.Name)
             .IsUnique();
 
+        modelBuilder.Entity<UnitFacade>()
+            .HasIndex(f => f.Name)
+            .IsUnique();
+
         modelBuilder.Entity<Unit>()
             .HasOne(u => u.City)
             .WithMany(c => c.Units)
@@ -70,6 +75,12 @@ public class ApplicationDbContext : DbContext
             .HasOne(u => u.UnitType)
             .WithMany(ut => ut.Units)
             .HasForeignKey(u => u.UnitTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Unit>()
+            .HasOne(u => u.UnitFacade)
+            .WithMany(f => f.Units)
+            .HasForeignKey(u => u.UnitFacadeId)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Reservation>()

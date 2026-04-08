@@ -1,10 +1,10 @@
-using System.Globalization;
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Models.DTOs;
 using ECM.ReservationSystem.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace ECM.ReservationSystem.Controllers.API;
 
@@ -85,7 +85,8 @@ public class ReservationsApiController : ControllerBase
     public async Task<IActionResult> GetAvailableUnits(
         string weekId,
         [FromQuery] string? audience = null,
-        [FromQuery] bool? isForManagement = null)
+        [FromQuery] bool? isForManagement = null,
+        [])
     {
         var week = await ResolveWeekAsync(weekId);
         if (week is null)
@@ -104,22 +105,22 @@ public class ReservationsApiController : ControllerBase
 
         var items = units
             .OrderBy(u => u.UnitName)
-            .Select(u =>
+            .Select(u => new
             {
-                var floorType = Enum.Parse<FloorType>(u.FloorType);
-                return new
-                {
-                    id = u.UnitId,
-                    unitId = u.UnitId,
-                    floorName = ToFloorNameArabic(floorType),
-                    propertyName = u.UnitName,
-                    display = $"{ToFloorNameArabic(floorType)} - {u.UnitName}",
-                    weeklyRent = u.WeeklyRentDefaultCapacity,
-                    insuranceAmount = u.InsuranceAmount,
-                    transportationCostPerPerson = u.TransportationCostPerPerson,
-                    defaultCapacity = u.DefaultCapacity,
-                    maxCapacity = u.MaxCapacity
-                };
+                id = u.UnitId,
+                unitId = u.UnitId,
+                propertyName = BuildApiPropertyName(u),
+                floorName = BuildApiFloorName(u.FloorNumber),
+                unitNumber = u.UnitNumber,
+                facade = u.FacadeName,
+                facadeName = u.FacadeName,
+                floorNumber = u.FloorNumber,
+                display = BuildApiUnitDisplay(u),
+                weeklyRent = u.WeeklyRentDefaultCapacity,
+                insuranceAmount = u.InsuranceAmount,
+                transportationCostPerPerson = u.TransportationCostPerPerson,
+                capacity = u.Capacity,
+                roomCount = u.RoomCount
             })
             .ToList();
 
@@ -365,7 +366,7 @@ public class ReservationsApiController : ControllerBase
                 Id = $"{cityId}-{week.SlotStartDate:yyyyMMdd}",
                 CityId = cityId,
                 WeekNumber = index + 1,
-                DisplayName = $"Week {index + 1} ({week.SlotStartDate:yyyy-MM-dd} - {week.SlotEndDate:yyyy-MM-dd})",
+                DisplayName = $"{GetArabicWeekLabel(index + 1)} ({week.SlotStartDate:yyyy-MM-dd} - {week.SlotEndDate:yyyy-MM-dd})",
                 StartDate = week.SlotStartDate,
                 EndDate = week.SlotEndDate
             })
@@ -403,8 +404,86 @@ public class ReservationsApiController : ControllerBase
             CityId = cityId,
             StartDate = week.SlotStartDate,
             EndDate = week.SlotEndDate,
-            DisplayName = $"Week ({week.SlotStartDate:yyyy-MM-dd} - {week.SlotEndDate:yyyy-MM-dd})"
+            DisplayName = $"الأسبوع ({week.SlotStartDate:yyyy-MM-dd} - {week.SlotEndDate:yyyy-MM-dd})"
         };
+    }
+
+    private static string GetArabicWeekLabel(int weekNumber)
+    {
+        return weekNumber switch
+        {
+            1 => "الاسبوع الاول",
+            2 => "الاسبوع الثاني",
+            3 => "الاسبوع الثالث",
+            4 => "الاسبوع الرابع",
+            5 => "الاسبوع الخامس",
+            6 => "الاسبوع السادس",
+            7 => "الاسبوع السابع",
+            8 => "الاسبوع الثامن",
+            9 => "الاسبوع التاسع",
+            10 => "الاسبوع العاشر",
+            _ => $"الاسبوع {weekNumber}"
+        };
+    }
+
+    private static string BuildApiUnitDisplay(UnitAvailabilityDto unit)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(unit.UnitTypeName))
+        {
+            parts.Add(unit.UnitTypeName);
+        }
+
+        if (unit.FloorNumber > 0)
+        {
+            parts.Add($"الدور {unit.FloorNumber}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(unit.FacadeName))
+        {
+            parts.Add(unit.FacadeName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(unit.UnitNumber))
+        {
+            parts.Add($"رقم {unit.UnitNumber}");
+        }
+
+        return parts.Any()
+            ? string.Join(" | ", parts)
+            : $"{unit.CityName} - {unit.UnitName}";
+    }
+
+    private static string BuildApiPropertyName(UnitAvailabilityDto unit)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(unit.UnitTypeName))
+        {
+            parts.Add(unit.UnitTypeName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(unit.FacadeName))
+        {
+            parts.Add(unit.FacadeName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(unit.UnitNumber))
+        {
+            parts.Add($"رقم {unit.UnitNumber}");
+        }
+
+        return parts.Any()
+            ? string.Join(" | ", parts)
+            : unit.UnitName;
+    }
+
+    private static string BuildApiFloorName(int floorNumber)
+    {
+        return floorNumber <= 0
+            ? "الدور الارضي"
+            : $"الدور {floorNumber}";
     }
 
     private static AudienceFilter ResolveAudienceFilter(string? audience, bool? isForManagement)
@@ -455,17 +534,6 @@ public class ReservationsApiController : ControllerBase
         }
 
         return query;
-    }
-
-    private static string ToFloorNameArabic(FloorType floorType)
-    {
-        return floorType switch
-        {
-            FloorType.GroundFloor => "الدور الأرضي",
-            FloorType.MiddleFloor => "الدور المتوسط",
-            FloorType.TopFloor => "الدور العلوي",
-            _ => floorType.ToString()
-        };
     }
 
     public sealed class ReservationCostRequest

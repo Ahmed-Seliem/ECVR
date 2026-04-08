@@ -7,14 +7,14 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">
         <i class="fas fa-eye"></i>
-        تفاصيل التسعيرة: @Model.UnitName
+        تفاصيل التسعيرة: @(string.IsNullOrWhiteSpace(Model.UnitNumber) ? Model.UnitName : Model.UnitNumber)
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/Admin/Pricing" class="btn btn-outline-secondary">
+        <a href="/Admin/Pricings" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-right"></i>
             العودة للقائمة
         </a>
-        <a href="/Admin/Pricing/Edit/@Model.Id" class="btn btn-warning">
+        <a href="/Admin/Pricings/Edit/@Model.Id" class="btn btn-warning">
             <i class="fas fa-edit"></i>
             تحرير
         </a>
@@ -31,12 +31,10 @@
                 <dl class="row mb-0">
                     <dt class="col-sm-4">الوحدة:</dt>
                     <dd class="col-sm-8">@Model.UnitName</dd>
+                    <dt class="col-sm-4">رقم الوحدة:</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.UnitNumber) ? "-" : Model.UnitNumber)</dd>
                     <dt class="col-sm-4">المدينة:</dt>
                     <dd class="col-sm-8">@Model.CityName</dd>
-                    <dt class="col-sm-4">نوع الوحدة:</dt>
-                    <dd class="col-sm-8">@Model.UnitTypeName</dd>
-                    <dt class="col-sm-4">نوع الدور:</dt>
-                    <dd class="col-sm-8">@Model.FloorTypeDisplay</dd>
                     <dt class="col-sm-4">الحالة:</dt>
                     <dd class="col-sm-8">@(Model.IsActive ? "نشط" : "غير نشط")</dd>
                 </dl>
@@ -52,8 +50,6 @@
                 <dl class="row mb-0">
                     <dt class="col-sm-5">السعر الأسبوعي:</dt>
                     <dd class="col-sm-7">@Model.WeeklyRentDefaultCapacity.ToString("N2") ج</dd>
-                    <dt class="col-sm-5">الشخص الإضافي:</dt>
-                    <dd class="col-sm-7">@Model.AdditionalPersonCost.ToString("N2") ج</dd>
                     <dt class="col-sm-5">التأمين:</dt>
                     <dd class="col-sm-7">@Model.InsuranceAmount.ToString("N2") ج</dd>
                     <dt class="col-sm-5">النقل للفرد:</dt>

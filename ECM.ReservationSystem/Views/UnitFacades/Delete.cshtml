@@ -1,0 +1,21 @@
+@model ECM.ReservationSystem.Domain.Entities.UnitFacade
+@{
+    ViewData["Title"] = "حذف واجهة";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">حذف واجهة</h1>
+    <a href="/Admin/UnitFacades" class="btn btn-outline-secondary">العودة للقائمة</a>
+</div>
+
+<div class="card shadow border-danger">
+    <div class="card-body">
+        <p class="mb-3">هل أنت متأكد من حذف الواجهة <strong>@Model.NameAr</strong>؟</p>
+        <form asp-action="Delete" method="post">
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger">حذف</button>
+            <a href="/Admin/UnitFacades" class="btn btn-outline-secondary">إلغاء</a>
+        </form>
+    </div>
+</div>

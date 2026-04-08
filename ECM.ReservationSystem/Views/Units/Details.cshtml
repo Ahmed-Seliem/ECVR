@@ -2,273 +2,130 @@
 @{
     ViewData["Title"] = "تفاصيل الوحدة";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var currentPricing = Model.Pricings?
+        .Where(p => p.IsActive)
+        .OrderByDescending(p => p.EffectiveFrom)
+        .FirstOrDefault();
 }
 
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="fas fa-eye"></i>
-        تفاصيل الوحدة: @Model.Name
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="/Admin/Units" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-right"></i>
-                العودة للقائمة
-            </a>
-        </div>
-        <div class="btn-group">
-            <a href="/Admin/Units/Edit/@Model.Id" class="btn btn-warning">
-                <i class="fas fa-edit"></i>
-                تحرير
-            </a>
-        </div>
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2 mb-0">تفاصيل الوحدة</h1>
+        <div class="text-muted mt-1">@Model.City?.Name - @(string.IsNullOrWhiteSpace(Model.Code) ? Model.Name : Model.Code)</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/Admin/Units" class="btn btn-secondary">العودة للقائمة</a>
+        <a href="/Admin/Units/Edit/@Model.Id" class="btn btn-warning">تحرير</a>
     </div>
 </div>
 
-<div class="row">
-    <!-- Basic Information -->
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-info-circle"></i>
-                    المعلومات الأساسية
-                </h5>
-            </div>
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
             <div class="card-body">
-                <dl class="row">
-                    <dt class="col-sm-4">اسم الوحدة:</dt>
-                    <dd class="col-sm-8">
-                        <strong>@Model.Name</strong>
-                    </dd>
-
-                    <dt class="col-sm-4">الكود:</dt>
-                    <dd class="col-sm-8">
-                        <code class="bg-light px-2 py-1 rounded">@Model.Code</code>
-                    </dd>
-
-                    <dt class="col-sm-4">الوصف:</dt>
-                    <dd class="col-sm-8">
-                        @if (!string.IsNullOrEmpty(Model.Description))
-                        {
-                            @Model.Description
-                        }
-                        else
-                        {
-                            <span class="text-muted">لا يوجد وصف</span>
-                        }
-                    </dd>
-
-                    <dt class="col-sm-4">الحالة:</dt>
-                    <dd class="col-sm-8">
-                        @if (Model.IsActive)
-                        {
-                            <span class="badge bg-success fs-6">نشط ومتاح للحجز</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary fs-6">غير نشط</span>
-                        }
-                    </dd>
-
-                    <dt class="col-sm-4">تاريخ الإنشاء:</dt>
-                    <dd class="col-sm-8">
-                        @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                    </dd>
-                </dl>
-            </div>
-        </div>
-    </div>
-
-    <!-- Location Information -->
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-header bg-info text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-map-marker-alt"></i>
-                    معلومات الموقع
-                </h5>
-            </div>
-            <div class="card-body">
-                <dl class="row">
-                    <dt class="col-sm-4">المدينة:</dt>
-                    <dd class="col-sm-8">
-                        <span class="badge bg-info fs-6">@Model.City.Name</span>
-                        @if (!string.IsNullOrEmpty(Model.City.NameAr))
-                        {
-                            <br>
-                        
-                            <small class="text-muted">@Model.City.NameAr</small>
-                        }
-                    </dd>
-
-                    <dt class="col-sm-4">نوع الوحدة:</dt>
-                    <dd class="col-sm-8">
-                        <span class="badge bg-secondary fs-6">@Model.UnitType.Name</span>
-                        @if (!string.IsNullOrEmpty(Model.UnitType.NameAr))
-                        {
-                            <br>
-                        
-                            <small class="text-muted">@Model.UnitType.NameAr</small>
-                        }
-                    </dd>
-
-                    <dt class="col-sm-4">نوع الدور:</dt>
-                    <dd class="col-sm-8">
-                        @switch (Model.FloorType)
-                        {
-                            case ECM.ReservationSystem.Domain.Entities.FloorType.GroundFloor:
-                                <span class="badge bg-success fs-6">دور أرضي</span>
-                                break;
-                            case ECM.ReservationSystem.Domain.Entities.FloorType.MiddleFloor:
-                                <span class="badge bg-warning text-dark fs-6">دور متكرر</span>
-                                break;
-                            case ECM.ReservationSystem.Domain.Entities.FloorType.TopFloor:
-                                <span class="badge bg-dark fs-6">دور أخير</span>
-                                break;
-                        }
-                    </dd>
-
-                    <dt class="col-sm-4">رقم الدور:</dt>
-                    <dd class="col-sm-8">
-                        <strong class="fs-5">@Model.FloorNumber</strong>
-                    </dd>
-
-                    <dt class="col-sm-4">السنة:</dt>
-                    <dd class="col-sm-8">
-                        <span class="badge bg-primary fs-6">@Model.Year</span>
-                    </dd>
-                </dl>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Capacity Information -->
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card shadow">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-users"></i>
-                    معلومات السعة
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
+                <div class="row g-3">
                     <div class="col-md-6">
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <h3 class="text-primary">@Model.DefaultCapacity</h3>
-                                <p class="card-title mb-0">السعة الافتراضية</p>
-                                <small class="text-muted">العدد المثالي للحضور</small>
-                            </div>
-                        </div>
+                        <div class="small text-muted">اسم الوحدة</div>
+                        <div class="fw-bold">@Model.Name</div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <h3 class="text-warning">@Model.MaxCapacity</h3>
-                                <p class="card-title mb-0">السعة القصوى</p>
-                                <small class="text-muted">أقصى عدد يمكن استيعابه</small>
-                            </div>
-                        </div>
+                        <div class="small text-muted">رقم الوحدة</div>
+                        <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.Code) ? "-" : Model.Code)</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">المدينة</div>
+                        <div class="fw-bold">@Model.City?.Name</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">نوع الوحدة</div>
+                        <div class="fw-bold">@Model.UnitType?.Name</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">الواجهة</div>
+                        <div class="fw-bold">@(Model.UnitFacade?.NameAr ?? Model.UnitFacade?.Name ?? "-")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small text-muted">رقم الدور</div>
+                        <div class="fw-bold">@Model.FloorNumber</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="small text-muted">السعة</div>
+                        <div class="fw-bold">@Model.DefaultCapacity</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="small text-muted">عدد الغرف</div>
+                        <div class="fw-bold">@Model.RoomCount</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="small text-muted">السنة</div>
+                        <div class="fw-bold">@Model.Year</div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="small text-muted">الوصف</div>
+                        <div>@(string.IsNullOrWhiteSpace(Model.Description) ? "لا يوجد وصف" : Model.Description)</div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="mt-3">
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar bg-primary" role="progressbar"
-                             style="width: @((double)Model.DefaultCapacity / Model.MaxCapacity * 100)%"
-                             aria-valuenow="@Model.DefaultCapacity" aria-valuemin="0" aria-valuemax="@Model.MaxCapacity">
-                            السعة الافتراضية
-                        </div>
-                        <div class="progress-bar bg-warning" role="progressbar"
-                             style="width: @((double)(Model.MaxCapacity - Model.DefaultCapacity) / Model.MaxCapacity * 100)%"
-                             aria-valuenow="@(Model.MaxCapacity - Model.DefaultCapacity)" aria-valuemin="0" aria-valuemax="@Model.MaxCapacity">
-                            السعة الإضافية
-                        </div>
-                    </div>
-                    <small class="text-muted mt-2 d-block">
-                        نسبة الاستغلال المثلى: @Math.Round((double)Model.DefaultCapacity / Model.MaxCapacity * 100, 1)%
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<!-- Statistics Cards -->
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card shadow text-white bg-primary">
-            <div class="card-body text-center">
-                <i class="fas fa-calendar-check fa-2x mb-2"></i>
-                <h4>@(Model.Reservations?.Count() ?? 0)</h4>
-                <p class="mb-0">إجمالي الحجوزات</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow text-white bg-success">
-            <div class="card-body text-center">
-                <i class="fas fa-dollar-sign fa-2x mb-2"></i>
-                <h4>@(Model.Reservations?.Sum(r => r.TotalAmount).ToString("C") ?? "0")</h4>
-                <p class="mb-0">إجمالي الإيرادات</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow text-white bg-info">
-            <div class="card-body text-center">
-                <i class="fas fa-users fa-2x mb-2"></i>
-                <h4>@Math.Round((double)Model.DefaultCapacity / Model.MaxCapacity * 100, 0)%</h4>
-                <p class="mb-0">كفاءة السعة</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow text-white bg-warning">
-            <div class="card-body text-center">
-                <i class="fas fa-tag fa-2x mb-2"></i>
-                <h4>@(Model.Pricings?.Count() ?? 0)</h4>
-                <p class="mb-0">خطط الأسعار</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header bg-light">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-bolt"></i>
-                    إجراءات سريعة
-                </h5>
-            </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
             <div class="card-body">
-                <div class="btn-group" role="group">
-                    <a href="/Admin/Units/Edit/@Model.Id" class="btn btn-warning">
-                        <i class="fas fa-edit"></i>
-                        تحرير الوحدة
-                    </a>
-                    <a href="/Admin/Pricings?unitId=@Model.Id" class="btn btn-success">
-                        <i class="fas fa-dollar-sign"></i>
-                        إدارة الأسعار
-                    </a>
-                    <a href="/Admin/Reservations?unitId=@Model.Id" class="btn btn-info">
-                        <i class="fas fa-calendar-check"></i>
-                        عرض الحجوزات
-                    </a>
-                    <a href="/Admin/Reports/Unit/@Model.Id" class="btn btn-secondary">
-                        <i class="fas fa-chart-bar"></i>
-                        التقارير
-                    </a>
+                <div class="small text-muted">الحالة</div>
+                <div class="mt-1">
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge bg-success">نشط</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">غير نشط</span>
+                    }
+                    @if (Model.IsForPensioners)
+                    {
+                        <span class="badge bg-info">للمعاشات</span>
+                    }
                 </div>
+                <hr />
+                <div class="small text-muted">الحجوزات</div>
+                <div class="fw-bold">@Model.Reservations.Count()</div>
+                <div class="small text-muted mt-2">الفترات المجدولة</div>
+                <div class="fw-bold">@Model.ScheduleSlots.Count(s => s.IsActive)</div>
+                <div class="small text-muted mt-2">التسعيرات</div>
+                <div class="fw-bold">@Model.Pricings.Count()</div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body d-grid gap-2">
+                <a href="/Admin/Pricings?unitId=@Model.Id" class="btn btn-success">التسعير </a>
+                <a href="/Admin/Units/Availability?unitId=@Model.Id&year=@Model.Year" class="btn btn-primary">جدولة الوحدة</a>
+                <a href="/Admin/Reservations?unitId=@Model.Id" class="btn btn-info">الحجوزات</a>
             </div>
         </div>
     </div>
 </div>
+
+@if (currentPricing != null)
+{
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+            <h5 class="mb-3">ملخص آخر تسعيرة</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="small text-muted">السعر الأسبوعي</div>
+                    <div class="fw-bold">@currentPricing.WeeklyRentDefaultCapacity.ToString("N2") ج</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="small text-muted">التأمين</div>
+                    <div class="fw-bold">@currentPricing.InsuranceAmount.ToString("N2") ج</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="small text-muted">النقل للفرد</div>
+                    <div class="fw-bold">@currentPricing.TransportationCostPerPerson.ToString("N2") ج</div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

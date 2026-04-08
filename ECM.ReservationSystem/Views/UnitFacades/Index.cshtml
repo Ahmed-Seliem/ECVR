@@ -1,0 +1,139 @@
+@model IEnumerable<ECM.ReservationSystem.Domain.Entities.UnitFacade>
+@{
+    ViewData["Title"] = "واجهات الوحدات";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0">
+        <i class="fas fa-border-style"></i>
+        واجهات الوحدات
+    </h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUnitFacadeModal">
+        <i class="fas fa-plus"></i>
+        إضافة واجهة
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @await Html.PartialAsync("_UnitFacadesTable", Model)
+    </div>
+</div>
+
+<div class="modal fade" id="createUnitFacadeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="/Admin/UnitFacades/Create">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة واجهة</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم بالانجليزية</label>
+                            <input name="Name" class="form-control" required maxlength="100" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم بالعربية</label>
+                            <input name="NameAr" class="form-control" required maxlength="100" />
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="createUnitFacadeIsActive" name="IsActive" value="true" checked />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="createUnitFacadeIsActive">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editUnitFacadeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editUnitFacadeForm" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="editUnitFacadeId" name="Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الواجهة</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم بالانجليزية</label>
+                            <input id="editUnitFacadeName" name="Name" class="form-control" required maxlength="100" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الاسم بالعربية</label>
+                            <input id="editUnitFacadeNameAr" name="NameAr" class="form-control" required maxlength="100" />
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="editUnitFacadeIsActive" name="IsActive" value="true" />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="editUnitFacadeIsActive">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const editModal = new bootstrap.Modal(document.getElementById('editUnitFacadeModal'));
+
+            $(document).on('click', '.js-edit-unitfacade', function () {
+                const row = $(this);
+                const id = row.data('id');
+                $('#editUnitFacadeId').val(id);
+                $('#editUnitFacadeName').val(row.data('name'));
+                $('#editUnitFacadeNameAr').val(row.data('namear'));
+                $('#editUnitFacadeIsActive').prop('checked', row.data('active') === true || row.data('active') === 'True');
+                $('#editUnitFacadeForm').attr('action', '/Admin/UnitFacades/Edit/' + id);
+                editModal.show();
+            });
+
+            $(document).on('click', '.js-delete-unitfacade', function () {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                swal({
+                    title: 'تأكيد الحذف',
+                    text: `سيتم حذف الواجهة: ${name}`,
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، حذف',
+                    cancelButtonText: 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) return;
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = '/Admin/UnitFacades/Delete/' + id;
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token;
+                    form.appendChild(tokenInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+        });
+    </script>
+}
