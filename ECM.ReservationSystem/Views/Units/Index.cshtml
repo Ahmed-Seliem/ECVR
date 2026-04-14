@@ -115,21 +115,21 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-4">
+@*                         <div class="col-md-4">
                             <label class="form-label">اسم الوحدة</label>
-                            <input name="Name" class="form-control" required />
-                        </div>
+                            <input name="Name" class="form-control" />
+                        </div> *@
                         <div class="col-md-4">
                             <label class="form-label">رقم الوحدة</label>
                             <input name="Code" class="form-control" required />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">السنة</label>
-                            <input name="Year" type="number" class="form-control" value="@DateTime.Now.Year" required />
+                            <input name="Year" type="number" class="form-control" value="@DateTime.Now.Year" />
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">نوع الدور</label>
-                            <select name="FloorType" class="form-select" required>
+                            <select name="FloorType" class="form-select">
                                 @if (floorTypes != null)
                                 {
                                     foreach (var floor in floorTypes)
@@ -197,7 +197,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">الاسم</label>
-                            <input id="editUnitName" name="Name" class="form-control" required />
+                            <input id="editUnitName" name="Name" class="form-control" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">رقم الوحدة</label>
@@ -205,7 +205,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">السنة</label>
-                            <input id="editUnitYear" name="Year" type="number" class="form-control" required />
+                            <input id="editUnitYear" name="Year" type="number" class="form-control" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">المدينة</label>
@@ -246,7 +246,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">نوع الدور</label>
-                            <select id="editUnitFloorType" name="FloorType" class="form-select" required>
+                            <select id="editUnitFloorType" name="FloorType" class="form-select">
                                 @if (floorTypes != null)
                                 {
                                     foreach (var floor in floorTypes)

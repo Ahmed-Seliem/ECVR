@@ -81,12 +81,12 @@ public class ReservationsApiController : ControllerBase
         }));
     }
 
-    [HttpGet("floors-properties/{weekId}/flat")]
+    [HttpGet("floors-properties/{weekId}/{unitAudience}")]
     public async Task<IActionResult> GetAvailableUnits(
         string weekId,
+        string unitAudience,
         [FromQuery] string? audience = null,
-        [FromQuery] bool? isForManagement = null,
-        [])
+        [FromQuery] bool? isForManagement = null)
     {
         var week = await ResolveWeekAsync(weekId);
         if (week is null)
@@ -94,7 +94,8 @@ public class ReservationsApiController : ControllerBase
             return NotFound(new { message = "Invalid or unavailable week id." });
         }
 
-        var filter = ResolveAudienceFilter(audience, isForManagement);
+        var filter = ResolveAudienceFilter(unitAudience, audience, isForManagement);
+
         var units = await _reservationService.GetAvailableUnitsAsync(
             week.CityId,
             week.StartDate.Year,
@@ -484,6 +485,32 @@ public class ReservationsApiController : ControllerBase
         return floorNumber <= 0
             ? "الدور الارضي"
             : $"الدور {floorNumber}";
+    }
+
+    private static AudienceFilter ResolveAudienceFilter(string? unitAudience, string? audience, bool? isForManagement)
+    {
+        if (!string.IsNullOrWhiteSpace(unitAudience))
+        {
+            if (string.Equals(unitAudience, "flat", StringComparison.OrdinalIgnoreCase))
+            {
+                return new AudienceFilter(false, false);
+            }
+
+            if (string.Equals(unitAudience, "pension-flat", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(unitAudience, "pension", StringComparison.OrdinalIgnoreCase))
+            {
+                return new AudienceFilter(false, true);
+            }
+
+            if (string.Equals(unitAudience, "management", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(unitAudience, "villa", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(unitAudience, "chalet", StringComparison.OrdinalIgnoreCase))
+            {
+                return new AudienceFilter(true, null);
+            }
+        }
+
+        return ResolveAudienceFilter(audience, isForManagement);
     }
 
     private static AudienceFilter ResolveAudienceFilter(string? audience, bool? isForManagement)

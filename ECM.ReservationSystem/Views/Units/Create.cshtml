@@ -14,26 +14,26 @@
         <form asp-action="Create" method="post">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
             <div class="row g-3">
-                <div class="col-md-6">
+@*                 <div class="col-md-6">
                     <label asp-for="Name" class="form-label">اسم الوحدة</label>
                     <input asp-for="Name" class="form-control" />
                     <span asp-validation-for="Name" class="text-danger"></span>
-                </div>
+                </div> *@
                 <div class="col-md-6">
                     <label asp-for="Code" class="form-label">رقم الوحدة</label>
-                    <input asp-for="Code" class="form-control" />
+                    <input asp-for="Code" class="form-control" required />
                     <span asp-validation-for="Code" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="CityId" class="form-label">المدينة</label>
-                    <select asp-for="CityId" asp-items="ViewBag.Cities" class="form-select">
+                    <select asp-for="CityId" asp-items="ViewBag.Cities" class="form-select" required>
                         <option value="">اختر المدينة</option>
                     </select>
                     <span asp-validation-for="CityId" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="UnitTypeId" class="form-label">نوع الوحدة</label>
-                    <select asp-for="UnitTypeId" asp-items="ViewBag.UnitTypes" class="form-select">
+                    <select asp-for="UnitTypeId" asp-items="ViewBag.UnitTypes" class="form-select" required>
                         <option value="">اختر نوع الوحدة</option>
                     </select>
                     <span asp-validation-for="UnitTypeId" class="text-danger"></span>
@@ -72,14 +72,14 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-check form-switch mt-4 pt-2">
-                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
-                        <label asp-for="IsActive" class="form-check-label">نشط</label>
+                        <input asp-for="IsForPensioners" class="form-check-input" type="checkbox" />
+                        <label asp-for="IsForPensioners" class="form-check-label">للمعاشات</label>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-check form-switch mt-4 pt-2">
-                        <input asp-for="IsForPensioners" class="form-check-input" type="checkbox" />
-                        <label asp-for="IsForPensioners" class="form-check-label">للمعاشات</label>
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                        <label asp-for="IsActive" class="form-check-label">نشط</label>
                     </div>
                 </div>
                 <div class="col-12">

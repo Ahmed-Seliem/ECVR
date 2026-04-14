@@ -20,24 +20,24 @@
             <input type="hidden" asp-for="CreatedAt" />
             <input type="hidden" asp-for="CreatedByUserId" />
             <div class="row g-3">
-                <div class="col-md-6">
+@*                 <div class="col-md-6">
                     <label asp-for="Name" class="form-label">اسم الوحدة</label>
                     <input asp-for="Name" class="form-control" />
                     <span asp-validation-for="Name" class="text-danger"></span>
-                </div>
+                </div> *@
                 <div class="col-md-6">
                     <label asp-for="Code" class="form-label">رقم الوحدة</label>
-                    <input asp-for="Code" class="form-control" />
+                    <input asp-for="Code" class="form-control" required />
                     <span asp-validation-for="Code" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="CityId" class="form-label">المدينة</label>
-                    <select asp-for="CityId" asp-items="ViewBag.Cities" class="form-select"></select>
+                    <select asp-for="CityId" asp-items="ViewBag.Cities" class="form-select" required></select>
                     <span asp-validation-for="CityId" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="UnitTypeId" class="form-label">نوع الوحدة</label>
-                    <select asp-for="UnitTypeId" asp-items="ViewBag.UnitTypes" class="form-select"></select>
+                    <select asp-for="UnitTypeId" asp-items="ViewBag.UnitTypes" class="form-select" required></select>
                     <span asp-validation-for="UnitTypeId" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">

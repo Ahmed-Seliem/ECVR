@@ -419,10 +419,118 @@ namespace ECM.ReservationSystem.Controllers.Admin
             return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
         }
 
+        [HttpPost("Availability/ToggleSlotStatus/{slotId}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleSlotStatus(int slotId, int? cityId, int? unitTypeId, int? unitId, int? year, bool? isForManagement)
+        {
+            var slot = await _context.UnitScheduleSlots
+                .Include(s => s.Unit)
+                .ThenInclude(u => u!.Reservations)
+                .FirstOrDefaultAsync(s => s.Id == slotId);
+
+            if (slot == null)
+            {
+                TempData["Error"] = "الفترة غير موجودة.";
+                return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
+            }
+
+            var hasReservation = slot.Unit.Reservations.Any(r =>
+                r.Status != ReservationStatus.Cancelled &&
+                r.CheckInDate < slot.SlotEndDate.AddDays(1) &&
+                r.CheckOutDate > slot.SlotStartDate);
+
+            if (slot.IsActive && hasReservation)
+            {
+                TempData["Error"] = "لا يمكن تعطيل فترة عليها حجز.";
+                return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
+            }
+
+            slot.IsActive = !slot.IsActive;
+            await _context.SaveChangesAsync();
+            TempData["Success"] = slot.IsActive ? "تم تفعيل الفترة بنجاح." : "تم تعطيل الفترة بنجاح.";
+
+            return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
+        }
+
+        [HttpPost("Availability/DeleteAllSlots")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAllSlots(int? cityId, int? unitTypeId, int? unitId, int? year, bool? isForManagement)
+        {
+            var targetYear = year ?? DateTime.Now.Year;
+
+            var query = _context.UnitScheduleSlots
+                .Include(s => s.Unit)
+                .ThenInclude(u => u!.UnitType)
+                .Include(s => s.Unit)
+                .ThenInclude(u => u!.Reservations)
+                .Where(s => s.Unit.IsActive && s.Year == targetYear)
+                .AsQueryable();
+
+            if (cityId.HasValue)
+            {
+                query = query.Where(s => s.Unit.CityId == cityId.Value);
+            }
+
+            if (unitTypeId.HasValue)
+            {
+                query = query.Where(s => s.Unit.UnitTypeId == unitTypeId.Value);
+            }
+
+            if (unitId.HasValue)
+            {
+                query = query.Where(s => s.UnitId == unitId.Value);
+            }
+
+            if (isForManagement.HasValue)
+            {
+                query = query.Where(s => s.Unit.UnitType != null && s.Unit.UnitType.IsForManagement == isForManagement.Value);
+            }
+
+            var slots = await query.ToListAsync();
+            if (!slots.Any())
+            {
+                TempData["Info"] = "لا توجد فترات مطابقة للحذف.";
+                return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year = targetYear, isForManagement });
+            }
+
+            var updatedCount = 0;
+            var skippedCount = 0;
+
+            foreach (var slot in slots)
+            {
+                var hasReservation = slot.Unit.Reservations.Any(r =>
+                    r.Status != ReservationStatus.Cancelled &&
+                    r.CheckInDate < slot.SlotEndDate.AddDays(1) &&
+                    r.CheckOutDate > slot.SlotStartDate);
+
+                if (hasReservation)
+                {
+                    skippedCount++;
+                    continue;
+                }
+
+                if (slot.IsActive)
+                {
+                    slot.IsActive = false;
+                    updatedCount++;
+                }
+            }
+
+            if (updatedCount > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["Success"] = skippedCount > 0
+                ? $"تم حذف {updatedCount} فترة، وتخطي {skippedCount} فترة لوجود حجوزات."
+                : $"تم حذف {updatedCount} فترة بنجاح.";
+
+            return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year = targetYear, isForManagement });
+        }
+
         private UnitAvailabilityViewModel BuildAvailabilityViewModel(Unit unit)
         {
             var weekAvailabilities = unit.ScheduleSlots
-                .Where(s => s.IsActive)
                 .OrderBy(s => s.SlotStartDate)
                 .Select(slot =>
                 {
@@ -443,6 +551,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                         WeekStartDate = slot.SlotStartDate,
                         WeekEndDate = slot.SlotEndDate,
                         IsScheduled = true,
+                        IsActive = slot.IsActive,
                         IsAvailable = reservation == null,
                         IsPending = isPending,
                         IsReserved = isReserved,
@@ -456,9 +565,12 @@ namespace ECM.ReservationSystem.Controllers.Admin
             return new UnitAvailabilityViewModel
             {
                 UnitId = unit.Id,
-                UnitName = string.IsNullOrWhiteSpace(unit.Code) ? unit.Name : $"{unit.Code} - {unit.Name}",
+                UnitName = unit.Name ?? string.Empty,
+                UnitCode = unit.Code ?? string.Empty,
                 CityName = unit.City?.Name ?? string.Empty,
                 UnitTypeName = unit.UnitType?.Name ?? string.Empty,
+                FacadeName = unit.UnitFacade?.NameAr ?? unit.UnitFacade?.Name ?? string.Empty,
+                FloorDisplayName = BuildFloorDisplayName(unit.FloorNumber),
                 FloorType = unit.FloorType,
                 Year = unit.Year,
                 IsForPensioners = unit.IsForPensioners,
@@ -469,6 +581,15 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
         private async Task ValidateUnitAsync(Unit unit, int? currentUnitId = null)
         {
+            if (unit.CityId <= 0)
+            {
+                ModelState.AddModelError(nameof(Unit.CityId), "المدينة مطلوبة");
+            }
+
+            if (unit.UnitTypeId <= 0)
+            {
+                ModelState.AddModelError(nameof(Unit.UnitTypeId), "نوع الوحدة مطلوب");
+            }
             if (string.IsNullOrWhiteSpace(unit.Code))
             {
                 ModelState.AddModelError(nameof(Unit.Code), "رقم الوحدة مطلوب");
@@ -564,6 +685,25 @@ namespace ECM.ReservationSystem.Controllers.Admin
             unit.Name = unit.Name?.Trim() ?? string.Empty;
             unit.Description = unit.Description?.Trim();
             unit.MaxCapacity = unit.DefaultCapacity;
+        }
+
+        private static string BuildFloorDisplayName(int floorNumber)
+        {
+            return floorNumber switch
+            {
+                0 => "الدور الأرضي",
+                1 => "الدور الأول",
+                2 => "الدور الثاني",
+                3 => "الدور الثالث",
+                4 => "الدور الرابع",
+                5 => "الدور الخامس",
+                6 => "الدور السادس",
+                7 => "الدور السابع",
+                8 => "الدور الثامن",
+                9 => "الدور التاسع",
+                10 => "الدور العاشر",
+                _ => $"الدور {floorNumber}"
+            };
         }
 
         private List<int> GetAvailableYears()

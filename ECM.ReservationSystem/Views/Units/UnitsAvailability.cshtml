@@ -8,8 +8,7 @@
     private static string ResolveCategory(ECM.ReservationSystem.Models.ViewModels.Admin.UnitAvailabilityViewModel unit)
     {
         var unitType = unit.UnitTypeName ?? string.Empty;
-        if (unitType.Contains("شقة") && unit.IsForPensioners) return "شقق معاشات";
-        if (unitType.Contains("شقة")) return "شقق موظفين";
+        if (unitType.Contains("شقة")) return "شقق";
         if (unitType.Contains("فيلا")) return "فلل";
         if (unitType.Contains("شاليه")) return "شاليهات";
         return unitType;
@@ -118,7 +117,7 @@
                         <label class="form-label">ملاحظات</label>
                         <input name="Notes" class="form-control" />
                     </div>
-                    <div class="col-md-10">
+                    <div class="col-md-3">
                         <label class="form-label">اسم الفترة</label>
                         <input name="SlotName" class="form-control" placeholder="مثال: صيف 2026" />
                     </div>
@@ -135,9 +134,24 @@
     @Html.AntiForgeryToken()
 </form>
 
+<form id="slotBulkActionForm" method="post" action="/Admin/Units/Availability/DeleteAllSlots" class="mb-3">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="cityId" value="@Model.CityId" />
+    <input type="hidden" name="unitTypeId" value="@Model.UnitTypeId" />
+    <input type="hidden" name="unitId" value="@Model.UnitId" />
+    <input type="hidden" name="year" value="@Model.Year" />
+    <input type="hidden" name="isForManagement" value="@Model.IsForManagement" />
+</form>
+
 @if (Model.Units.Any())
 {
     var cityGroups = Model.Units.GroupBy(u => u.CityName).OrderBy(g => g.Key);
+
+    <div class="d-flex justify-content-end mb-3">
+        <button type="button" class="btn btn-danger action-btn js-delete-all-slots">
+         حذف الكل
+        </button>
+    </div>
 
     <div class="accordion" id="cityAccordion">
         @foreach (var cityGroup in cityGroups)
@@ -174,22 +188,25 @@
                                             <div class="row g-3">
                                                 @foreach (var item in categoryGroup)
                                                 {
-                                                    var available = item.WeekAvailabilities.Count(w => w.IsAvailable);
+                                                    var available = item.WeekAvailabilities.Count(w => w.IsAvailable && w.IsActive);
                                                     var pending = item.WeekAvailabilities.Count(w => w.IsPending);
                                                     var reserved = item.WeekAvailabilities.Count(w => w.IsReserved);
+                                                    var inactive = item.WeekAvailabilities.Count(w => !w.IsActive);
 
                                                     <div class="col-12">
                                                         <div class="card shadow-sm border-0 unit-availability-card">
                                                             <div class="card-body">
                                                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
                                                                     <div>
-                                                                        <h5 class="mb-1 fw-bold">@item.UnitName</h5>
+                                                                        <h5 class="mb-1 fw-bold">
+                                                                            @(string.IsNullOrWhiteSpace(item.UnitCode) ? "-" : item.UnitCode)
+                                                                            -
+                                                                            @(string.IsNullOrWhiteSpace(item.FacadeName) ? "-" : item.FacadeName)
+                                                                            -
+                                                                            @(string.IsNullOrWhiteSpace(item.FloorDisplayName) ? "-" : item.FloorDisplayName)
+                                                                        </h5>
                                                                         <div class="text-muted">@item.UnitTypeName</div>
                                                                     </div>
-                                                                    @if (item.IsForPensioners)
-                                                                    {
-                                                                        <span class="badge stat-pill stat-pill-info">للمعاشات</span>
-                                                                    }
                                                                 </div>
 
                                                                 @if (item.WeekAvailabilities.Any())
@@ -201,13 +218,17 @@
                                                                                 ? "slot-booked"
                                                                                 : slot.IsPending
                                                                                     ? "slot-pending"
-                                                                                    : "slot-available";
+                                                                                    : slot.IsActive
+                                                                                        ? "slot-available"
+                                                                                        : "slot-inactive";
 
                                                                             var statusText = slot.IsReserved
                                                                                 ? "محجوز"
                                                                                 : slot.IsPending
                                                                                     ? "معلق"
-                                                                                    : "متاح";
+                                                                                    : slot.IsActive
+                                                                                        ? "متاح"
+                                                                                        : "غير نشط";
 
                                                                             <div class="schedule-slot @slotClass">
                                                                                 <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
@@ -228,19 +249,46 @@
                                                                                     <div class="small text-muted mb-2">@slot.Notes</div>
                                                                                 }
 
-                                                                                @if (slot.IsAvailable && slot.SlotId.HasValue)
+                                                                                @if (slot.SlotId.HasValue)
                                                                                 {
-                                                                                    <button type="button"
-                                                                                            class="btn btn-outline-danger btn-sm action-btn js-delete-slot"
-                                                                                            data-slotid="@slot.SlotId"
-                                                                                            data-slotname="@slot.SlotName"
-                                                                                            data-cityid="@Model.CityId"
-                                                                                            data-unittypeid="@Model.UnitTypeId"
-                                                                                            data-unitid="@item.UnitId"
-                                                                                            data-year="@Model.Year"
-                                                                                            data-isformanagement="@Model.IsForManagement">
-                                                                                        حذف الفترة
-                                                                                    </button>
+                                                                                    <div class="d-flex gap-3 align-items-center">
+                                                                                        <!-- Toggle Switch -->
+                                                                                        <div class="d-flex justify-content-center align-items-center">
+                                                                                            <div class="form-check form-switch d-flex align-items-center gap-2 m-0">
+
+                                                                                                <input class="form-check-input js-toggle-slot-status"
+                                                                                                       type="checkbox"
+                                                                                                       @(slot.IsActive ? "checked" : "")
+                                                                                                       role="switch"
+                                                                                                       data-slotid="@slot.SlotId"
+                                                                                                       data-slotname="@slot.SlotName"
+                                                                                                       data-actionlabel="@(slot.IsActive ? "تعطيل" : "تفعيل")"
+                                                                                                       data-cityid="@Model.CityId"
+                                                                                                       data-unittypeid="@Model.UnitTypeId"
+                                                                                                       data-unitid="@item.UnitId"
+                                                                                                       data-year="@Model.Year"
+                                                                                                       data-isformanagement="@Model.IsForManagement">
+
+                                                                                                <label class="form-check-label fw-bold @(slot.IsActive ? "text-success" : "text-muted") small">
+                                                                                                    @(slot.IsActive ? "مفعل" : "معطل")
+                                                                                                </label>
+
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        <!-- زر الحذف -->
+@*                                                                                         <button type="button"
+                                                                                                class="btn btn-outline-danger btn-sm action-btn js-delete-slot"
+                                                                                                data-slotid="@slot.SlotId"
+                                                                                                data-slotname="@slot.SlotName"
+                                                                                                data-cityid="@Model.CityId"
+                                                                                                data-unittypeid="@Model.UnitTypeId"
+                                                                                                data-unitid="@item.UnitId"
+                                                                                                data-year="@Model.Year"
+                                                                                                data-isformanagement="@Model.IsForManagement">
+                                                                                          حذف
+                                                                                        </button> *@
+                                                                                    </div>
                                                                                 }
                                                                             </div>
                                                                         }
@@ -250,6 +298,7 @@
                                                                         <span class="badge stat-pill stat-pill-success">متاح: @available</span>
                                                                         <span class="badge stat-pill stat-pill-warning">معلق: @pending</span>
                                                                         <span class="badge stat-pill stat-pill-danger">محجوز: @reserved</span>
+                                                                        <span class="badge stat-pill stat-pill-neutral">غير نشط: @inactive</span>
                                                                         <span class="badge stat-pill stat-pill-neutral">إجمالي الفترات: @item.WeekAvailabilities.Count</span>
                                                                     </div>
                                                                 }
@@ -288,6 +337,27 @@ else
 @section Scripts {
     <script>
         $(function () {
+            function buildPostForm(action, fields) {
+                const form = document.createElement('form');
+                form.method = 'post';
+                form.action = action;
+
+                Object.entries(fields).forEach(([key, value]) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                });
+
+                document.body.appendChild(form);
+                return form;
+            }
+
+            function getToken() {
+                return document.querySelector('#slotDeleteTokenForm input[name="__RequestVerificationToken"]').value;
+            }
+
             $(document).on('click', '.js-delete-slot', function () {
                 const button = $(this);
                 const slotId = button.data('slotid');
@@ -304,30 +374,57 @@ else
                 }, function (isConfirm) {
                     if (!isConfirm) return;
 
-                    const form = document.createElement('form');
-                    form.method = 'post';
-                    form.action = '/Admin/Units/Availability/DeleteSlot/' + slotId;
-
-                    const token = document.querySelector('#slotDeleteTokenForm input[name="__RequestVerificationToken"]').value;
-                    const fields = {
-                        __RequestVerificationToken: token,
+                    buildPostForm('/Admin/Units/Availability/DeleteSlot/' + slotId, {
+                        __RequestVerificationToken: getToken(),
                         cityId: button.data('cityid') ?? '',
                         unitTypeId: button.data('unittypeid') ?? '',
                         unitId: button.data('unitid') ?? '',
                         year: button.data('year') ?? '',
                         isForManagement: button.data('isformanagement') ?? ''
-                    };
+                    }).submit();
+                });
+            });
 
-                    Object.entries(fields).forEach(([key, value]) => {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = key;
-                        input.value = value;
-                        form.appendChild(input);
-                    });
+            $(document).on('click', '.js-toggle-slot-status', function () {
+                const button = $(this);
+                const slotId = button.data('slotid');
+                const slotName = button.data('slotname');
+                const actionLabel = button.data('actionlabel');
 
-                    document.body.appendChild(form);
-                    form.submit();
+                swal({
+                    title: 'تأكيد الإجراء',
+                    text: `${actionLabel} الفترة: ${slotName}`,
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: `نعم، ${actionLabel}`,
+                    cancelButtonText: 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) return;
+
+                    buildPostForm('/Admin/Units/Availability/ToggleSlotStatus/' + slotId, {
+                        __RequestVerificationToken: getToken(),
+                        cityId: button.data('cityid') ?? '',
+                        unitTypeId: button.data('unittypeid') ?? '',
+                        unitId: button.data('unitid') ?? '',
+                        year: button.data('year') ?? '',
+                        isForManagement: button.data('isformanagement') ?? ''
+                    }).submit();
+                });
+            });
+
+            $(document).on('click', '.js-delete-all-slots', function () {
+                swal({
+                    title: 'تأكيد الحذف',
+                    text: 'سيتم حذف كل الفترات المطابقة للفلاتر الحالية ما لم تكن عليها حجوزات.',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، حذف الكل',
+                    cancelButtonText: 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) return;
+                    document.getElementById('slotBulkActionForm').submit();
                 });
             });
         });

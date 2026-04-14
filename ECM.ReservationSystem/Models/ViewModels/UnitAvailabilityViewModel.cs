@@ -6,8 +6,11 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
     {
         public int UnitId { get; set; }
         public string UnitName { get; set; } = string.Empty;
+        public string UnitCode { get; set; } = string.Empty;
         public string CityName { get; set; } = string.Empty;
         public string UnitTypeName { get; set; } = string.Empty;
+        public string FacadeName { get; set; } = string.Empty;
+        public string FloorDisplayName { get; set; } = string.Empty;
         public FloorType FloorType { get; set; }
         public int Year { get; set; }
         public bool IsForPensioners { get; set; }
@@ -25,6 +28,7 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         public bool IsPending { get; set; }
         public bool IsReserved { get; set; }
         public bool IsScheduled { get; set; }
+        public bool IsActive { get; set; }
         public string ReservationStatus { get; set; } = string.Empty;
         public string EmployeeName { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;

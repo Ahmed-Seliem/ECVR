@@ -7,7 +7,7 @@
             <thead>
                 <tr>
                     <th>رقم الوحدة</th>
-                    <th>اسم الوحدة</th>
+                    @* <th>اسم الوحدة</th> *@
                     <th>المدينة</th>
                     <th>النوع</th>
                     <th>الواجهة</th>
@@ -23,7 +23,7 @@
                 {
                     <tr>
                         <td><code>@(string.IsNullOrWhiteSpace(unit.Code) ? "-" : unit.Code)</code></td>
-                        <td>@unit.Name</td>
+                        @* <td>@unit.Name</td> *@
                         <td>@unit.City?.Name</td>
                         <td>@unit.UnitType?.Name</td>
                         <td>@(unit.UnitFacade?.NameAr ?? unit.UnitFacade?.Name ?? "-")</td>

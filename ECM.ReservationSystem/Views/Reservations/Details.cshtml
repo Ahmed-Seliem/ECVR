@@ -21,8 +21,8 @@
                     <dt class="col-sm-4">عدد الأفراد</dt><dd class="col-sm-8">@Model.NumberOfGuests</dd>
                     <dt class="col-sm-4">إجمالي المبلغ</dt><dd class="col-sm-8">@Model.TotalAmount.ToString("N2")</dd>
                     <dt class="col-sm-4">الحالة</dt><dd class="col-sm-8"><span class="badge bg-info">@Model.Status</span></dd>
-                    <dt class="col-sm-4">Document Id</dt><dd class="col-sm-8">@(Model.DocumentId?.ToString() ?? "-")</dd>
-                    <dt class="col-sm-4">Reference</dt><dd class="col-sm-8">@Model.CaseSystemId</dd>
+                    <dt class="col-sm-4">رقم الوثيقة   </dt><dd class="col-sm-8">@(Model.DocumentId?.ToString() ?? "-")</dd>
+                    <dt class="col-sm-4">مرجع الحجز </dt><dd class="col-sm-8">@Model.CaseSystemId</dd>
                     <dt class="col-sm-4">ملاحظات</dt><dd class="col-sm-8">@Model.Notes</dd>
                 </dl>
             </div>
