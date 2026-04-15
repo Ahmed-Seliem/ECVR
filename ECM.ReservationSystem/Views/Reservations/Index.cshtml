@@ -60,7 +60,8 @@
                         <th>#</th>
                         <th>الموظف</th>
                         <th>الوحدة</th>
-                        <th>رقم الوثيقة </th>
+                        <th>رقم الهاتف</th>
+                        <th>رقم الوثيقة</th>
                         <th>الفترة</th>
                         <th>الأفراد</th>
                         <th>المبلغ</th>
@@ -75,6 +76,7 @@
                             <td>@r.Id</td>
                             <td>@r.EmployeeName <br /><small class="text-muted">@r.EmployeeNumber</small></td>
                             <td>@r.Unit?.Name <br /><small class="text-muted">@r.Unit?.City?.Name</small></td>
+                            <td>@(string.IsNullOrWhiteSpace(r.PhoneNumber) ? "-" : r.PhoneNumber)</td>
                             <td>@(r.DocumentId?.ToString() ?? "-")</td>
                             <td>@r.CheckInDate.ToString("dd/MM/yyyy") - @r.CheckOutDate.ToString("dd/MM/yyyy")</td>
                             <td>@r.NumberOfGuests</td>

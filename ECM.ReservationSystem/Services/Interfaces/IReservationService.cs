@@ -21,5 +21,7 @@ namespace ECM.ReservationSystem.Services.Interfaces
         Task CleanupExpiredHoldsAsync();
         Task<ReservationResponseDto> GetReservationAsync(int reservationId);
         Task<List<ReservationResponseDto>> GetReservationsByEmployeeAsync(string employeeNumber);
+        Task<TransportQuotaStatusDto> GetTransportQuotaStatusAsync(int cityId, DateTime checkInDate, DateTime checkOutDate);
+        Task<SeasonBookingEligibilityDto> GetSeasonEligibilityAsync(string employeeNumber, int seasonYear);
     }
 }

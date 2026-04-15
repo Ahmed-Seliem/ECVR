@@ -1,0 +1,105 @@
+@using ECM.ReservationSystem.Models.ViewModels.Admin
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model IEnumerable<WeeklyReservationReportGroupViewModel>
+@{
+    ViewData["Title"] = "التقرير الأسبوعي";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var cities = ViewBag.Cities as SelectList;
+    var years = ViewBag.Years as SelectList;
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0"><i class="fas fa-list"></i> التقرير الأسبوعي للأفواج</h1>
+    <a href="/Admin/Reservations" class="btn btn-outline-secondary">رجوع للحجوزات</a>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">المدينة</label>
+                <select name="cityId" class="form-select select2">
+                    <option value="">الكل</option>
+                    @if (cities != null)
+                    {
+                        foreach (var city in cities)
+                        {
+                            if (city.Selected) { <option value="@city.Value" selected>@city.Text</option> }
+                            else { <option value="@city.Value">@city.Text</option> }
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">السنة</label>
+                <select name="year" class="form-select select2">
+                    <option value="">الكل</option>
+                    @if (years != null)
+                    {
+                        foreach (var y in years)
+                        {
+                            if (y.Selected) { <option value="@y.Value" selected>@y.Text</option> }
+                            else { <option value="@y.Value">@y.Text</option> }
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-3">
+                <button type="submit" class="btn btn-primary w-50">بحث</button>
+                <a href="/Admin/Reservations/WeeklyReport" class="btn btn-secondary w-50">مسح</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">لا توجد بيانات للحجوزات في الفلاتر الحالية.</div>
+}
+else
+{
+    foreach (var group in Model)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header d-flex justify-content-between flex-wrap gap-2">
+                <div>
+                    <strong>@group.CityName</strong>
+                    <span class="text-muted">| @group.WeekStartDate.ToString("dd/MM/yyyy") - @group.WeekEndDate.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div>
+                    <span class="badge bg-primary">الحجوزات: @group.ReservationCount</span>
+                    <span class="badge bg-success">الأفراد: @group.PassengerCount</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>الموظف</th>
+                                <th>رقم الهاتف</th>
+                                <th>الوحدة</th>
+                                <th>عدد الأفراد</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var reservation in group.Reservations)
+                            {
+                                <tr>
+                                    <td>@reservation.ReservationId</td>
+                                    <td>@reservation.EmployeeName <br /><small class="text-muted">@reservation.EmployeeNumber</small></td>
+                                    <td>@(string.IsNullOrWhiteSpace(reservation.PhoneNumber) ? "-" : reservation.PhoneNumber)</td>
+                                    <td>@reservation.UnitName</td>
+                                    <td>@reservation.NumberOfGuests</td>
+                                    <td>@reservation.Status</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+}

@@ -5,10 +5,11 @@ namespace ECM.ReservationSystem.Models.DTOs
     public class ReservationResponseDto
     {
         public int ReservationId { get; set; }
-        public string EmployeeNumber { get; set; }
-        public string EmployeeName { get; set; }
-        public string UnitName { get; set; }
-        public string CityName { get; set; }
+        public string EmployeeNumber { get; set; } = string.Empty;
+        public string EmployeeName { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string UnitName { get; set; } = string.Empty;
+        public string CityName { get; set; } = string.Empty;
         public DateTime CheckInDate { get; set; }
         public DateTime CheckOutDate { get; set; }
         public int NumberOfGuests { get; set; }
@@ -19,9 +20,11 @@ namespace ECM.ReservationSystem.Models.DTOs
         public ReservationStatus Status { get; set; }
         public DateTime? PaymentDeadline { get; set; }
         public bool IsTransportationRequired { get; set; }
-        public string Notes { get; set; }
+        public string PaymentReceiptNumber { get; set; } = string.Empty;
+        public string InsuranceReceiptNumber { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public string CaseSystemId { get; set; }
+        public string CaseSystemId { get; set; } = string.Empty;
         public long? DocumentId { get; set; }
     }
 }

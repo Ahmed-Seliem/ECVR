@@ -16,4 +16,5 @@ public class City : AuditableEntity
 
     public ICollection<Unit> Units { get; set; } = new List<Unit>();
     public ICollection<TransportationCost> TransportationCosts { get; set; } = new List<TransportationCost>();
+    public ICollection<TransportQuota> TransportQuotas { get; set; } = new List<TransportQuota>();
 }

@@ -11,6 +11,7 @@ namespace ECM.ReservationSystem.Controllers.API;
 [Route("api/[controller]")]
 [Route("api/Reservation")]
 [ApiController]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class ReservationsApiController : ControllerBase
 {
     private const int MaxGuestsLimit = 6;
@@ -71,14 +72,32 @@ public class ReservationsApiController : ControllerBase
 
         var filter = ResolveAudienceFilter(audience, isForManagement);
         var weeks = await BuildWeeksAsync(cityId, filter);
+        var weekItems = new List<object>();
 
-        return Ok(weeks.Select(w => new
+        foreach (var week in weeks)
         {
-            id = w.Id,
-            weekNumber = w.DisplayName,
-            weekStartDate = w.StartDate,
-            weekEndDate = w.EndDate
-        }));
+            var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
+                week.CityId,
+                week.StartDate,
+                week.EndDate.AddDays(1));
+
+            weekItems.Add(new
+            {
+                id = week.Id,
+                weekNumber = week.DisplayName,
+                weekStartDate = week.StartDate,
+                weekEndDate = week.EndDate,
+                transport = new
+                {
+                    totalSeats = quotaStatus.TotalSeats,
+                    reservedSeats = quotaStatus.ReservedSeats,
+                    remainingSeats = quotaStatus.RemainingSeats,
+                    hasQuotaConfigured = quotaStatus.HasQuotaConfigured
+                }
+            });
+        }
+
+        return Ok(weekItems);
     }
 
     [HttpGet("floors-properties/{weekId}/{unitAudience}")]
@@ -132,16 +151,16 @@ public class ReservationsApiController : ControllerBase
     public async Task<IActionResult> GetPrice(
         string weekId,
         int unitId,
-        [FromQuery] int passengers = 1)
+        [FromQuery] int passengers = 0)
     {
         if (unitId <= 0)
         {
             return BadRequest(new { message = "unitId is required." });
         }
 
-        if (passengers < 1 || passengers > MaxGuestsLimit)
+        if (passengers < 0 || passengers > MaxGuestsLimit)
         {
-            return BadRequest(new { message = $"passengers must be between 1 and {MaxGuestsLimit}." });
+            return BadRequest(new { message = $"passengers must be between 0 and {MaxGuestsLimit}." });
         }
 
         var week = await ResolveWeekAsync(weekId);
@@ -155,12 +174,17 @@ public class ReservationsApiController : ControllerBase
             week.StartDate,
             week.EndDate.AddDays(1),
             passengers,
-            isTransportationRequired: true);
+            isTransportationRequired: passengers > 0);
 
         if (!cost.IsAvailable)
         {
             return BadRequest(new { message = cost.Message });
         }
+
+        var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
+            week.CityId,
+            week.StartDate,
+            week.EndDate.AddDays(1));
 
         return Ok(new
         {
@@ -170,16 +194,23 @@ public class ReservationsApiController : ControllerBase
             unit = cost.WeeklyRent,
             insurance = cost.InsuranceAmount,
             transportation = cost.TransportationCost,
-            total = cost.TotalAmount
+            total = cost.TotalAmount,
+            transport = new
+            {
+                totalSeats = quotaStatus.TotalSeats,
+                reservedSeats = quotaStatus.ReservedSeats,
+                remainingSeats = quotaStatus.RemainingSeats,
+                hasQuotaConfigured = quotaStatus.HasQuotaConfigured
+            }
         });
     }
 
     [HttpPost("calculate")]
     public async Task<IActionResult> Calculate([FromBody] ReservationCostRequest request)
     {
-        if (request.NumberOfGuests < 1 || request.NumberOfGuests > MaxGuestsLimit)
+        if (request.NumberOfGuests < 0 || request.NumberOfGuests > MaxGuestsLimit)
         {
-            return BadRequest(new { message = $"numberOfGuests must be between 1 and {MaxGuestsLimit}." });
+            return BadRequest(new { message = $"numberOfGuests must be between 0 and {MaxGuestsLimit}." });
         }
 
         var week = await ResolveWeekAsync(request.WeekId);
@@ -200,6 +231,11 @@ public class ReservationsApiController : ControllerBase
             return BadRequest(new { message = cost.Message });
         }
 
+        var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
+            week.CityId,
+            week.StartDate,
+            week.EndDate.AddDays(1));
+
         return Ok(new
         {
             unitId = cost.UnitId,
@@ -211,6 +247,107 @@ public class ReservationsApiController : ControllerBase
                 insurance = cost.InsuranceAmount,
                 transportation = cost.TransportationCost,
                 total = cost.TotalAmount
+            },
+            transport = new
+            {
+                totalSeats = quotaStatus.TotalSeats,
+                reservedSeats = quotaStatus.ReservedSeats,
+                remainingSeats = quotaStatus.RemainingSeats,
+                hasQuotaConfigured = quotaStatus.HasQuotaConfigured
+            }
+        });
+    }
+
+    [HttpGet("booking-context")]
+    public async Task<IActionResult> GetBookingContext(
+        [FromQuery] string employeeNumber,
+        [FromQuery] string weekId,
+        [FromQuery] int passengers = 0)
+    {
+        if (string.IsNullOrWhiteSpace(employeeNumber))
+        {
+            return BadRequest(new { message = "employeeNumber is required." });
+        }
+
+        if (passengers < 0 || passengers > MaxGuestsLimit)
+        {
+            return BadRequest(new { message = $"passengers must be between 0 and {MaxGuestsLimit}." });
+        }
+
+        var week = await ResolveWeekAsync(weekId);
+        if (week is null)
+        {
+            return NotFound(new { message = "Invalid or unavailable week id." });
+        }
+
+        var seasonEligibility = await _reservationService.GetSeasonEligibilityAsync(employeeNumber, week.StartDate.Year);
+        var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
+            week.CityId,
+            week.StartDate,
+            week.EndDate.AddDays(1));
+
+        return Ok(new
+        {
+            employeeNumber,
+            seasonYear = week.StartDate.Year,
+            canBook = !seasonEligibility.HasExistingReservation,
+            seasonEligibility = new
+            {
+                hasExistingReservation = seasonEligibility.HasExistingReservation,
+                reservationId = seasonEligibility.ReservationId,
+                cityId = seasonEligibility.CityId,
+                cityName = seasonEligibility.CityName,
+                checkInDate = seasonEligibility.CheckInDate,
+                checkOutDate = seasonEligibility.CheckOutDate,
+                status = seasonEligibility.Status
+            },
+            transport = new
+            {
+                totalSeats = quotaStatus.TotalSeats,
+                reservedSeats = quotaStatus.ReservedSeats,
+                remainingSeats = quotaStatus.RemainingSeats,
+                requestedPassengers = passengers,
+                hasEnoughSeats = quotaStatus.RemainingSeats >= passengers,
+                hasQuotaConfigured = quotaStatus.HasQuotaConfigured
+            }
+        });
+    }
+
+    [HttpGet("transport-status/{weekId}")]
+    public async Task<IActionResult> GetTransportStatus(
+        string weekId,
+        [FromQuery] int passengers = 0)
+    {
+        if (passengers < 0 || passengers > MaxGuestsLimit)
+        {
+            return BadRequest(new { message = $"passengers must be between 0 and {MaxGuestsLimit}." });
+        }
+
+        var week = await ResolveWeekAsync(weekId);
+        if (week is null)
+        {
+            return NotFound(new { message = "Invalid or unavailable week id." });
+        }
+
+        var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
+            week.CityId,
+            week.StartDate,
+            week.EndDate.AddDays(1));
+
+        return Ok(new
+        {
+            weekId,
+            cityId = week.CityId,
+            weekStartDate = week.StartDate,
+            weekEndDate = week.EndDate,
+            transport = new
+            {
+                totalSeats = quotaStatus.TotalSeats,
+                reservedSeats = quotaStatus.ReservedSeats,
+                remainingSeats = quotaStatus.RemainingSeats,
+                requestedPassengers = passengers,
+                hasEnoughSeats = quotaStatus.RemainingSeats >= passengers,
+                hasQuotaConfigured = quotaStatus.HasQuotaConfigured
             }
         });
     }
@@ -259,9 +396,9 @@ public class ReservationsApiController : ControllerBase
     [HttpPost("submit")]
     public async Task<IActionResult> Submit([FromBody] ReservationSubmissionRequest request)
     {
-        if (request.NumberOfGuests < 1 || request.NumberOfGuests > MaxGuestsLimit)
+        if (request.NumberOfGuests < 0 || request.NumberOfGuests > MaxGuestsLimit)
         {
-            return BadRequest(new { message = $"numberOfGuests must be between 1 and {MaxGuestsLimit}." });
+            return BadRequest(new { message = $"numberOfGuests must be between 0 and {MaxGuestsLimit}." });
         }
 
         var week = await ResolveWeekAsync(request.WeekId);
@@ -270,15 +407,21 @@ public class ReservationsApiController : ControllerBase
             return NotFound(new { message = "Invalid or unavailable week id." });
         }
 
+        var normalizedGuests = request.NumberOfGuests > 0 ? request.NumberOfGuests : 1;
+        var transportationRequired = request.IsTransportationRequired && request.NumberOfGuests > 0;
+
         var holdRequest = new ReservationRequestDto
         {
             EmployeeNumber = request.EmployeeNumber,
             EmployeeName = request.EmployeeName,
+            PhoneNumber = request.PhoneNumber,
             UnitId = request.UnitId,
             CheckInDate = week.StartDate,
             CheckOutDate = week.EndDate.AddDays(1),
-            NumberOfGuests = request.NumberOfGuests,
-            IsTransportationRequired = request.IsTransportationRequired,
+            NumberOfGuests = normalizedGuests,
+            IsTransportationRequired = transportationRequired,
+            PaymentReceiptNumber = request.PaymentReceiptNumber ?? string.Empty,
+            InsuranceReceiptNumber = request.InsuranceReceiptNumber ?? string.Empty,
             Notes = request.Notes ?? string.Empty,
             CaseSystemId = BuildReferenceId(request),
             DocumentId = request.DocumentId
@@ -496,10 +639,14 @@ public class ReservationsApiController : ControllerBase
                 return new AudienceFilter(false, false);
             }
 
-            if (string.Equals(unitAudience, "pension-flat", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(unitAudience, "pension", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(unitAudience, "pension-flat", StringComparison.OrdinalIgnoreCase))
             {
                 return new AudienceFilter(false, true);
+            }
+
+            if (string.Equals(unitAudience, "pension", StringComparison.OrdinalIgnoreCase))
+            {
+                return new AudienceFilter(null, true);
             }
 
             if (string.Equals(unitAudience, "management", StringComparison.OrdinalIgnoreCase) ||
@@ -522,7 +669,7 @@ public class ReservationsApiController : ControllerBase
 
         if (string.Equals(audience, "pensioner", StringComparison.OrdinalIgnoreCase))
         {
-            return new AudienceFilter(false, true);
+            return new AudienceFilter(null, true);
         }
 
         if (string.Equals(audience, "employee", StringComparison.OrdinalIgnoreCase))
@@ -575,10 +722,13 @@ public class ReservationsApiController : ControllerBase
     {
         public string EmployeeNumber { get; set; } = string.Empty;
         public string EmployeeName { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
         public int UnitId { get; set; }
         public string WeekId { get; set; } = string.Empty;
         public int NumberOfGuests { get; set; } = 1;
         public bool IsTransportationRequired { get; set; } = true;
+        public string? PaymentReceiptNumber { get; set; }
+        public string? InsuranceReceiptNumber { get; set; }
         public string? Notes { get; set; }
         public string? CaseSystemId { get; set; }
         public long? WorkflowId { get; set; }

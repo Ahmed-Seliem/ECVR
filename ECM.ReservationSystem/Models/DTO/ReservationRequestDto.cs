@@ -5,10 +5,14 @@ namespace ECM.ReservationSystem.Models.DTOs
     public class ReservationRequestDto
     {
         [Required]
-        public string EmployeeNumber { get; set; }
+        public string EmployeeNumber { get; set; } = string.Empty;
 
         [Required]
-        public string EmployeeName { get; set; }
+        public string EmployeeName { get; set; } = string.Empty;
+
+        [Required]
+        [RegularExpression("^(010|011|012|015)[0-9]{8}$")]
+        public string PhoneNumber { get; set; } = string.Empty;
 
         [Required]
         public int UnitId { get; set; }
@@ -25,9 +29,13 @@ namespace ECM.ReservationSystem.Models.DTOs
 
         public bool IsTransportationRequired { get; set; }
 
-        public string Notes { get; set; }
+        public string PaymentReceiptNumber { get; set; } = string.Empty;
 
-        public string CaseSystemId { get; set; }
+        public string InsuranceReceiptNumber { get; set; } = string.Empty;
+
+        public string Notes { get; set; } = string.Empty;
+
+        public string CaseSystemId { get; set; } = string.Empty;
         public long? DocumentId { get; set; }
     }
 }

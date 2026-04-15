@@ -14,6 +14,9 @@ public class Reservation : AuditableEntity
     [StringLength(100)]
     public string EmployeeName { get; set; } = string.Empty;
 
+    [StringLength(20)]
+    public string PhoneNumber { get; set; } = string.Empty;
+
     [Required]
     public string Year { get; set; } = string.Empty;
 
@@ -42,6 +45,12 @@ public class Reservation : AuditableEntity
     public ReservationStatus Status { get; set; } = ReservationStatus.TemporaryHold;
     public DateTime? PaymentDeadline { get; set; }
     public bool IsTransportationRequired { get; set; }
+
+    [StringLength(100)]
+    public string PaymentReceiptNumber { get; set; } = string.Empty;
+
+    [StringLength(100)]
+    public string InsuranceReceiptNumber { get; set; } = string.Empty;
 
     [StringLength(500)]
     public string Notes { get; set; } = string.Empty;

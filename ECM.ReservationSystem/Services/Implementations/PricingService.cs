@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECM.ReservationSystem.Services.Implementations
 {
@@ -33,7 +33,7 @@ namespace ECM.ReservationSystem.Services.Implementations
             return pricing?.WeeklyRentDefaultCapacity ?? 0;
         }
 
-        public async Task<decimal> GetTransportationCostAsync(int cityId, int unitId, int numberOfGuests = 1)
+        public async Task<decimal> GetTransportationCostAsync(int cityId, int unitId, int numberOfGuests = 0)
         {
             var pricing = await GetCurrentPricingAsync(unitId);
             if (pricing == null || pricing.TransportationCostPerPerson <= 0)
@@ -41,7 +41,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 return 0;
             }
 
-            return pricing.TransportationCostPerPerson * Math.Max(1, numberOfGuests);
+            return pricing.TransportationCostPerPerson * Math.Max(0, numberOfGuests);
         }
 
         public async Task<decimal> CalculateTotalCostAsync(int unitId, int numberOfGuests, bool includeTransportation)

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Services.Interfaces;
+using ECM.ReservationSystem.Models.ViewModels.Admin;
 
 namespace ECM.ReservationSystem.Controllers.Admin
 {
@@ -49,6 +50,62 @@ namespace ECM.ReservationSystem.Controllers.Admin
             ViewBag.Years = new SelectList(GetAvailableYears(), year);
 
             return View(reservations);
+        }
+
+        [HttpGet("WeeklyReport")]
+        public async Task<IActionResult> WeeklyReport(int? cityId, int? year)
+        {
+            var targetYear = year ?? DateTime.Now.Year;
+
+            var query = _context.Reservations
+                .Include(r => r.Unit)
+                .ThenInclude(u => u.City)
+                .Where(r => r.Status != ReservationStatus.Cancelled && r.CheckInDate.Year == targetYear);
+
+            if (cityId.HasValue)
+            {
+                query = query.Where(r => r.Unit.CityId == cityId.Value);
+            }
+
+            var reservations = await query
+                .OrderBy(r => r.Unit.City.Name)
+                .ThenBy(r => r.CheckInDate)
+                .ThenBy(r => r.EmployeeName)
+                .ToListAsync();
+
+            var report = reservations
+                .GroupBy(r => new
+                {
+                    CityName = r.Unit.City.NameAr ?? r.Unit.City.Name,
+                    r.CheckInDate,
+                    WeekEndDate = r.CheckOutDate.AddDays(-1)
+                })
+                .Select(group => new WeeklyReservationReportGroupViewModel
+                {
+                    CityName = group.Key.CityName,
+                    WeekStartDate = group.Key.CheckInDate,
+                    WeekEndDate = group.Key.WeekEndDate,
+                    ReservationCount = group.Count(),
+                    PassengerCount = group.Sum(r => r.NumberOfGuests),
+                    Reservations = group.Select(r => new WeeklyReservationReportItemViewModel
+                    {
+                        ReservationId = r.Id,
+                        EmployeeName = r.EmployeeName,
+                        EmployeeNumber = r.EmployeeNumber,
+                        PhoneNumber = r.PhoneNumber,
+                        UnitName = r.Unit.Name,
+                        NumberOfGuests = r.NumberOfGuests,
+                        Status = r.Status.ToString()
+                    }).ToList()
+                })
+                .OrderBy(g => g.WeekStartDate)
+                .ThenBy(g => g.CityName)
+                .ToList();
+
+            ViewBag.Cities = new SelectList(await _context.Cities.Where(c => c.IsActive).ToListAsync(), "Id", "Name", cityId);
+            ViewBag.Years = new SelectList(GetAvailableYears(), year);
+
+            return View(report);
         }
 
         // GET: Admin/Reservations/Details/5

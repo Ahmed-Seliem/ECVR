@@ -1,0 +1,163 @@
+@using ECM.ReservationSystem.Models.ViewModels.Admin
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model TransportQuotaIndexViewModel
+@{
+    ViewData["Title"] = "سعات النقل";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var cities = ViewBag.Cities as SelectList;
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0"><i class="fas fa-bus"></i> سعات النقل للمواسم</h1>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">إضافة / تعديل</h5>
+                <form id="transportQuotaForm" method="post" action="@(Model.Id > 0 ? $"/Admin/TransportQuotas/Edit/{Model.Id}" : "/Admin/TransportQuotas/Create")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="CityId" class="form-label">المدينة</label>
+                        <select asp-for="CityId" asp-items="cities" class="form-select">
+                            <option value="">اختر المدينة</option>
+                        </select>
+                        <span asp-validation-for="CityId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="SeasonYear" class="form-label">سنة الموسم</label>
+                        <input asp-for="SeasonYear" class="form-control" type="number" />
+                        <span asp-validation-for="SeasonYear" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="BusCount" class="form-label">عدد الأتوبيسات</label>
+                        <input asp-for="BusCount" class="form-control" type="number" min="1" />
+                        <span asp-validation-for="BusCount" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="SeatsPerBus" class="form-label">عدد المقاعد في الأتوبيس</label>
+                        <input asp-for="SeatsPerBus" class="form-control" type="number" min="1" />
+                        <span asp-validation-for="SeatsPerBus" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label">ملاحظات</label>
+                        <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="IsActive" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label">نشط</label>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">حفظ</button>
+                        <button type="button" id="resetTransportQuotaForm" class="btn btn-outline-secondary flex-fill">جديد</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>المدينة</th>
+                                <th>الموسم</th>
+                                <th>الأتوبيسات</th>
+                                <th>مقاعد الأتوبيس</th>
+                                <th>الإجمالي</th>
+                                <th>الحالة</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>@(item.City?.NameAr ?? item.City?.Name)</td>
+                                    <td>@item.SeasonYear</td>
+                                    <td>@item.BusCount</td>
+                                    <td>@item.SeatsPerBus</td>
+                                    <td>@item.TotalSeats</td>
+                                    <td>
+                                        <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
+                                            @(item.IsActive ? "نشط" : "غير نشط")
+                                        </span>
+                                    </td>
+                                    <td class="d-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary js-edit-quota"
+                                                data-id="@item.Id"
+                                                data-cityid="@item.CityId"
+                                                data-seasonyear="@item.SeasonYear"
+                                                data-buscount="@item.BusCount"
+                                                data-seatsperbus="@item.SeatsPerBus"
+                                                data-isactive="@item.IsActive"
+                                                data-notes="@item.Notes">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form method="post" action="/Admin/TransportQuotas/Delete/@item.Id" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(function () {
+            function resetTransportQuotaForm() {
+                $('#transportQuotaForm').attr('action', '/Admin/TransportQuotas/Create');
+                $('#Id').val('0');
+                $('#CityId').val('');
+                $('#SeasonYear').val('@DateTime.Now.Year');
+                $('#BusCount').val('');
+                $('#SeatsPerBus').val('');
+                $('#Notes').val('');
+                $('#IsActive').prop('checked', true);
+            }
+
+            $(document).on('click', '.js-edit-quota', function () {
+                const button = $(this);
+                $('#Id').val(button.data('id'));
+                $('#CityId').val(button.data('cityid'));
+                $('#SeasonYear').val(button.data('seasonyear'));
+                $('#BusCount').val(button.data('buscount'));
+                $('#SeatsPerBus').val(button.data('seatsperbus'));
+                $('#IsActive').prop('checked', button.data('isactive') === true || button.data('isactive') === 'True');
+                $('#Notes').val(button.data('notes'));
+                $('#transportQuotaForm').attr('action', '/Admin/TransportQuotas/Edit/' + button.data('id'));
+            });
+
+            $('#resetTransportQuotaForm').on('click', function () {
+                resetTransportQuotaForm();
+            });
+        });
+    </script>
+}

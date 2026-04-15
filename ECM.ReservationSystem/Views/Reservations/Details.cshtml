@@ -16,13 +16,16 @@
             <div class="card-body">
                 <dl class="row mb-0">
                     <dt class="col-sm-4">الموظف</dt><dd class="col-sm-8">@Model.EmployeeName (@Model.EmployeeNumber)</dd>
+                    <dt class="col-sm-4">رقم الهاتف</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "-" : Model.PhoneNumber)</dd>
                     <dt class="col-sm-4">الوحدة</dt><dd class="col-sm-8">@Model.Unit?.Name - @Model.Unit?.City?.Name</dd>
                     <dt class="col-sm-4">الفترة</dt><dd class="col-sm-8">@Model.CheckInDate:dd/MM/yyyy - @Model.CheckOutDate:dd/MM/yyyy</dd>
                     <dt class="col-sm-4">عدد الأفراد</dt><dd class="col-sm-8">@Model.NumberOfGuests</dd>
+                    <dt class="col-sm-4">إيصال السداد</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PaymentReceiptNumber) ? "-" : Model.PaymentReceiptNumber)</dd>
+                    <dt class="col-sm-4">إيصال التأمين</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.InsuranceReceiptNumber) ? "-" : Model.InsuranceReceiptNumber)</dd>
                     <dt class="col-sm-4">إجمالي المبلغ</dt><dd class="col-sm-8">@Model.TotalAmount.ToString("N2")</dd>
                     <dt class="col-sm-4">الحالة</dt><dd class="col-sm-8"><span class="badge bg-info">@Model.Status</span></dd>
-                    <dt class="col-sm-4">رقم الوثيقة   </dt><dd class="col-sm-8">@(Model.DocumentId?.ToString() ?? "-")</dd>
-                    <dt class="col-sm-4">مرجع الحجز </dt><dd class="col-sm-8">@Model.CaseSystemId</dd>
+                    <dt class="col-sm-4">رقم الوثيقة</dt><dd class="col-sm-8">@(Model.DocumentId?.ToString() ?? "-")</dd>
+                    <dt class="col-sm-4">مرجع الحجز</dt><dd class="col-sm-8">@Model.CaseSystemId</dd>
                     <dt class="col-sm-4">ملاحظات</dt><dd class="col-sm-8">@Model.Notes</dd>
                 </dl>
             </div>

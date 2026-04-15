@@ -26,6 +26,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ReservationType> ReservationTypes { get; set; }
     public DbSet<Pricing> Pricings { get; set; }
     public DbSet<TransportationCost> TransportationCosts { get; set; }
+    public DbSet<TransportQuota> TransportQuotas { get; set; }
     public DbSet<AvailableDate> AvailableDates { get; set; }
     public DbSet<UnitScheduleSlot> UnitScheduleSlots { get; set; }
 
@@ -107,6 +108,12 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(tc => tc.CityId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<TransportQuota>()
+            .HasOne(tq => tq.City)
+            .WithMany(c => c.TransportQuotas)
+            .HasForeignKey(tq => tq.CityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<AvailableDate>()
             .HasOne(ad => ad.City)
             .WithMany()
@@ -127,6 +134,10 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<UnitScheduleSlot>()
             .HasIndex(s => new { s.UnitId, s.SlotStartDate, s.SlotEndDate })
+            .IsUnique();
+
+        modelBuilder.Entity<TransportQuota>()
+            .HasIndex(tq => new { tq.CityId, tq.SeasonYear })
             .IsUnique();
     }
 

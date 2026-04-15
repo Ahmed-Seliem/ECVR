@@ -75,16 +75,20 @@ namespace Reservation
 
         private static ReservationSubmitRequest BuildSubmitRequest(JsonElement root, long workflowId, long documentId)
         {
-            var passengers = GetIntValue(root, "passengers") ?? 1;
+            var passengers = GetIntValue(root, "passengers") ?? 0;
+            var normalizedGuests = passengers > 0 ? passengers : 1;
 
             return new ReservationSubmitRequest
             {
                 EmployeeNumber = GetStringValue(root, "number") ?? string.Empty,
                 EmployeeName = GetStringValue(root, "name") ?? string.Empty,
+                PhoneNumber = GetStringValue(root, "phoneNumber") ?? string.Empty,
                 UnitId = GetIntValue(root, "propertyWithFloor") ?? 0,
                 WeekId = GetStringValue(root, "weeks") ?? string.Empty,
-                NumberOfGuests = passengers > 0 ? passengers : 1,
+                NumberOfGuests = normalizedGuests,
                 IsTransportationRequired = passengers > 0,
+                PaymentReceiptNumber = GetStringValue(root, "paymentReceiptNumber") ?? string.Empty,
+                InsuranceReceiptNumber = GetStringValue(root, "insuranceReceiptNumber") ?? string.Empty,
                 Notes = BuildNotes(root),
                 WorkflowId = workflowId,
                 DocumentId = documentId
@@ -190,10 +194,13 @@ namespace Reservation
         {
             public string EmployeeNumber { get; set; } = string.Empty;
             public string EmployeeName { get; set; } = string.Empty;
+            public string PhoneNumber { get; set; } = string.Empty;
             public int UnitId { get; set; }
             public string WeekId { get; set; } = string.Empty;
             public int NumberOfGuests { get; set; }
             public bool IsTransportationRequired { get; set; }
+            public string PaymentReceiptNumber { get; set; } = string.Empty;
+            public string InsuranceReceiptNumber { get; set; } = string.Empty;
             public string Notes { get; set; } = string.Empty;
             public long WorkflowId { get; set; }
             public long DocumentId { get; set; }

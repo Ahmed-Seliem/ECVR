@@ -135,10 +135,17 @@ namespace ECM.ReservationSystem.Services.Implementations
 
         public async Task<CostCalculationDto> CalculateCostAsync(int unitId, DateTime checkInDate, DateTime checkOutDate, int numberOfGuests, bool isTransportationRequired)
         {
-            if (numberOfGuests < 1 || numberOfGuests > MaxGuestsLimit)
+            if (numberOfGuests < 0 || numberOfGuests > MaxGuestsLimit)
             {
-                return new CostCalculationDto { IsAvailable = false, Message = $"الحد الأقصى للأفراد هو {MaxGuestsLimit}" };
+                return new CostCalculationDto
+                {
+                    IsAvailable = false,
+                    Message = $"عدد الأفراد يجب أن يكون بين 0 و {MaxGuestsLimit}"
+                };
             }
+
+            var guestsCount = Math.Max(0, numberOfGuests);
+            var transportationRequired = isTransportationRequired && guestsCount > 0;
 
             var unit = await _context.Units
                 .Include(u => u.City)
@@ -171,10 +178,28 @@ namespace ECM.ReservationSystem.Services.Implementations
                 return new CostCalculationDto { IsAvailable = false, Message = "الوحدة غير متاحة في هذه التواريخ" };
             }
 
-            var weeklyRent = await _pricingService.CalculateWeeklyRentAsync(unitId, numberOfGuests);
+            if (transportationRequired)
+            {
+                var quotaStatus = await GetTransportQuotaStatusAsync(unit.CityId, checkInDate, checkOutDate);
+                if (!quotaStatus.HasQuotaConfigured)
+                {
+                    return new CostCalculationDto { IsAvailable = false, Message = "لم يتم إعداد سعة النقل لهذه المدينة في الموسم الحالي." };
+                }
+
+                if (quotaStatus.RemainingSeats < guestsCount)
+                {
+                    return new CostCalculationDto
+                    {
+                        IsAvailable = false,
+                        Message = $"المقاعد المتبقية في هذا الفوج هي {quotaStatus.RemainingSeats} فقط."
+                    };
+                }
+            }
+
+            var weeklyRent = await _pricingService.CalculateWeeklyRentAsync(unitId, guestsCount);
             var pricing = await _pricingService.GetCurrentPricingAsync(unitId);
-            var transportationCost = isTransportationRequired
-                ? await _pricingService.GetTransportationCostAsync(unit.CityId, unitId, numberOfGuests)
+            var transportationCost = transportationRequired
+                ? await _pricingService.GetTransportationCostAsync(unit.CityId, unitId, guestsCount)
                 : 0;
 
             return new CostCalculationDto
@@ -182,8 +207,8 @@ namespace ECM.ReservationSystem.Services.Implementations
                 UnitId = unitId,
                 CheckInDate = checkInDate,
                 CheckOutDate = checkOutDate,
-                NumberOfGuests = numberOfGuests,
-                IsTransportationRequired = isTransportationRequired,
+                NumberOfGuests = guestsCount,
+                IsTransportationRequired = transportationRequired,
                 WeeklyRent = weeklyRent,
                 InsuranceAmount = pricing?.InsuranceAmount ?? 0,
                 TransportationCost = transportationCost,
@@ -211,10 +236,22 @@ namespace ECM.ReservationSystem.Services.Implementations
                 .Include(u => u.City)
                 .FirstOrDefaultAsync(u => u.Id == request.UnitId);
 
+            if (unit == null)
+            {
+                throw new InvalidOperationException("الوحدة غير موجودة.");
+            }
+
+            var seasonEligibility = await GetSeasonEligibilityAsync(request.EmployeeNumber, request.CheckInDate.Year);
+            if (seasonEligibility.HasExistingReservation)
+            {
+                throw new InvalidOperationException("تم الحجز لهذا الموظف من قبل خلال نفس الموسم.");
+            }
+
             var reservation = new Reservation
             {
                 EmployeeNumber = request.EmployeeNumber,
                 EmployeeName = request.EmployeeName,
+                PhoneNumber = request.PhoneNumber,
                 Year = request.CheckInDate.Year.ToString(),
                 UnitId = request.UnitId,
                 CheckInDate = request.CheckInDate,
@@ -225,38 +262,19 @@ namespace ECM.ReservationSystem.Services.Implementations
                 TransportationCost = costCalculation.TransportationCost,
                 TotalAmount = costCalculation.TotalAmount,
                 IsTransportationRequired = request.IsTransportationRequired,
-                Notes = request.Notes,
+                PaymentReceiptNumber = request.PaymentReceiptNumber ?? string.Empty,
+                InsuranceReceiptNumber = request.InsuranceReceiptNumber ?? string.Empty,
+                Notes = request.Notes ?? string.Empty,
                 Status = ReservationStatus.TemporaryHold,
                 PaymentDeadline = AddBusinessDays(DateTime.Now, 3),
-                CaseSystemId = request.CaseSystemId,
+                CaseSystemId = request.CaseSystemId ?? string.Empty,
                 DocumentId = request.DocumentId
             };
 
             _context.Reservations.Add(reservation);
             await _context.SaveChangesAsync();
 
-            return new ReservationResponseDto
-            {
-                ReservationId = reservation.Id,
-                EmployeeNumber = reservation.EmployeeNumber,
-                EmployeeName = reservation.EmployeeName,
-                UnitName = unit.Name,
-                CityName = unit.City.Name,
-                CheckInDate = reservation.CheckInDate,
-                CheckOutDate = reservation.CheckOutDate,
-                NumberOfGuests = reservation.NumberOfGuests,
-                WeeklyRent = reservation.WeeklyRent,
-                InsuranceAmount = reservation.InsuranceAmount,
-                TransportationCost = reservation.TransportationCost,
-                TotalAmount = reservation.TotalAmount,
-                Status = reservation.Status,
-                PaymentDeadline = reservation.PaymentDeadline,
-                IsTransportationRequired = reservation.IsTransportationRequired,
-                Notes = reservation.Notes,
-                CreatedAt = reservation.CreatedAt,
-                CaseSystemId = reservation.CaseSystemId,
-                DocumentId = reservation.DocumentId
-            };
+            return MapReservationResponse(reservation, unit.Name, unit.City.Name);
         }
 
         public async Task<bool> ConfirmReservationAsync(int reservationId)
@@ -394,6 +412,114 @@ namespace ECM.ReservationSystem.Services.Implementations
             }
         }
 
+        public async Task<ReservationResponseDto> GetReservationAsync(int reservationId)
+        {
+            var reservation = await _context.Reservations
+                .Include(r => r.Unit)
+                .ThenInclude(u => u.City)
+                .FirstOrDefaultAsync(r => r.Id == reservationId);
+
+            if (reservation == null)
+            {
+                return null!;
+            }
+
+            return MapReservationResponse(reservation, reservation.Unit.Name, reservation.Unit.City.Name);
+        }
+
+        public async Task<List<ReservationResponseDto>> GetReservationsByEmployeeAsync(string employeeNumber)
+        {
+            var reservations = await _context.Reservations
+                .Include(r => r.Unit)
+                .ThenInclude(u => u.City)
+                .Where(r => r.EmployeeNumber == employeeNumber)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            return reservations
+                .Select(r => MapReservationResponse(r, r.Unit.Name, r.Unit.City.Name))
+                .ToList();
+        }
+
+        public async Task<TransportQuotaStatusDto> GetTransportQuotaStatusAsync(int cityId, DateTime checkInDate, DateTime checkOutDate)
+        {
+            var seasonYear = checkInDate.Year;
+            var quota = await _context.TransportQuotas
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.CityId == cityId && q.SeasonYear == seasonYear && q.IsActive);
+
+            var reservedSeats = await _context.Reservations
+                .Include(r => r.Unit)
+                .Where(r => r.Unit.CityId == cityId
+                            && r.Status != ReservationStatus.Cancelled
+                            && r.IsTransportationRequired
+                            && r.CheckInDate < checkOutDate
+                            && r.CheckOutDate > checkInDate)
+                .SumAsync(r => (int?)r.NumberOfGuests) ?? 0;
+
+            var totalSeats = quota?.TotalSeats ?? 0;
+
+            return new TransportQuotaStatusDto
+            {
+                CityId = cityId,
+                SeasonYear = seasonYear,
+                WeekStartDate = checkInDate,
+                WeekEndDate = checkOutDate.AddDays(-1),
+                BusCount = quota?.BusCount ?? 0,
+                SeatsPerBus = quota?.SeatsPerBus ?? 0,
+                TotalSeats = totalSeats,
+                ReservedSeats = reservedSeats,
+                RemainingSeats = Math.Max(totalSeats - reservedSeats, 0),
+                HasQuotaConfigured = quota != null
+            };
+        }
+
+        public async Task<SeasonBookingEligibilityDto> GetSeasonEligibilityAsync(string employeeNumber, int seasonYear)
+        {
+            if (string.IsNullOrWhiteSpace(employeeNumber))
+            {
+                return new SeasonBookingEligibilityDto
+                {
+                    EmployeeNumber = string.Empty,
+                    SeasonYear = seasonYear,
+                    HasExistingReservation = false
+                };
+            }
+
+            var reservation = await _context.Reservations
+                .AsNoTracking()
+                .Include(r => r.Unit)
+                .ThenInclude(u => u.City)
+                .Where(r => r.EmployeeNumber == employeeNumber
+                            && r.Status != ReservationStatus.Cancelled
+                            && r.CheckInDate.Year == seasonYear)
+                .OrderByDescending(r => r.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (reservation == null)
+            {
+                return new SeasonBookingEligibilityDto
+                {
+                    EmployeeNumber = employeeNumber,
+                    SeasonYear = seasonYear,
+                    HasExistingReservation = false
+                };
+            }
+
+            return new SeasonBookingEligibilityDto
+            {
+                EmployeeNumber = employeeNumber,
+                SeasonYear = seasonYear,
+                HasExistingReservation = true,
+                ReservationId = reservation.Id,
+                CityId = reservation.Unit.CityId,
+                CityName = reservation.Unit.City?.NameAr ?? reservation.Unit.City?.Name ?? string.Empty,
+                CheckInDate = reservation.CheckInDate,
+                CheckOutDate = reservation.CheckOutDate,
+                Status = reservation.Status.ToString()
+            };
+        }
+
         private static DateTime AddBusinessDays(DateTime startDate, int businessDays)
         {
             var current = startDate;
@@ -414,23 +540,16 @@ namespace ECM.ReservationSystem.Services.Implementations
             return current;
         }
 
-        public async Task<ReservationResponseDto> GetReservationAsync(int reservationId)
+        private static ReservationResponseDto MapReservationResponse(Reservation reservation, string unitName, string cityName)
         {
-            var reservation = await _context.Reservations
-                .Include(r => r.Unit)
-                .ThenInclude(u => u.City)
-                .FirstOrDefaultAsync(r => r.Id == reservationId);
-
-            if (reservation == null)
-                return null;
-
             return new ReservationResponseDto
             {
                 ReservationId = reservation.Id,
                 EmployeeNumber = reservation.EmployeeNumber,
                 EmployeeName = reservation.EmployeeName,
-                UnitName = reservation.Unit.Name,
-                CityName = reservation.Unit.City.Name,
+                PhoneNumber = reservation.PhoneNumber,
+                UnitName = unitName,
+                CityName = cityName,
                 CheckInDate = reservation.CheckInDate,
                 CheckOutDate = reservation.CheckOutDate,
                 NumberOfGuests = reservation.NumberOfGuests,
@@ -441,44 +560,13 @@ namespace ECM.ReservationSystem.Services.Implementations
                 Status = reservation.Status,
                 PaymentDeadline = reservation.PaymentDeadline,
                 IsTransportationRequired = reservation.IsTransportationRequired,
+                PaymentReceiptNumber = reservation.PaymentReceiptNumber,
+                InsuranceReceiptNumber = reservation.InsuranceReceiptNumber,
                 Notes = reservation.Notes,
                 CreatedAt = reservation.CreatedAt,
                 CaseSystemId = reservation.CaseSystemId,
                 DocumentId = reservation.DocumentId
             };
-        }
-
-        public async Task<List<ReservationResponseDto>> GetReservationsByEmployeeAsync(string employeeNumber)
-        {
-            var reservations = await _context.Reservations
-                .Include(r => r.Unit)
-                .ThenInclude(u => u.City)
-                .Where(r => r.EmployeeNumber == employeeNumber)
-                .OrderByDescending(r => r.CreatedAt)
-                .ToListAsync();
-
-            return reservations.Select(r => new ReservationResponseDto
-            {
-                ReservationId = r.Id,
-                EmployeeNumber = r.EmployeeNumber,
-                EmployeeName = r.EmployeeName,
-                UnitName = r.Unit.Name,
-                CityName = r.Unit.City.Name,
-                CheckInDate = r.CheckInDate,
-                CheckOutDate = r.CheckOutDate,
-                NumberOfGuests = r.NumberOfGuests,
-                WeeklyRent = r.WeeklyRent,
-                InsuranceAmount = r.InsuranceAmount,
-                TransportationCost = r.TransportationCost,
-                TotalAmount = r.TotalAmount,
-                Status = r.Status,
-                PaymentDeadline = r.PaymentDeadline,
-                IsTransportationRequired = r.IsTransportationRequired,
-                Notes = r.Notes,
-                CreatedAt = r.CreatedAt,
-                CaseSystemId = r.CaseSystemId,
-                DocumentId = r.DocumentId
-            }).ToList();
         }
     }
 }
