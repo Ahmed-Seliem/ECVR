@@ -428,5 +428,104 @@ else
                 });
             });
         });
+        </script>
+    <script>
+        $(function () {
+            function getToken() {
+                return document.querySelector('#slotDeleteTokenForm input[name="__RequestVerificationToken"]').value;
+            }
+
+            function updateStats(card) {
+                const slots = card.find('.schedule-slot');
+                const stats = card.find('.stats-badges .stat-pill');
+
+                if (stats.length < 5) {
+                    return;
+                }
+
+                stats.eq(0).text('\u0645\u062a\u0627\u062d: ' + slots.filter('.slot-available').length);
+                stats.eq(1).text('\u0645\u0639\u0644\u0642: ' + slots.filter('.slot-pending').length);
+                stats.eq(2).text('\u0645\u062d\u062c\u0648\u0632: ' + slots.filter('.slot-booked').length);
+                stats.eq(3).text('\u063a\u064a\u0631 \u0646\u0634\u0637: ' + slots.filter('.slot-inactive').length);
+                stats.eq(4).text('\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0641\u062a\u0631\u0627\u062a: ' + slots.length);
+            }
+
+            function applySlotState(toggle, isActive) {
+                const slot = toggle.closest('.schedule-slot');
+                const statusBadge = slot.find('.slot-status-badge');
+                const label = toggle.siblings('.form-check-label');
+                const isReserved = slot.hasClass('slot-booked');
+                const isPending = slot.hasClass('slot-pending');
+                const actionLabel = isActive ? '\u062a\u0639\u0637\u064a\u0644' : '\u062a\u0641\u0639\u064a\u0644';
+
+                toggle.prop('checked', isActive);
+                toggle.data('actionlabel', actionLabel);
+                toggle.attr('data-actionlabel', actionLabel);
+
+                label
+                    .text(isActive ? '\u0645\u0641\u0639\u0644' : '\u0645\u0639\u0637\u0644')
+                    .toggleClass('text-success', isActive)
+                    .toggleClass('text-muted', !isActive);
+
+                if (!isReserved && !isPending) {
+                    slot.removeClass('slot-available slot-inactive')
+                        .addClass(isActive ? 'slot-available' : 'slot-inactive');
+                    statusBadge.text(isActive ? '\u0645\u062a\u0627\u062d' : '\u063a\u064a\u0631 \u0646\u0634\u0637');
+                }
+
+                updateStats(slot.closest('.unit-availability-card'));
+            }
+
+            $(document).off('click', '.js-toggle-slot-status');
+            $(document).off('change', '.js-toggle-slot-status');
+            $(document).on('change', '.js-toggle-slot-status', function () {
+                const button = $(this);
+                const slotId = button.data('slotid');
+                const slotName = button.data('slotname');
+                const nextState = button.is(':checked');
+                const actionLabel = nextState ? '\u062a\u0641\u0639\u064a\u0644' : '\u062a\u0639\u0637\u064a\u0644';
+
+                swal({
+                    title: '\u062a\u0623\u0643\u064a\u062f \u0627\u0644\u0625\u062c\u0631\u0627\u0621',
+                    text: actionLabel + ' \u0627\u0644\u0641\u062a\u0631\u0629: ' + slotName,
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '\u0646\u0639\u0645\u060c ' + actionLabel,
+                    cancelButtonText: '\u0625\u0644\u063a\u0627\u0621',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) {
+                        button.prop('checked', !nextState);
+                        return;
+                    }
+
+                    button.prop('disabled', true);
+
+                    $.ajax({
+                        url: '/Admin/Units/Availability/ToggleSlotStatus/' + slotId,
+                        type: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        data: {
+                            __RequestVerificationToken: getToken(),
+                            cityId: button.data('cityid') ?? '',
+                            unitTypeId: button.data('unittypeid') ?? '',
+                            unitId: button.data('unitid') ?? '',
+                            year: button.data('year') ?? '',
+                            isForManagement: button.data('isformanagement') ?? ''
+                        }
+                    }).done(function (response) {
+                        applySlotState(button, response.isActive);
+                    }).fail(function (xhr) {
+                        button.prop('checked', !nextState);
+                        const message = xhr.responseJSON?.message || '\u062d\u062f\u062b \u062e\u0637\u0623 \u0623\u062b\u0646\u0627\u0621 \u062a\u062d\u062f\u064a\u062b \u062d\u0627\u0644\u0629 \u0627\u0644\u0641\u062a\u0631\u0629.';
+                        swal('\u062e\u0637\u0623', message, 'error');
+                    }).always(function () {
+                        button.prop('disabled', false);
+                    });
+                });
+            });
+        });
     </script>
 }
