@@ -431,6 +431,11 @@ namespace ECM.ReservationSystem.Controllers.Admin
             if (slot == null)
             {
                 TempData["Error"] = "الفترة غير موجودة.";
+                if (IsAjaxRequest())
+                {
+                    return NotFound(new { success = false, message = TempData["Error"]?.ToString() });
+                }
+
                 return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
             }
 
@@ -442,6 +447,11 @@ namespace ECM.ReservationSystem.Controllers.Admin
             if (slot.IsActive && hasReservation)
             {
                 TempData["Error"] = "لا يمكن تعطيل فترة عليها حجز.";
+                if (IsAjaxRequest())
+                {
+                    return BadRequest(new { success = false, message = TempData["Error"]?.ToString() });
+                }
+
                 return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
             }
 
@@ -449,9 +459,18 @@ namespace ECM.ReservationSystem.Controllers.Admin
             await _context.SaveChangesAsync();
             TempData["Success"] = slot.IsActive ? "تم تفعيل الفترة بنجاح." : "تم تعطيل الفترة بنجاح.";
 
+            if (IsAjaxRequest())
+            {
+                return Json(new
+                {
+                    success = true,
+                    isActive = slot.IsActive,
+                    message = TempData["Success"]?.ToString()
+                });
+            }
+
             return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
         }
-
         [HttpPost("Availability/DeleteAllSlots")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteAllSlots(int? cityId, int? unitTypeId, int? unitId, int? year, bool? isForManagement)
@@ -730,6 +749,10 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 : $"{customName.Trim()} | {defaultName}";
         }
 
+        private bool IsAjaxRequest()
+        {
+            return string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+        }
         private bool UnitExists(int id)
         {
             return _context.Units.Any(e => e.Id == id);

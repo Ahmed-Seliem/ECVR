@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ECM.ReservationSystem.Data;
+using ECM.ReservationSystem.Domain.Entities;
+using ECM.ReservationSystem.Models.ViewModels.Admin;
+using ECM.ReservationSystem.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using ECM.ReservationSystem.Data;
-using ECM.ReservationSystem.Domain.Entities;
-using ECM.ReservationSystem.Services.Interfaces;
-using ECM.ReservationSystem.Models.ViewModels.Admin;
 
 namespace ECM.ReservationSystem.Controllers.Admin
 {
