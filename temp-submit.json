@@ -1,0 +1,14 @@
+{
+  "EmployeeNumber": "WFTEST-001",
+  "EmployeeName": "Workflow Test",
+  "PhoneNumber": "01126130133",
+  "UnitId": 4035,
+  "WeekId": "3004-20260102",
+  "NumberOfGuests": 2,
+  "IsTransportationRequired": true,
+  "PaymentReceiptNumber": "",
+  "InsuranceReceiptNumber": "",
+  "Notes": "Direct API test",
+  "WorkflowId": 999,
+  "DocumentId": 999
+}

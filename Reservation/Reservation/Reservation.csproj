@@ -1,40 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  
   <ItemGroup>
     <Reference Include="Intalio.Case.Core">
-      <HintPath>Pak\Intalio.Case.Core.dll</HintPath>
+      <HintPath>Pak\dllsV7.1.0\Intalio.Case.Core.dll</HintPath>
     </Reference>
     <Reference Include="Intalio.Case.Portal">
-      <HintPath>Pak\Intalio.Case.Portal.dll</HintPath>
+      <HintPath>Pak\dllsV7.1.0\Intalio.Case.Portal.dll</HintPath>
     </Reference>
     <Reference Include="Intalio.Case.Portal.Core">
-      <HintPath>Pak\Intalio.Case.Portal.Core.dll</HintPath>
+      <HintPath>Pak\dllsV7.1.0\Intalio.Case.Portal.Core.dll</HintPath>
     </Reference>
     <Reference Include="Intalio.Core">
-      <HintPath>Pak\Intalio.Core.dll</HintPath>
+      <HintPath>Pak\dllsV7.1.0\Intalio.Core.dll</HintPath>
     </Reference>
     <Reference Include="Intalio.Core.UI">
-      <HintPath>Pak\Intalio.Core.UI.dll</HintPath>
+      <HintPath>Pak\dllsV7.1.0\Intalio.Core.UI.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.EntityFrameworkCore">
-      <HintPath>Pak\Microsoft.EntityFrameworkCore.dll</HintPath>
+      <HintPath>Pak\dllsV7.1.0\Microsoft.EntityFrameworkCore.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.EntityFrameworkCore.Relational">
-      <HintPath>Pak\Microsoft.EntityFrameworkCore.Relational.dll</HintPath>
+      <HintPath>Pak\dllsV7.1.0\Microsoft.EntityFrameworkCore.Relational.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.EntityFrameworkCore.SqlServer">
-      <HintPath>Pak\Microsoft.EntityFrameworkCore.SqlServer.dll</HintPath>
+      <HintPath>Pak\dllsV7.1.0\Microsoft.EntityFrameworkCore.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.DependencyModel">
-      <HintPath>Pak\Microsoft.Extensions.DependencyModel.dll</HintPath>
+      <HintPath>Pak\dllsV7.1.0\Microsoft.Extensions.DependencyModel.dll</HintPath>
     </Reference>
   </ItemGroup>
+
 
  
 

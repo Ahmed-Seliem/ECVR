@@ -21,21 +21,33 @@ namespace Reservation
 
         private static void ProcessWorkflowItem(WorkflowItem workflowItem)
         {
+            var currentDocumentId = 0L;
             try
             {
                 var reservationUrl = GetPropertyValue(workflowItem, "ReservationURL");
                 var workflowId = workflowItem.ActivityInstance.ActivityDefinition.WorkflowDefinition.WorkflowId;
-                var currentDocumentId = GetLongPropertyValue(workflowItem, "DocumentId");
+                currentDocumentId = GetLongPropertyValue(workflowItem, "DocumentId");
                 var formData = ResolveFormData(workflowItem, currentDocumentId);
 
                 using var json = JsonDocument.Parse(formData);
                 var root = json.RootElement;
                 var submitRequest = BuildSubmitRequest(root, workflowId, currentDocumentId);
+                var submitUrl = BuildUrl(reservationUrl, "/api/Reservation/submit");
+                var requestBody = JsonSerializer.Serialize(submitRequest);
 
-                SendPostRequest(BuildUrl(reservationUrl, "/api/Reservation/submit"), submitRequest);
+                WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitUrl", submitUrl);
+                WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitRequest", requestBody);
+
+                var responseBody = SendPostRequest(submitUrl, requestBody);
+                WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitResponse", responseBody);
             }
             catch (Exception ex)
             {
+                WriteDebugArtifact(
+                    workflowItem,
+                    currentDocumentId,
+                    "SubmitException",
+                    $"{ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 Intalio.Core.ExceptionLogger.WriteEntry(
                     $"Exception in Reservation Code Activity: {ex.Message}\nStack Trace: {ex.StackTrace}");
             }
@@ -58,6 +70,11 @@ namespace Reservation
 
         private static void WriteDebugFormData(WorkflowItem workflowItem, long documentId, string formData)
         {
+            WriteDebugArtifact(workflowItem, documentId, "FormData", formData);
+        }
+
+        private static void WriteDebugArtifact(WorkflowItem workflowItem, long documentId, string artifactName, string content)
+        {
             var folderPath = GetPropertyValue(workflowItem, "Filepath");
             if (string.IsNullOrWhiteSpace(folderPath))
             {
@@ -69,8 +86,8 @@ namespace Reservation
                 Directory.CreateDirectory(folderPath);
             }
 
-            var filePath = Path.Combine(folderPath, $"FormData_{documentId}.txt");
-            File.WriteAllText(filePath, formData);
+            var filePath = Path.Combine(folderPath, $"{artifactName}_{documentId}.txt");
+            File.WriteAllText(filePath, content);
         }
 
         private static ReservationSubmitRequest BuildSubmitRequest(JsonElement root, long workflowId, long documentId)
@@ -126,9 +143,8 @@ namespace Reservation
             return string.Join(" | ", parts);
         }
 
-        private static void SendPostRequest<TPayload>(string url, TPayload payload)
+        private static string SendPostRequest(string url, string requestBody)
         {
-            var requestBody = JsonSerializer.Serialize(payload);
             using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
             using var response = HttpClient.PostAsync(url, content).GetAwaiter().GetResult();
             var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -138,6 +154,8 @@ namespace Reservation
                 throw new InvalidOperationException(
                     $"Reservation request failed with status {(int)response.StatusCode}. Response: {responseBody}");
             }
+
+            return responseBody;
         }
 
         private static string BuildUrl(string reservationUrl, string path)
