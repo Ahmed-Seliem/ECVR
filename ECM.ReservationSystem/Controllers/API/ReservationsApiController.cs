@@ -79,7 +79,7 @@ public class ReservationsApiController : ControllerBase
             var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
                 week.CityId,
                 week.StartDate,
-                week.EndDate.AddDays(1));
+                week.EndDate);
 
             weekItems.Add(new
             {
@@ -119,7 +119,7 @@ public class ReservationsApiController : ControllerBase
             week.CityId,
             week.StartDate.Year,
             week.StartDate,
-            week.EndDate.AddDays(1),
+            week.EndDate,
             filter.IsForManagement,
             filter.IsForPensioners);
 
@@ -172,7 +172,7 @@ public class ReservationsApiController : ControllerBase
         var cost = await _reservationService.CalculateCostAsync(
             unitId,
             week.StartDate,
-            week.EndDate.AddDays(1),
+            week.EndDate,
             passengers,
             isTransportationRequired: passengers > 0);
 
@@ -184,7 +184,7 @@ public class ReservationsApiController : ControllerBase
         var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
             week.CityId,
             week.StartDate,
-            week.EndDate.AddDays(1));
+            week.EndDate);
 
         return Ok(new
         {
@@ -222,7 +222,7 @@ public class ReservationsApiController : ControllerBase
         var cost = await _reservationService.CalculateCostAsync(
             request.UnitId,
             week.StartDate,
-            week.EndDate.AddDays(1),
+            week.EndDate,
             request.NumberOfGuests,
             request.IsTransportationRequired);
 
@@ -234,7 +234,7 @@ public class ReservationsApiController : ControllerBase
         var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
             week.CityId,
             week.StartDate,
-            week.EndDate.AddDays(1));
+            week.EndDate);
 
         return Ok(new
         {
@@ -284,7 +284,7 @@ public class ReservationsApiController : ControllerBase
         var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
             week.CityId,
             week.StartDate,
-            week.EndDate.AddDays(1));
+            week.EndDate);
 
         return Ok(new
         {
@@ -332,7 +332,7 @@ public class ReservationsApiController : ControllerBase
         var quotaStatus = await _reservationService.GetTransportQuotaStatusAsync(
             week.CityId,
             week.StartDate,
-            week.EndDate.AddDays(1));
+            week.EndDate);
 
         return Ok(new
         {
@@ -417,7 +417,7 @@ public class ReservationsApiController : ControllerBase
             PhoneNumber = request.PhoneNumber,
             UnitId = request.UnitId,
             CheckInDate = week.StartDate,
-            CheckOutDate = week.EndDate.AddDays(1),
+            CheckOutDate = week.EndDate,
             NumberOfGuests = normalizedGuests,
             IsTransportationRequired = transportationRequired,
             PaymentReceiptNumber = request.PaymentReceiptNumber ?? string.Empty,
@@ -492,27 +492,52 @@ public class ReservationsApiController : ControllerBase
             .Include(s => s.Unit)
             .ThenInclude(u => u!.UnitType), filter);
 
-        var weeks = await slotQuery
+        var allWeeks = await slotQuery
+            .Where(s => s.IsActive && s.Unit.IsActive && s.Unit.CityId == cityId)
+            .Select(s => new { s.SlotStartDate, s.SlotEndDate })
+            .Distinct()
+            .OrderBy(s => s.SlotStartDate)
+            .ToListAsync();
+
+        var availableWeeks = await slotQuery
             .Where(s => s.IsActive && s.Unit.IsActive && s.Unit.CityId == cityId)
             .Where(s => !_context.Reservations.Any(r =>
                 r.UnitId == s.UnitId &&
                 r.Status != ReservationStatus.Cancelled &&
-                r.CheckInDate < s.SlotEndDate.AddDays(1) &&
+                r.CheckInDate < s.SlotEndDate &&
                 r.CheckOutDate > s.SlotStartDate))
             .Select(s => new { s.SlotStartDate, s.SlotEndDate })
             .Distinct()
             .OrderBy(s => s.SlotStartDate)
             .ToListAsync();
 
-        return weeks
-            .Select((week, index) => new WeekOption
+        var weekSequence = allWeeks
+            .Select((week, index) => new
             {
-                Id = $"{cityId}-{week.SlotStartDate:yyyyMMdd}",
-                CityId = cityId,
-                WeekNumber = index + 1,
-                DisplayName = $"{GetArabicWeekLabel(index + 1)} ({week.SlotStartDate:yyyy-MM-dd} - {week.SlotEndDate:yyyy-MM-dd})",
-                StartDate = week.SlotStartDate,
-                EndDate = week.SlotEndDate
+                week.SlotStartDate,
+                week.SlotEndDate,
+                WeekNumber = index + 1
+            })
+            .ToDictionary(
+                x => (x.SlotStartDate.Date, x.SlotEndDate.Date),
+                x => x.WeekNumber);
+
+        return availableWeeks
+            .Select(week =>
+            {
+                var weekNumber = weekSequence.TryGetValue((week.SlotStartDate.Date, week.SlotEndDate.Date), out var sequence)
+                    ? sequence
+                    : 1;
+
+                return new WeekOption
+                {
+                    Id = $"{cityId}-{week.SlotStartDate:yyyyMMdd}",
+                    CityId = cityId,
+                    WeekNumber = weekNumber,
+                    DisplayName = $"{GetArabicWeekLabel(weekNumber)} ({week.SlotStartDate:yyyy-MM-dd} - {week.SlotEndDate:yyyy-MM-dd})",
+                    StartDate = week.SlotStartDate,
+                    EndDate = week.SlotEndDate
+                };
             })
             .ToList();
     }
@@ -542,13 +567,30 @@ public class ReservationsApiController : ControllerBase
             return null;
         }
 
+        var cityWeeks = await _context.UnitScheduleSlots
+            .Where(s => s.IsActive && s.Unit.CityId == cityId)
+            .Select(s => new { s.SlotStartDate, s.SlotEndDate })
+            .Distinct()
+            .OrderBy(s => s.SlotStartDate)
+            .ToListAsync();
+
+        var weekNumber = cityWeeks.FindIndex(x =>
+            x.SlotStartDate.Date == week.SlotStartDate.Date &&
+            x.SlotEndDate.Date == week.SlotEndDate.Date) + 1;
+
+        if (weekNumber <= 0)
+        {
+            weekNumber = 1;
+        }
+
         return new WeekOption
         {
             Id = weekId,
             CityId = cityId,
+            WeekNumber = weekNumber,
             StartDate = week.SlotStartDate,
             EndDate = week.SlotEndDate,
-            DisplayName = $"الأسبوع ({week.SlotStartDate:yyyy-MM-dd} - {week.SlotEndDate:yyyy-MM-dd})"
+            DisplayName = $"{GetArabicWeekLabel(weekNumber)} ({week.SlotStartDate:yyyy-MM-dd} - {week.SlotEndDate:yyyy-MM-dd})"
         };
     }
 

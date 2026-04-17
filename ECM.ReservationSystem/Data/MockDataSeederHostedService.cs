@@ -265,7 +265,7 @@ public class MockDataSeederHostedService : IHostedService
                     Year = currentYear.ToString(),
                     UnitId = slot.UnitId,
                     CheckInDate = slot.SlotStartDate,
-                    CheckOutDate = slot.SlotEndDate.AddDays(1),
+                    CheckOutDate = slot.SlotEndDate,
                     NumberOfGuests = 4,
                     WeeklyRent = 0,
                     InsuranceAmount = 1500,
@@ -304,7 +304,7 @@ public class MockDataSeederHostedService : IHostedService
 
         for (var current = startDate; current <= endDate; current = current.AddDays(7))
         {
-            var slotEnd = current.AddDays(6);
+            var slotEnd = current.AddDays(7);
             if (slotEnd > endDate)
             {
                 break;

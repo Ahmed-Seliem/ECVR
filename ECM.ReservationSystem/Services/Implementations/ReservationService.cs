@@ -55,12 +55,12 @@ namespace ECM.ReservationSystem.Services.Implementations
 
                 if (checkInDate.HasValue && checkOutDate.HasValue)
                 {
-                    var hasScheduledSlot = unit.ScheduleSlots.Any(s =>
+                    var matchingSlot = unit.ScheduleSlots.FirstOrDefault(s =>
                         s.IsActive &&
                         s.SlotStartDate.Date == checkInDate.Value.Date &&
-                        s.SlotEndDate.Date.AddDays(1) == checkOutDate.Value.Date);
+                        s.SlotEndDate.Date == checkOutDate.Value.Date);
 
-                    if (!hasScheduledSlot)
+                    if (matchingSlot == null)
                     {
                         isAvailable = false;
                     }
@@ -71,6 +71,33 @@ namespace ECM.ReservationSystem.Services.Implementations
                                       && r.CheckInDate < checkOutDate.Value
                                       && r.CheckOutDate > checkInDate.Value)
                                   && isAvailable;
+
+                    if (isAvailable && matchingSlot != null)
+                    {
+                        var pricing = await _pricingService.GetCurrentPricingAsync(unit.Id);
+
+                        availableUnits.Add(new UnitAvailabilityDto
+                        {
+                            UnitId = unit.Id,
+                            UnitName = unit.Name,
+                            CityName = unit.City.Name,
+                            UnitTypeName = unit.UnitType.Name,
+                            UnitNumber = unit.Code ?? string.Empty,
+                            FacadeName = unit.UnitFacade?.NameAr ?? unit.UnitFacade?.Name ?? string.Empty,
+                            FloorNumber = unit.FloorNumber,
+                            Capacity = unit.DefaultCapacity,
+                            RoomCount = unit.RoomCount,
+                            Year = unit.Year,
+                            IsForPensioners = unit.IsForPensioners,
+                            IsForManagement = unit.UnitType?.IsForManagement ?? false,
+                            WeeklyRentDefaultCapacity = matchingSlot.WeeklyRentOverride ?? pricing?.WeeklyRentDefaultCapacity ?? 0,
+                            InsuranceAmount = pricing?.InsuranceAmount ?? 0,
+                            TransportationCostPerPerson = pricing?.TransportationCostPerPerson ?? 0,
+                            IsAvailable = true
+                        });
+                    }
+
+                    continue;
                 }
                 else
                 {
@@ -85,7 +112,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                         {
                             var isSlotBooked = unit.Reservations.Any(r =>
                                 r.Status != ReservationStatus.Cancelled &&
-                                r.CheckInDate < slot.SlotEndDate.Date.AddDays(1) &&
+                                r.CheckInDate < slot.SlotEndDate.Date &&
                                 r.CheckOutDate > slot.SlotStartDate.Date);
 
                             if (!isSlotBooked)
@@ -157,12 +184,12 @@ namespace ECM.ReservationSystem.Services.Implementations
             }
 
             var hasScheduledSlot = await _context.UnitScheduleSlots
-                .AnyAsync(s => s.UnitId == unitId
-                               && s.IsActive
-                               && s.SlotStartDate.Date == checkInDate.Date
-                               && s.SlotEndDate.Date.AddDays(1) == checkOutDate.Date);
+                .FirstOrDefaultAsync(s => s.UnitId == unitId
+                                          && s.IsActive
+                                          && s.SlotStartDate.Date == checkInDate.Date
+                                          && s.SlotEndDate.Date == checkOutDate.Date);
 
-            if (!hasScheduledSlot)
+            if (hasScheduledSlot == null)
             {
                 return new CostCalculationDto { IsAvailable = false, Message = "الوحدة غير متاحة ضمن الجدولة المحددة." };
             }
@@ -196,7 +223,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 }
             }
 
-            var weeklyRent = await _pricingService.CalculateWeeklyRentAsync(unitId, guestsCount);
+            var weeklyRent = hasScheduledSlot.WeeklyRentOverride ?? await _pricingService.CalculateWeeklyRentAsync(unitId, guestsCount);
             var pricing = await _pricingService.GetCurrentPricingAsync(unitId);
             var transportationCost = transportationRequired
                 ? await _pricingService.GetTransportationCostAsync(unit.CityId, unitId, guestsCount)
@@ -307,7 +334,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 s.UnitId == reservation.UnitId &&
                 s.IsActive &&
                 s.SlotStartDate.Date == reservation.CheckInDate.Date &&
-                s.SlotEndDate.Date.AddDays(1) == reservation.CheckOutDate.Date);
+                s.SlotEndDate.Date == reservation.CheckOutDate.Date);
 
             if (slot != null)
             {
@@ -332,7 +359,7 @@ namespace ECM.ReservationSystem.Services.Implementations
             var slot = await _context.UnitScheduleSlots.FirstOrDefaultAsync(s =>
                 s.UnitId == reservation.UnitId &&
                 s.SlotStartDate.Date == reservation.CheckInDate.Date &&
-                s.SlotEndDate.Date.AddDays(1) == reservation.CheckOutDate.Date);
+                s.SlotEndDate.Date == reservation.CheckOutDate.Date);
 
             if (slot != null)
             {
@@ -374,7 +401,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 var slot = await _context.UnitScheduleSlots.FirstOrDefaultAsync(s =>
                     s.UnitId == reservation.UnitId &&
                     s.SlotStartDate.Date == reservation.CheckInDate.Date &&
-                    s.SlotEndDate.Date.AddDays(1) == reservation.CheckOutDate.Date);
+                    s.SlotEndDate.Date == reservation.CheckOutDate.Date);
 
                 if (slot != null)
                 {
@@ -403,6 +430,20 @@ namespace ECM.ReservationSystem.Services.Implementations
             foreach (var reservation in expiredReservations)
             {
                 reservation.Status = ReservationStatus.Cancelled;
+                reservation.PaymentDeadline = null;
+                reservation.Notes = string.IsNullOrWhiteSpace(reservation.Notes)
+                    ? "Expired temporary hold cancelled automatically."
+                    : $"{reservation.Notes} | Expired temporary hold cancelled automatically.";
+
+                var slot = await _context.UnitScheduleSlots.FirstOrDefaultAsync(s =>
+                    s.UnitId == reservation.UnitId &&
+                    s.SlotStartDate.Date == reservation.CheckInDate.Date &&
+                    s.SlotEndDate.Date == reservation.CheckOutDate.Date);
+
+                if (slot != null)
+                {
+                    slot.IsPaid = false;
+                }
             }
 
             if (expiredReservations.Any())
@@ -464,7 +505,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 CityId = cityId,
                 SeasonYear = seasonYear,
                 WeekStartDate = checkInDate,
-                WeekEndDate = checkOutDate.AddDays(-1),
+                WeekEndDate = checkOutDate,
                 BusCount = quota?.BusCount ?? 0,
                 SeatsPerBus = quota?.SeatsPerBus ?? 0,
                 TotalSeats = totalSeats,

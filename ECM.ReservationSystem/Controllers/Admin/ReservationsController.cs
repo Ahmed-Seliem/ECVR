@@ -78,7 +78,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 {
                     CityName = r.Unit.City.NameAr ?? r.Unit.City.Name,
                     r.CheckInDate,
-                    WeekEndDate = r.CheckOutDate.AddDays(-1)
+                    WeekEndDate = r.CheckOutDate
                 })
                 .Select(group => new WeeklyReservationReportGroupViewModel
                 {

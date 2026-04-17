@@ -24,6 +24,9 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         public string SlotName { get; set; } = string.Empty;
         public DateTime WeekStartDate { get; set; }
         public DateTime WeekEndDate { get; set; }
+        public decimal DefaultUnitPrice { get; set; }
+        public decimal BaseUnitPrice { get; set; }
+        public bool HasCustomUnitPrice { get; set; }
         public bool IsAvailable { get; set; }
         public bool IsPending { get; set; }
         public bool IsReserved { get; set; }

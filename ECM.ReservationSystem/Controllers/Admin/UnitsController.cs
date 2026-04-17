@@ -241,6 +241,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 .Include(u => u.City)
                 .Include(u => u.UnitType)
                 .Include(u => u.UnitFacade)
+                .Include(u => u.Pricings)
                 .Include(u => u.Reservations)
                 .Include(u => u.ScheduleSlots)
                 .Where(u => u.IsActive && u.Year == currentYear);
@@ -325,7 +326,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
             var newSlots = new List<UnitScheduleSlot>();
             for (var slotStart = startDate; slotStart <= lastDay; slotStart = slotStart.AddDays(7))
             {
-                var slotEnd = slotStart.AddDays(6);
+                var slotEnd = slotStart.AddDays(7);
                 if (slotEnd > lastDay)
                 {
                     break;
@@ -403,7 +404,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
             var hasReservation = slot.Unit.Reservations.Any(r =>
                 r.Status != ReservationStatus.Cancelled &&
-                r.CheckInDate < slot.SlotEndDate.AddDays(1) &&
+                r.CheckInDate < slot.SlotEndDate &&
                 r.CheckOutDate > slot.SlotStartDate);
 
             if (hasReservation)
@@ -412,9 +413,47 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
             }
 
-            slot.IsActive = false;
+            _context.UnitScheduleSlots.Remove(slot);
             await _context.SaveChangesAsync();
             TempData["Success"] = "تم إلغاء الفترة بنجاح.";
+
+            return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
+        }
+
+        [HttpPost("Availability/UpdateSlotPrice/{slotId}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSlotPrice(int slotId, decimal weeklyRent, int? cityId, int? unitTypeId, int? unitId, int? year, bool? isForManagement)
+        {
+            if (weeklyRent < 0)
+            {
+                TempData["Error"] = "سعر الوحدة يجب أن يكون أكبر من أو يساوي صفر.";
+                if (IsAjaxRequest())
+                {
+                    return BadRequest(new { success = false, message = TempData["Error"]?.ToString() });
+                }
+
+                return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
+            }
+
+            var slot = await _context.UnitScheduleSlots
+                .Include(s => s.Unit)
+                .ThenInclude(u => u!.Pricings)
+                .FirstOrDefaultAsync(s => s.Id == slotId);
+            if (slot == null)
+            {
+                TempData["Error"] = "الفترة غير موجودة.";
+                return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
+            }
+
+            var defaultPrice = ResolveDefaultSlotWeeklyRent(slot.Unit, slot.SlotStartDate);
+            slot.WeeklyRentOverride = weeklyRent == defaultPrice ? null : weeklyRent;
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "تم تحديث سعر الفترة بنجاح.";
+
+            if (IsAjaxRequest())
+            {
+                return Json(new { success = true, weeklyRent = slot.WeeklyRentOverride ?? defaultPrice, defaultPrice, isCustom = slot.WeeklyRentOverride.HasValue });
+            }
 
             return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year, isForManagement });
         }
@@ -441,7 +480,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
             var hasReservation = slot.Unit.Reservations.Any(r =>
                 r.Status != ReservationStatus.Cancelled &&
-                r.CheckInDate < slot.SlotEndDate.AddDays(1) &&
+                r.CheckInDate < slot.SlotEndDate &&
                 r.CheckOutDate > slot.SlotStartDate);
 
             if (slot.IsActive && hasReservation)
@@ -476,6 +515,11 @@ namespace ECM.ReservationSystem.Controllers.Admin
         public async Task<IActionResult> DeleteAllSlots(int? cityId, int? unitTypeId, int? unitId, int? year, bool? isForManagement)
         {
             var targetYear = year ?? DateTime.Now.Year;
+            if (!unitId.HasValue || unitId.Value <= 0)
+            {
+                TempData["Error"] = "اختر وحدة واحدة أولاً لحذف فتراتها.";
+                return RedirectToAction(nameof(UnitsAvailability), new { cityId, unitTypeId, unitId, year = targetYear, isForManagement });
+            }
 
             var query = _context.UnitScheduleSlots
                 .Include(s => s.Unit)
@@ -514,12 +558,13 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
             var updatedCount = 0;
             var skippedCount = 0;
+            var slotsToDelete = new List<UnitScheduleSlot>();
 
             foreach (var slot in slots)
             {
                 var hasReservation = slot.Unit.Reservations.Any(r =>
                     r.Status != ReservationStatus.Cancelled &&
-                    r.CheckInDate < slot.SlotEndDate.AddDays(1) &&
+                    r.CheckInDate < slot.SlotEndDate &&
                     r.CheckOutDate > slot.SlotStartDate);
 
                 if (hasReservation)
@@ -528,15 +573,13 @@ namespace ECM.ReservationSystem.Controllers.Admin
                     continue;
                 }
 
-                if (slot.IsActive)
-                {
-                    slot.IsActive = false;
-                    updatedCount++;
-                }
+                slotsToDelete.Add(slot);
+                updatedCount++;
             }
 
             if (updatedCount > 0)
             {
+                _context.UnitScheduleSlots.RemoveRange(slotsToDelete);
                 await _context.SaveChangesAsync();
             }
 
@@ -555,7 +598,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
                 {
                     var reservation = unit.Reservations
                         .Where(r => r.Status != ReservationStatus.Cancelled
-                                    && r.CheckInDate < slot.SlotEndDate.AddDays(1)
+                                    && r.CheckInDate < slot.SlotEndDate
                                     && r.CheckOutDate > slot.SlotStartDate)
                         .OrderByDescending(r => r.CreatedAt)
                         .FirstOrDefault();
@@ -563,12 +606,17 @@ namespace ECM.ReservationSystem.Controllers.Admin
                     var isPending = reservation?.Status == ReservationStatus.TemporaryHold;
                     var isReserved = reservation is not null && !isPending;
 
+                    var defaultPrice = ResolveDefaultSlotWeeklyRent(unit, slot.SlotStartDate);
+
                     return new WeekAvailabilityViewModel
                     {
                         SlotId = slot.Id,
                         SlotName = slot.Name,
                         WeekStartDate = slot.SlotStartDate,
                         WeekEndDate = slot.SlotEndDate,
+                        DefaultUnitPrice = defaultPrice,
+                        BaseUnitPrice = slot.WeeklyRentOverride ?? defaultPrice,
+                        HasCustomUnitPrice = slot.WeeklyRentOverride.HasValue,
                         IsScheduled = true,
                         IsActive = slot.IsActive,
                         IsAvailable = reservation == null,
@@ -747,6 +795,51 @@ namespace ECM.ReservationSystem.Controllers.Admin
             return string.IsNullOrWhiteSpace(customName)
                 ? defaultName
                 : $"{customName.Trim()} | {defaultName}";
+        }
+
+        private decimal ResolveDefaultSlotWeeklyRent(Unit unit, DateTime targetDate)
+        {
+            var pricing = unit.Pricings
+                .Where(p => p.IsActive
+                    && p.EffectiveFrom.Date <= targetDate.Date
+                    && (!p.EffectiveTo.HasValue || p.EffectiveTo.Value.Date >= targetDate.Date))
+                .OrderByDescending(p => p.EffectiveFrom)
+                .FirstOrDefault();
+
+            if (pricing != null)
+            {
+                return pricing.WeeklyRentDefaultCapacity;
+            }
+
+            var fallbackPricing = unit.Pricings
+                .Where(p => p.IsActive)
+                .OrderByDescending(p => p.EffectiveFrom)
+                .FirstOrDefault();
+
+            return fallbackPricing?.WeeklyRentDefaultCapacity ?? 0m;
+        }
+
+        private async Task<decimal> ResolveDefaultSlotWeeklyRentAsync(int unitId, DateTime targetDate)
+        {
+            var pricing = await _context.Pricings
+                .Where(p => p.UnitId == unitId
+                    && p.IsActive
+                    && p.EffectiveFrom.Date <= targetDate.Date
+                    && (!p.EffectiveTo.HasValue || p.EffectiveTo.Value.Date >= targetDate.Date))
+                .OrderByDescending(p => p.EffectiveFrom)
+                .FirstOrDefaultAsync();
+
+            if (pricing != null)
+            {
+                return pricing.WeeklyRentDefaultCapacity;
+            }
+
+            var fallbackPricing = await _context.Pricings
+                .Where(p => p.UnitId == unitId && p.IsActive)
+                .OrderByDescending(p => p.EffectiveFrom)
+                .FirstOrDefaultAsync();
+
+            return fallbackPricing?.WeeklyRentDefaultCapacity ?? 0m;
         }
 
         private bool IsAjaxRequest()
