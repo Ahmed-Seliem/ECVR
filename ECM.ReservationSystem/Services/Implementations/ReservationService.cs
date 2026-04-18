@@ -371,7 +371,12 @@ namespace ECM.ReservationSystem.Services.Implementations
             return true;
         }
 
-        public async Task<bool> UpdateWorkflowStatusAsync(long documentId, ReservationStatus status, string? notes = null)
+        public async Task<bool> UpdateWorkflowStatusAsync(
+            long documentId,
+            ReservationStatus status,
+            string? notes = null,
+            string? paymentReceiptNumber = null,
+            string? insuranceReceiptNumber = null)
         {
             if (documentId <= 0 || (status != ReservationStatus.Approved && status != ReservationStatus.Cancelled))
             {
@@ -392,6 +397,16 @@ namespace ECM.ReservationSystem.Services.Implementations
                 reservation.Notes = string.IsNullOrWhiteSpace(reservation.Notes)
                     ? notes.Trim()
                     : $"{reservation.Notes} | WorkflowNotes: {notes.Trim()}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(paymentReceiptNumber))
+            {
+                reservation.PaymentReceiptNumber = paymentReceiptNumber.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(insuranceReceiptNumber))
+            {
+                reservation.InsuranceReceiptNumber = insuranceReceiptNumber.Trim();
             }
 
             if (status == ReservationStatus.Cancelled)

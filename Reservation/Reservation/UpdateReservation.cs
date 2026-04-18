@@ -41,6 +41,14 @@ namespace Reservation
                 {
                     DocumentId = currentDocumentId,
                     ReservationStatus = status,
+                    PaymentReceiptNumber = GetFirstPropertyValue(
+                        workflowItem,
+                        "PaymentReceiptNumber",
+                        "paymentReceiptNumber"),
+                    InsuranceReceiptNumber = GetFirstPropertyValue(
+                        workflowItem,
+                        "InsuranceReceiptNumber",
+                        "insuranceReceiptNumber"),
                     Notes = GetPropertyValue(workflowItem, "Notes")
                 };
 
@@ -62,6 +70,20 @@ namespace Reservation
         private static string GetPropertyValue(WorkflowItem workflowItem, string key)
         {
             return workflowItem.Properties[key]?.Value?.ToString() ?? string.Empty;
+        }
+
+        private static string GetFirstPropertyValue(WorkflowItem workflowItem, params string[] keys)
+        {
+            foreach (var key in keys)
+            {
+                var value = GetPropertyValue(workflowItem, key);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+
+            return string.Empty;
         }
 
         private static void SendPostRequest<TPayload>(string url, TPayload payload)
@@ -92,6 +114,8 @@ namespace Reservation
         {
             public long DocumentId { get; set; }
             public long ReservationStatus { get; set; }
+            public string PaymentReceiptNumber { get; set; } = string.Empty;
+            public string InsuranceReceiptNumber { get; set; } = string.Empty;
             public string Notes { get; set; } = string.Empty;
         }
     }

@@ -455,7 +455,9 @@ public class ReservationsApiController : ControllerBase
         var success = await _reservationService.UpdateWorkflowStatusAsync(
             request.DocumentId,
             request.ReservationStatus,
-            request.Notes);
+            request.Notes,
+            request.PaymentReceiptNumber,
+            request.InsuranceReceiptNumber);
 
         if (!success)
         {
@@ -783,6 +785,8 @@ public class ReservationsApiController : ControllerBase
     {
         public long DocumentId { get; set; }
         public ReservationStatus ReservationStatus { get; set; }
+        public string? PaymentReceiptNumber { get; set; }
+        public string? InsuranceReceiptNumber { get; set; }
         public string? Notes { get; set; }
     }
 
