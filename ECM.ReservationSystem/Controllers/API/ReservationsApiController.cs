@@ -568,6 +568,7 @@ public class ReservationsApiController : ControllerBase
         }
 
 
+
         var cityWeeks = await _context.UnitScheduleSlots
             .Where(s => s.IsActive && s.Unit.CityId == cityId)
             .Select(s => new { s.SlotStartDate, s.SlotEndDate })
