@@ -93,7 +93,15 @@ public class ReportsController : Controller
                         NumberOfGuests = r.NumberOfGuests,
                         IsTransportationRequired = r.IsTransportationRequired,
                         TotalAmount = r.TotalAmount,
-                        Status = r.Status.ToString()
+                        Status = r.Status switch
+                        {
+                            ReservationStatus.TemporaryHold => "حجز مؤقت",
+                            ReservationStatus.Approved => "مؤكد",
+                            ReservationStatus.Cancelled => "ملغي",
+                            ReservationStatus.Confirmed => "مؤكد",
+                            ReservationStatus.Paid => "مدفوع",
+                            _ => r.Status.ToString()
+                        }
                     }).ToList()
                 })
                 .OrderBy(g => g.WeekStartDate)
@@ -105,9 +113,12 @@ public class ReportsController : Controller
         ViewBag.UnitTypes = new SelectList(await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync(), "Id", "Name", unitTypeId);
         ViewBag.Years = new SelectList(GetAvailableYears(), targetYear);
         ViewBag.Statuses = new SelectList(
-            Enum.GetValues(typeof(ReservationStatus))
-                .Cast<ReservationStatus>()
-                .Select(s => new { Value = s, Text = s.ToString() }),
+            new[]
+            {
+                new { Value = ReservationStatus.TemporaryHold, Text = "حجز مؤقت" },
+                new { Value = ReservationStatus.Approved, Text = "مؤكد" },
+                new { Value = ReservationStatus.Cancelled, Text = "ملغي" }
+            },
             "Value",
             "Text",
             status);

@@ -35,6 +35,7 @@ public class UnitTypesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("Name,NameAr,Description,IsForManagement,IsActive")] UnitType unitType)
     {
+        NormalizeUnitType(unitType);
         if (ModelState.IsValid)
         {
             _context.Add(unitType);
@@ -67,6 +68,7 @@ public class UnitTypesController : Controller
         if (id != unitType.Id)
             return NotFound();
 
+        NormalizeUnitType(unitType);
         if (ModelState.IsValid)
         {
             try
@@ -126,6 +128,15 @@ public class UnitTypesController : Controller
     private bool UnitTypeExists(int id)
     {
         return _context.UnitTypes.Any(e => e.Id == id);
+    }
+
+    private static void NormalizeUnitType(UnitType unitType)
+    {
+        unitType.Name = unitType.Name?.Trim() ?? string.Empty;
+        unitType.NameAr = unitType.NameAr?.Trim() ?? string.Empty;
+        unitType.Description = string.IsNullOrWhiteSpace(unitType.Description)
+            ? string.Empty
+            : unitType.Description.Trim();
     }
 }
 

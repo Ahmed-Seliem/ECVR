@@ -13,7 +13,7 @@
 
 <div class="row g-3">
     <div class="col-lg-4">
-        <div class="card shadow-sm">
+<div class="card shadow-sm">
             <div class="card-body">
                 <h5 class="card-title mb-3">إضافة / تعديل</h5>
                 <form id="transportQuotaForm" method="post" action="@(Model.Id > 0 ? $"/Admin/TransportQuotas/Edit/{Model.Id}" : "/Admin/TransportQuotas/Create")">
@@ -109,7 +109,11 @@
                                                 data-notes="@item.Notes">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <form method="post" action="/Admin/TransportQuotas/Delete/@item.Id" class="d-inline">
+                                        <form method="post"
+                                              action="/Admin/TransportQuotas/Delete/@item.Id"
+                                              class="d-inline js-confirm-delete-quota"
+                                              data-city="@(item.City?.NameAr ?? item.City?.Name)"
+                                              data-season="@item.SeasonYear">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                                 <i class="fas fa-trash"></i>
@@ -125,6 +129,10 @@
         </div>
     </div>
 </div>
+
+<form id="transportQuotaDeleteTokenForm">
+    @Html.AntiForgeryToken()
+</form>
 
 @section Scripts {
     @{
@@ -157,6 +165,28 @@
 
             $('#resetTransportQuotaForm').on('click', function () {
                 resetTransportQuotaForm();
+            });
+
+            $(document).on('submit', '.js-confirm-delete-quota', function (event) {
+                event.preventDefault();
+                const form = this;
+                const $form = $(form);
+                const city = $form.data('city') || 'هذه المدينة';
+                const season = $form.data('season') || '';
+
+                swal({
+                    title: 'تأكيد الحذف',
+                    text: `سيتم حذف سعة النقل لمدينة ${city}${season ? ' في موسم ' + season : ''}`,
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، حذف',
+                    cancelButtonText: 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (isConfirm) {
+                        form.submit();
+                    }
+                });
             });
         });
     </script>

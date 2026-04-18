@@ -301,16 +301,21 @@ namespace ECM.ReservationSystem.Controllers.Admin
         {
             return await _context.Units
                 .Include(u => u.City)
+                .Include(u => u.UnitType)
                 .Where(u => u.IsActive)
                 .OrderBy(u => u.City!.Name)
+                .ThenBy(u => u.UnitType!.Name)
                 .ThenBy(u => u.Code)
                 .ThenBy(u => u.Name)
                 .Select(u => new
                 {
                     u.Id,
-                    DisplayName = string.IsNullOrWhiteSpace(u.Code)
-                        ? $"{u.City!.Name} - {u.Name}"
-                        : $"{u.City!.Name} - {u.Code}"
+                    DisplayName = string.Join(" - ", new[]
+                    {
+                        string.IsNullOrWhiteSpace(u.City!.NameAr) ? u.City.Name : u.City.NameAr,
+                        string.IsNullOrWhiteSpace(u.UnitType!.NameAr) ? u.UnitType.Name : u.UnitType.NameAr,
+                        string.IsNullOrWhiteSpace(u.Code) ? u.Name : u.Code
+                    })
                 })
                 .Cast<object>()
                 .ToListAsync();

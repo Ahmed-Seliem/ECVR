@@ -13,7 +13,7 @@ public class UnitType : AuditableEntity
     public string NameAr { get; set; } = string.Empty;
 
     [StringLength(200)]
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     public bool IsForManagement { get; set; }
     public bool IsActive { get; set; } = true;

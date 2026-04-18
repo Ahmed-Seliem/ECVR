@@ -127,7 +127,7 @@
                             <label class="form-label">السنة</label>
                             <input name="Year" type="number" class="form-control" value="@DateTime.Now.Year" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">نوع الدور</label>
                             <select name="FloorType" class="form-select">
                                 @if (floorTypes != null)
@@ -139,16 +139,16 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">رقم الدور</label>
                             <input name="FloorNumber" type="number" class="form-control" min="0" value="0" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">السعة</label>
                             <input name="DefaultCapacity" type="number" class="form-control" min="1" value="6" />
                             <input name="MaxCapacity" type="hidden" value="6" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">عدد الغرف</label>
                             <input name="RoomCount" type="number" class="form-control" min="1" value="1" />
                         </div>
@@ -195,10 +195,10 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-4">
+@*                         <div class="col-md-4">
                             <label class="form-label">الاسم</label>
                             <input id="editUnitName" name="Name" class="form-control" />
-                        </div>
+                        </div> *@
                         <div class="col-md-4">
                             <label class="form-label">رقم الوحدة</label>
                             <input id="editUnitCode" name="Code" class="form-control" required />
@@ -244,7 +244,7 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">نوع الدور</label>
                             <select id="editUnitFloorType" name="FloorType" class="form-select">
                                 @if (floorTypes != null)
@@ -256,16 +256,16 @@
                                 }
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">رقم الدور</label>
                             <input id="editUnitFloorNumber" name="FloorNumber" type="number" class="form-control" min="0" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">السعة</label>
                             <input id="editUnitDefaultCapacity" name="DefaultCapacity" type="number" class="form-control" min="1" />
                             <input id="editUnitMaxCapacity" name="MaxCapacity" type="hidden" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label">عدد الغرف</label>
                             <input id="editUnitRoomCount" name="RoomCount" type="number" class="form-control" min="1" />
                         </div>

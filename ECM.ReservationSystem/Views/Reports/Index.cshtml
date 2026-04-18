@@ -30,7 +30,7 @@
         <div class="card-header">الفلاتر</div>
         <div class="card-body">
             <form method="get" class="row g-3 align-items-end">
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label">السنة</label>
                     <select name="year" class="form-select select2">
                         @foreach (var year in years ?? Enumerable.Empty<SelectListItem>())
@@ -39,7 +39,7 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label">المدينة</label>
                     <select name="cityId" class="form-select select2">
                         <option value="">الكل</option>
@@ -49,7 +49,7 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label">نوع الوحدة</label>
                     <select name="unitTypeId" class="form-select select2">
                         <option value="">الكل</option>
@@ -59,7 +59,17 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <label class="form-label">الحالة</label>
+                    <select name="status" class="form-select select2">
+                        <option value="">الكل</option>
+                        @foreach (var status in statuses ?? Enumerable.Empty<SelectListItem>())
+                        {
+                            <option value="@status.Value" selected="@status.Selected">@status.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
                     <label class="form-label">الفوج</label>
                     <select name="weekId" class="form-select select2">
                         <option value="">الكل</option>
@@ -69,20 +79,11 @@
                         }
                     </select>
                 </div>
-@*                 <div class="col-md-2">
-                    <label class="form-label">الحالة</label>
-                    <select name="status" class="form-select select2">
-                        <option value="">الكل</option>
-                        @foreach (var status in statuses ?? Enumerable.Empty<SelectListItem>())
-                        {
-                            <option value="@status.Value" selected="@status.Selected">@status.Text</option>
-                        }
-                    </select>
-                </div> *@
-                <div class="col-md-1 d-grid">
+
+                <div class="col-md-2 d-grid">
                     <button type="submit" class="btn btn-primary">بحث</button>
                 </div>
-                <div class="col-md-1 d-grid">
+                <div class="col-md-2 d-grid">
                     <a href="/Admin/Reports" class="btn btn-outline-secondary">مسح</a>
                 </div>
             </form>
