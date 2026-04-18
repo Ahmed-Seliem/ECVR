@@ -5,6 +5,33 @@
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
+@functions {
+    private static (string CssClass, string Text) GetStatusPresentation(ReservationStatus status)
+    {
+        return status switch
+        {
+            ReservationStatus.TemporaryHold => ("warning", "حجز مؤقت"),
+            ReservationStatus.Confirmed => ("info", "مؤكد"),
+            ReservationStatus.Paid => ("success", "مدفوع"),
+            ReservationStatus.Cancelled => ("danger", "ملغي"),
+            ReservationStatus.Approved => ("success", "مؤكد"),
+            _ => ("secondary", status.ToString())
+        };
+    }
+}
+
+@{
+    var status = GetStatusPresentation(Model.Status);
+    var statusOptions = new[]
+    {
+        new { Value = ReservationStatus.TemporaryHold, Text = "حجز مؤقت" },
+        // new { Value = ReservationStatus.Confirmed, Text = "مؤكد" },
+        // new { Value = ReservationStatus.Paid, Text = "مدفوع" },
+        new { Value = ReservationStatus.Cancelled, Text = "ملغي" },
+        new { Value = ReservationStatus.Approved, Text = "مؤكد" }
+    };
+}
+
 <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2 mb-0"><i class="fas fa-receipt"></i> تفاصيل الحجز #@Model.Id</h1>
     <a href="/Admin/Reservations" class="btn btn-outline-secondary">رجوع</a>
@@ -18,15 +45,18 @@
                     <dt class="col-sm-4">الموظف</dt><dd class="col-sm-8">@Model.EmployeeName (@Model.EmployeeNumber)</dd>
                     <dt class="col-sm-4">رقم الهاتف</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "-" : Model.PhoneNumber)</dd>
                     <dt class="col-sm-4">الوحدة</dt><dd class="col-sm-8">@Model.Unit?.Name - @Model.Unit?.City?.Name</dd>
-                    <dt class="col-sm-4">الفترة</dt><dd class="col-sm-8">@Model.CheckInDate:dd/MM/yyyy - @Model.CheckOutDate:dd/MM/yyyy</dd>
+                    <dt class="col-sm-4">الفترة</dt><dd class="col-sm-8">@Model.CheckInDate.ToString("dd/MM/yyyy") - @Model.CheckOutDate.ToString("dd/MM/yyyy")</dd>
                     <dt class="col-sm-4">عدد الأفراد</dt><dd class="col-sm-8">@Model.NumberOfGuests</dd>
                     <dt class="col-sm-4">إيصال السداد</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PaymentReceiptNumber) ? "-" : Model.PaymentReceiptNumber)</dd>
                     <dt class="col-sm-4">إيصال التأمين</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.InsuranceReceiptNumber) ? "-" : Model.InsuranceReceiptNumber)</dd>
                     <dt class="col-sm-4">إجمالي المبلغ</dt><dd class="col-sm-8">@Model.TotalAmount.ToString("N2")</dd>
-                    <dt class="col-sm-4">الحالة</dt><dd class="col-sm-8"><span class="badge bg-info">@Model.Status</span></dd>
+                    <dt class="col-sm-4">الحالة</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-@status.CssClass">@status.Text</span>
+                    </dd>
                     <dt class="col-sm-4">رقم الوثيقة</dt><dd class="col-sm-8">@(Model.DocumentId?.ToString() ?? "-")</dd>
-                    <dt class="col-sm-4">مرجع الحجز</dt><dd class="col-sm-8">@Model.CaseSystemId</dd>
-                    <dt class="col-sm-4">ملاحظات</dt><dd class="col-sm-8">@Model.Notes</dd>
+                    <dt class="col-sm-4">مرجع الحجز</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CaseSystemId) ? "-" : Model.CaseSystemId)</dd>
+                    <dt class="col-sm-4">ملاحظات</dt><dd class="col-sm-8">-</dd>
                 </dl>
             </div>
         </div>
@@ -35,14 +65,38 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <h6 class="mb-3">تعديل الحالة</h6>
-                <form method="post" action="/Admin/Reservations/UpdateStatus/@Model.Id">
+                <form method="post"
+                      action="/Admin/Reservations/UpdateStatus/@Model.Id"
+                      class="js-confirm-action"
+                      data-title="تأكيد تعديل الحالة"
+                      data-text="هل تريد حفظ تغيير حالة الحجز؟"
+                      data-confirm-button="نعم، حفظ"
+                      data-cancel-button="إلغاء">
                     @Html.AntiForgeryToken()
                     <div class="mb-3">
-                        <select class="form-select" name="status" asp-items="Html.GetEnumSelectList<ReservationStatus>()"></select>
+                        <select class="form-select" name="status">
+                            @foreach (var option in statusOptions)
+                            {
+                                if (Model.Status == option.Value)
+                                {
+                                    <option value="@option.Value" selected>@option.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@option.Value">@option.Text</option>
+                                }
+                            }
+                        </select>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">حفظ الحالة</button>
                 </form>
-                <form method="post" action="/Admin/Reservations/Cancel/@Model.Id" class="mt-2">
+                <form method="post"
+                      action="/Admin/Reservations/Cancel/@Model.Id"
+                      class="mt-2 js-confirm-action"
+                      data-title="تأكيد الإلغاء"
+                      data-text="هل تريد إلغاء هذا الحجز بالفعل؟"
+                      data-confirm-button="نعم، إلغاء"
+                      data-cancel-button="إلغاء">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-outline-danger w-100">إلغاء الحجز</button>
                 </form>
@@ -50,3 +104,29 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $(document).on('submit', '.js-confirm-action', function (event) {
+                event.preventDefault();
+                const form = this;
+                const $form = $(form);
+
+                swal({
+                    title: $form.data('title') || 'تأكيد الإجراء',
+                    text: $form.data('text') || 'هل أنت متأكد من تنفيذ هذا الإجراء؟',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: $form.data('confirm-button') || 'نعم',
+                    cancelButtonText: $form.data('cancel-button') || 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (isConfirm) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

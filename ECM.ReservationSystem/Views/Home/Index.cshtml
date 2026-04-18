@@ -112,7 +112,7 @@
                             إجمالي الإيرادات
                         </div>
                         <div class="h4 mb-0 font-weight-bold text-gray-800">
-                            @Model.TotalRevenue.ToString("C", new System.Globalization.CultureInfo("ar-SA"))
+                            @Model.TotalRevenue.ToString("C", new System.Globalization.CultureInfo("ar-EG"))
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -120,7 +120,7 @@
                             إيرادات هذا الشهر
                         </div>
                         <div class="h4 mb-0 font-weight-bold text-gray-800">
-                            @Model.MonthlyRevenue.ToString("C", new System.Globalization.CultureInfo("ar-SA"))
+                            @Model.MonthlyRevenue.ToString("C", new System.Globalization.CultureInfo("ar-EG"))
                         </div>
                     </div>
                 </div>
@@ -242,6 +242,7 @@
                                                     ECM.ReservationSystem.Domain.Entities.ReservationStatus.Confirmed => "info",
                                                     ECM.ReservationSystem.Domain.Entities.ReservationStatus.Paid => "success",
                                                     ECM.ReservationSystem.Domain.Entities.ReservationStatus.Cancelled => "danger",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Approved => "success",
                                                     _ => "secondary"
                                                 };
                                                 var statusText = reservation.Status switch
@@ -250,6 +251,7 @@
                                                     ECM.ReservationSystem.Domain.Entities.ReservationStatus.Confirmed => "مؤكد",
                                                     ECM.ReservationSystem.Domain.Entities.ReservationStatus.Paid => "مدفوع",
                                                     ECM.ReservationSystem.Domain.Entities.ReservationStatus.Cancelled => "ملغي",
+                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Approved => "مؤكد",
                                                     _ => reservation.Status.ToString()
                                                 };
                                             }
@@ -313,7 +315,7 @@
                                             <span class="badge bg-success">@city.AvailableUnits</span>
                                         </td>
                                         <td>
-                                            <small>@city.Revenue.ToString("C", new System.Globalization.CultureInfo("ar-SA"))</small>
+                                            <small>@city.Revenue.ToString("C", new System.Globalization.CultureInfo("ar-EG"))</small>
                                         </td>
                                     </tr>
                                 }

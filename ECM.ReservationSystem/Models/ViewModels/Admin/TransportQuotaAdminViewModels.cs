@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using ECM.ReservationSystem.Domain.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace ECM.ReservationSystem.Models.ViewModels.Admin
 {
@@ -12,22 +12,25 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
     {
         public int Id { get; set; }
 
-        [Range(1, int.MaxValue, ErrorMessage = "اختر المدينة.")]
+        [Required(ErrorMessage = "يرجي اختيار المدينة.")]
+        [Range(1, int.MaxValue, ErrorMessage = "يرجي اختيار المدينة.")]
         public int CityId { get; set; }
 
         [Range(2000, 3000, ErrorMessage = "أدخل سنة موسم صحيحة.")]
         public int SeasonYear { get; set; } = DateTime.Now.Year;
 
+        [Required(ErrorMessage = "أدخل عدد الأتوبيسات.")]
         [Range(1, 100, ErrorMessage = "عدد الأتوبيسات يجب أن يكون بين 1 و100.")]
-        public int BusCount { get; set; }
+        public int? BusCount { get; set; }
 
+        [Required(ErrorMessage = "أدخل عدد المقاعد.")]
         [Range(1, 100, ErrorMessage = "عدد المقاعد يجب أن يكون بين 1 و100.")]
-        public int SeatsPerBus { get; set; }
+        public int? SeatsPerBus { get; set; }
 
         public bool IsActive { get; set; } = true;
 
         [StringLength(500)]
-        public string Notes { get; set; } = string.Empty;
+        public string? Notes { get; set; }
     }
 
     public class WeeklyReservationReportGroupViewModel

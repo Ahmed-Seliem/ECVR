@@ -56,8 +56,8 @@ namespace ECM.ReservationSystem.Controllers.Admin
             {
                 CityId = model.CityId,
                 SeasonYear = model.SeasonYear,
-                BusCount = model.BusCount,
-                SeatsPerBus = model.SeatsPerBus,
+                BusCount = model.BusCount!.Value,
+                SeatsPerBus = model.SeatsPerBus!.Value,
                 IsActive = model.IsActive,
                 Notes = model.Notes ?? string.Empty
             };
@@ -98,8 +98,8 @@ namespace ECM.ReservationSystem.Controllers.Admin
 
             entity.CityId = model.CityId;
             entity.SeasonYear = model.SeasonYear;
-            entity.BusCount = model.BusCount;
-            entity.SeatsPerBus = model.SeatsPerBus;
+            entity.BusCount = model.BusCount!.Value;
+            entity.SeatsPerBus = model.SeatsPerBus!.Value;
             entity.IsActive = model.IsActive;
             entity.Notes = model.Notes ?? string.Empty;
 

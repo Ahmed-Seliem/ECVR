@@ -8,6 +8,21 @@
     var years = ViewBag.Years as SelectList;
 }
 
+@functions {
+    private static (string CssClass, string Text) GetStatusPresentation(ReservationStatus status)
+    {
+        return status switch
+        {
+            ReservationStatus.TemporaryHold => ("warning", "حجز مؤقت"),
+            ReservationStatus.Confirmed => ("info", "مؤكد"),
+            ReservationStatus.Paid => ("success", "مدفوع"),
+            ReservationStatus.Cancelled => ("danger", "ملغي"),
+            ReservationStatus.Approved => ("success", "مؤكد"),
+            _ => ("secondary", status.ToString())
+        };
+    }
+}
+
 <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2 mb-0"><i class="fas fa-calendar-check"></i> إدارة الحجوزات</h1>
 </div>
@@ -54,7 +69,7 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-striped table-hover datatable">
+            <table class="table table-striped table-hover datatable align-middle">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -70,23 +85,40 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var r in Model)
+                    @foreach (var reservation in Model)
                     {
+                        var status = GetStatusPresentation(reservation.Status);
                         <tr>
-                            <td>@r.Id</td>
-                            <td>@r.EmployeeName <br /><small class="text-muted">@r.EmployeeNumber</small></td>
-                            <td>@r.Unit?.Name <br /><small class="text-muted">@r.Unit?.City?.Name</small></td>
-                            <td>@(string.IsNullOrWhiteSpace(r.PhoneNumber) ? "-" : r.PhoneNumber)</td>
-                            <td>@(r.DocumentId?.ToString() ?? "-")</td>
-                            <td>@r.CheckInDate.ToString("dd/MM/yyyy") - @r.CheckOutDate.ToString("dd/MM/yyyy")</td>
-                            <td>@r.NumberOfGuests</td>
-                            <td>@r.TotalAmount.ToString("N2")</td>
-                            <td><span class="badge bg-info">@r.Status</span></td>
+                            <td>@reservation.Id</td>
+                            <td>
+                                @reservation.EmployeeName
+                                <br />
+                                <small class="text-muted">@reservation.EmployeeNumber</small>
+                            </td>
+                            <td>
+                                @reservation.Unit?.Name
+                                <br />
+                                <small class="text-muted">@reservation.Unit?.City?.Name</small>
+                            </td>
+                            <td>@(string.IsNullOrWhiteSpace(reservation.PhoneNumber) ? "-" : reservation.PhoneNumber)</td>
+                            <td>@(reservation.DocumentId?.ToString() ?? "-")</td>
+                            <td>@reservation.CheckInDate.ToString("dd/MM/yyyy") - @reservation.CheckOutDate.ToString("dd/MM/yyyy")</td>
+                            <td>@reservation.NumberOfGuests</td>
+                            <td>@reservation.TotalAmount.ToString("N2")</td>
+                            <td>
+                                <span class="badge bg-@status.CssClass">@status.Text</span>
+                            </td>
                             <td class="d-flex gap-1">
-                                <a href="/Admin/Reservations/Details/@r.Id" class="btn btn-sm btn-outline-info">
+                                <a href="/Admin/Reservations/Details/@reservation.Id" class="btn btn-sm btn-outline-info" title="التفاصيل">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <form method="post" action="/Admin/Reservations/Cancel/@r.Id" class="d-inline">
+                                <form method="post"
+                                      action="/Admin/Reservations/Cancel/@reservation.Id"
+                                      class="d-inline js-confirm-action"
+                                      data-title="تأكيد الإلغاء"
+                                      data-text="هل تريد إلغاء هذا الحجز بالفعل؟"
+                                      data-confirm-button="نعم، إلغاء"
+                                      data-cancel-button="إلغاء">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="إلغاء الحجز">
                                         <i class="fas fa-times"></i>
@@ -100,3 +132,29 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $(document).on('submit', '.js-confirm-action', function (event) {
+                event.preventDefault();
+                const form = this;
+                const $form = $(form);
+
+                swal({
+                    title: $form.data('title') || 'تأكيد الإجراء',
+                    text: $form.data('text') || 'هل أنت متأكد من تنفيذ هذا الإجراء؟',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: $form.data('confirm-button') || 'نعم',
+                    cancelButtonText: $form.data('cancel-button') || 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (isConfirm) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}
