@@ -1,11 +1,13 @@
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Models.ViewModels.Admin;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECM.ReservationSystem.Controllers.Admin
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _context;

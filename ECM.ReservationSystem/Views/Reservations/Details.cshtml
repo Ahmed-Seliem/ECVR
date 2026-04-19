@@ -44,7 +44,7 @@
                 <dl class="row mb-0">
                     <dt class="col-sm-4">الموظف</dt><dd class="col-sm-8">@Model.EmployeeName (@Model.EmployeeNumber)</dd>
                     <dt class="col-sm-4">رقم الهاتف</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "-" : Model.PhoneNumber)</dd>
-                    <dt class="col-sm-4">الوحدة</dt><dd class="col-sm-8">@Model.Unit?.Name - @Model.Unit?.City?.Name</dd>
+                    <dt class="col-sm-4">الوحدة</dt><dd class="col-sm-8">@Model.Unit?.Code - @Model.Unit?.City?.Name</dd>
                     <dt class="col-sm-4">الفترة</dt><dd class="col-sm-8">@Model.CheckInDate.ToString("dd/MM/yyyy") - @Model.CheckOutDate.ToString("dd/MM/yyyy")</dd>
                     <dt class="col-sm-4">عدد الأفراد</dt><dd class="col-sm-8">@Model.NumberOfGuests</dd>
                     <dt class="col-sm-4">إيصال السداد</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PaymentReceiptNumber) ? "-" : Model.PaymentReceiptNumber)</dd>

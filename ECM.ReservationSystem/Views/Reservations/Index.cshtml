@@ -76,7 +76,7 @@
                         <th>الموظف</th>
                         <th>الوحدة</th>
                         <th>رقم الهاتف</th>
-                        <th>رقم الوثيقة</th>
+                        @* <th>رقم الوثيقة</th> *@
                         <th>الفترة</th>
                         <th>الأفراد</th>
                         <th>المبلغ</th>
@@ -96,12 +96,12 @@
                                 <small class="text-muted">@reservation.EmployeeNumber</small>
                             </td>
                             <td>
-                                @reservation.Unit?.Name
+                                @reservation.Unit?.Code
                                 <br />
                                 <small class="text-muted">@reservation.Unit?.City?.Name</small>
                             </td>
                             <td>@(string.IsNullOrWhiteSpace(reservation.PhoneNumber) ? "-" : reservation.PhoneNumber)</td>
-                            <td>@(reservation.DocumentId?.ToString() ?? "-")</td>
+                            @* <td>@(reservation.DocumentId?.ToString() ?? "-")</td> *@
                             <td>@reservation.CheckInDate.ToString("dd/MM/yyyy") - @reservation.CheckOutDate.ToString("dd/MM/yyyy")</td>
                             <td>@reservation.NumberOfGuests</td>
                             <td>@reservation.TotalAmount.ToString("N2")</td>

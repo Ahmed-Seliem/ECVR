@@ -2,6 +2,7 @@
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Models.ViewModels.Admin;
 using ECM.ReservationSystem.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ECM.ReservationSystem.Controllers.Admin
 {
     [Route("Admin/[controller]")]
+    [Authorize]
     public class ReservationsController : Controller
     {
         private readonly ApplicationDbContext _context;

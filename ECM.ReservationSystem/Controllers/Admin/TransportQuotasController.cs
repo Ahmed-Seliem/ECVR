@@ -1,6 +1,7 @@
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Models.ViewModels.Admin;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ECM.ReservationSystem.Controllers.Admin
 {
     [Route("Admin/[controller]")]
+    [Authorize]
     public class TransportQuotasController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -18,21 +20,42 @@ namespace ECM.ReservationSystem.Controllers.Admin
         }
 
         [HttpGet("")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? cityId, int? seasonYear, bool? isActive)
         {
+            var query = _context.TransportQuotas
+                .Include(q => q.City)
+                .AsQueryable();
+
+            if (cityId.HasValue)
+            {
+                query = query.Where(q => q.CityId == cityId.Value);
+            }
+
+            if (seasonYear.HasValue)
+            {
+                query = query.Where(q => q.SeasonYear == seasonYear.Value);
+            }
+
+            if (isActive.HasValue)
+            {
+                query = query.Where(q => q.IsActive == isActive.Value);
+            }
+
+            var items = await query
+                .OrderByDescending(q => q.SeasonYear)
+                .ThenBy(q => q.City.NameAr)
+                .ToListAsync();
+
             var viewModel = new TransportQuotaIndexViewModel
             {
-                SeasonYear = DateTime.Now.Year,
-                IsActive = true,
-                Items = await _context.TransportQuotas
-                    .Include(q => q.City)
-                    .OrderByDescending(q => q.SeasonYear)
-                    .ThenBy(q => q.City.NameAr)
-                    .ThenBy(q => q.City.Name)
-                    .ToListAsync()
+                CityId = cityId ?? 0,
+                SeasonYear = seasonYear ?? DateTime.Now.Year,
+                IsActive = isActive ?? true,
+                Items = items
             };
 
-            await PopulateCitiesAsync();
+            await PopulateCitiesAsync(cityId);
+
             return View(viewModel);
         }
 

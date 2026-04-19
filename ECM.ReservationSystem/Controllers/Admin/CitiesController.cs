@@ -1,9 +1,11 @@
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 [Route("Admin/[controller]")]
+[Authorize]
 public class CitiesController : Controller
 {
     private readonly ApplicationDbContext _context;

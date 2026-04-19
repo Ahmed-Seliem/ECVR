@@ -1,6 +1,7 @@
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Models.ViewModels.Admin;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ namespace ECM.ReservationSystem.Controllers.Admin
 {
     [Route("Admin/Pricing")]
     [Route("Admin/Pricings")]
+    [Authorize]
     public class PricingController : Controller
     {
         private readonly ApplicationDbContext _context;

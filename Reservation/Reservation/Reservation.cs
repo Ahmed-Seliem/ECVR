@@ -50,6 +50,7 @@ namespace Reservation
                     $"{ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 Intalio.Core.ExceptionLogger.WriteEntry(
                     $"Exception in Reservation Code Activity: {ex.Message}\nStack Trace: {ex.StackTrace}");
+                throw;
             }
         }
 

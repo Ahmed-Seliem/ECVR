@@ -22,7 +22,7 @@
                 @foreach (var unit in Model)
                 {
                     <tr>
-                        <td><code>@(string.IsNullOrWhiteSpace(unit.Code) ? "-" : unit.Code)</code></td>
+                        <td><span>@(string.IsNullOrWhiteSpace(unit.Code) ? "-" : unit.Code)</span></td>
                         @* <td>@unit.Name</td> *@
                         <td>@unit.City?.Name</td>
                         <td>@unit.UnitType?.Name</td>
