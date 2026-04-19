@@ -55,6 +55,8 @@ public class ReportsController : Controller
             .ThenInclude(u => u.City)
             .Include(r => r.Unit)
             .ThenInclude(u => u.UnitType)
+            .Include(r => r.Unit)
+            .ThenInclude(u => u.UnitFacade)
             .Where(r => r.CheckInDate.Year == targetYear)
             .AsQueryable();
 
@@ -111,14 +113,20 @@ public class ReportsController : Controller
                     Items = group.Select(r => new ReportsReservationItemViewModel
                     {
                         ReservationId = r.Id,
+                        FloorDisplayName = BuildFloorDisplayName(r.Unit.FloorNumber),
+                        FacadeName = r.Unit.UnitFacade != null
+                            ? (r.Unit.UnitFacade.NameAr ?? r.Unit.UnitFacade.Name)
+                            : string.Empty,
                         EmployeeName = r.EmployeeName,
                         EmployeeNumber = r.EmployeeNumber,
+                        InsuranceReceiptNumber = r.InsuranceReceiptNumber,
                         PhoneNumber = r.PhoneNumber,
                         UnitCode = r.Unit.Code ?? string.Empty,
                         UnitName = r.Unit.Name,
                         UnitTypeName = r.Unit.UnitType!.NameAr ?? r.Unit.UnitType.Name,
                         NumberOfGuests = r.NumberOfGuests,
                         IsTransportationRequired = r.IsTransportationRequired,
+                        UnitAmount = r.WeeklyRent,
                         TotalAmount = r.TotalAmount,
                         Status = GetStatusText(r.Status)
                     }).ToList()
@@ -214,7 +222,7 @@ public class ReportsController : Controller
         html.AppendLine("<table border='1' style='border-collapse:collapse;width:100%;font-family:Tahoma;'>");
         html.AppendLine("<thead>");
         html.AppendLine("<tr style='background:#f3ead8;font-weight:bold;'>");
-        html.AppendLine("<th>المدينة</th><th>الفوج</th><th>الموظف</th><th>رقم العامل</th><th>الهاتف</th><th>رقم الوحدة</th><th>نوع الوحدة</th><th>عدد الأفراد</th><th>الإجمالي</th><th>الحالة</th>");
+        html.AppendLine("<th>المدينة</th><th>الفوج</th><th>الدور</th><th>رقم الشقة</th><th>قيمة الشقة</th><th>الاسم</th><th>الرقم</th><th>الوجهة</th><th>إيصال التأمين</th><th>عدد</th><th>القيمة</th><th>التليفون</th><th>الحالة</th>");
         html.AppendLine("</tr>");
         html.AppendLine("</thead><tbody>");
 
@@ -225,13 +233,16 @@ public class ReportsController : Controller
                 html.AppendLine("<tr>");
                 html.AppendLine($"<td>{group.CityName}</td>");
                 html.AppendLine($"<td>{group.WeekStartDate:dd/MM/yyyy} - {group.WeekEndDate:dd/MM/yyyy}</td>");
+                html.AppendLine($"<td>{item.FloorDisplayName}</td>");
+                html.AppendLine($"<td>{(string.IsNullOrWhiteSpace(item.UnitCode) ? item.UnitName : item.UnitCode)}</td>");
+                html.AppendLine($"<td>{item.UnitAmount:N2}</td>");
                 html.AppendLine($"<td>{item.EmployeeName}</td>");
                 html.AppendLine($"<td>{item.EmployeeNumber}</td>");
-                html.AppendLine($"<td>{item.PhoneNumber}</td>");
-                html.AppendLine($"<td>{(string.IsNullOrWhiteSpace(item.UnitCode) ? item.UnitName : item.UnitCode)}</td>");
-                html.AppendLine($"<td>{item.UnitTypeName}</td>");
+                html.AppendLine($"<td>{(string.IsNullOrWhiteSpace(item.FacadeName) ? "-" : item.FacadeName)}</td>");
+                html.AppendLine($"<td>{(string.IsNullOrWhiteSpace(item.InsuranceReceiptNumber) ? "-" : item.InsuranceReceiptNumber)}</td>");
                 html.AppendLine($"<td>{item.NumberOfGuests}</td>");
                 html.AppendLine($"<td>{item.TotalAmount:N2}</td>");
+                html.AppendLine($"<td>{(string.IsNullOrWhiteSpace(item.PhoneNumber) ? "-" : item.PhoneNumber)}</td>");
                 html.AppendLine($"<td>{item.Status}</td>");
                 html.AppendLine("</tr>");
             }
@@ -261,5 +272,24 @@ public class ReportsController : Controller
     {
         var currentYear = DateTime.Now.Year;
         return Enumerable.Range(currentYear - 2, 5).ToList();
+    }
+
+    private static string BuildFloorDisplayName(int floorNumber)
+    {
+        return floorNumber switch
+        {
+            0 => "الدور الأرضي",
+            1 => "الدور الأول",
+            2 => "الدور الثاني",
+            3 => "الدور الثالث",
+            4 => "الدور الرابع",
+            5 => "الدور الخامس",
+            6 => "الدور السادس",
+            7 => "الدور السابع",
+            8 => "الدور الثامن",
+            9 => "الدور التاسع",
+            10 => "الدور العاشر",
+            _ => $"الدور {floorNumber}"
+        };
     }
 }

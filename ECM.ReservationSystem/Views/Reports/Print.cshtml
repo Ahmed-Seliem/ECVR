@@ -41,11 +41,16 @@
             border: 1px solid #cfcfcf;
             padding: 8px;
             text-align: right;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         th {
             background: #f7f7f7;
+            white-space: nowrap;
+        }
+
+        td {
+            white-space: nowrap;
         }
 
         .summary {
@@ -71,13 +76,16 @@
             <table>
                 <thead>
                     <tr>
-                        <th>الموظف</th>
-                        <th>رقم العامل</th>
-                        <th>الهاتف</th>
-                        <th>رقم الوحدة</th>
-                        <th>نوع الوحدة</th>
-                        <th>عدد الأفراد</th>
-                        <th>الإجمالي</th>
+                        <th>الدور</th>
+                        <th>رقم الشقة</th>
+                        <th>قيمة الشقة</th>
+                        <th>الاسم</th>
+                        <th>الرقم</th>
+                        <th>الوجهة</th>
+                        <th>إيصال التأمين</th>
+                        <th>عدد</th>
+                        <th>القيمة</th>
+                        <th>التليفون</th>
                         <th>الحالة</th>
                     </tr>
                 </thead>
@@ -85,13 +93,16 @@
                     @foreach (var item in group.Items)
                     {
                         <tr>
+                            <td>@item.FloorDisplayName</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.UnitCode) ? item.UnitName : item.UnitCode)</td>
+                            <td>@item.UnitAmount.ToString("N2")</td>
                             <td>@item.EmployeeName</td>
                             <td>@item.EmployeeNumber</td>
-                            <td>@(string.IsNullOrWhiteSpace(item.PhoneNumber) ? "-" : item.PhoneNumber)</td>
-                            <td>@(string.IsNullOrWhiteSpace(item.UnitCode) ? item.UnitName : item.UnitCode)</td>
-                            <td>@item.UnitTypeName</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.FacadeName) ? "-" : item.FacadeName)</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.InsuranceReceiptNumber) ? "-" : item.InsuranceReceiptNumber)</td>
                             <td>@item.NumberOfGuests</td>
                             <td>@item.TotalAmount.ToString("N2")</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.PhoneNumber) ? "-" : item.PhoneNumber)</td>
                             <td>@item.Status</td>
                         </tr>
                     }

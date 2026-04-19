@@ -26,14 +26,18 @@ public class ReportsReservationGroupViewModel
 public class ReportsReservationItemViewModel
 {
     public int ReservationId { get; set; }
+    public string FloorDisplayName { get; set; } = string.Empty;
+    public string FacadeName { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
     public string EmployeeNumber { get; set; } = string.Empty;
+    public string InsuranceReceiptNumber { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public string UnitCode { get; set; } = string.Empty;
     public string UnitName { get; set; } = string.Empty;
     public string UnitTypeName { get; set; } = string.Empty;
     public int NumberOfGuests { get; set; }
     public bool IsTransportationRequired { get; set; }
+    public decimal UnitAmount { get; set; }
     public decimal TotalAmount { get; set; }
     public string Status { get; set; } = string.Empty;
 }

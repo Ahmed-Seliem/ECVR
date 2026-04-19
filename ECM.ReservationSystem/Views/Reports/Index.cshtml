@@ -16,9 +16,11 @@
     .reports-hero, .reports-filter, .report-group { border: 0; border-radius: 24px; box-shadow: 0 16px 34px rgba(15,23,42,.08); }
     .reports-hero { padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; background: linear-gradient(135deg,#eef7f3,#fff,#f7f1e5); }
     .reports-hero h1 { margin: 0; font-weight: 800; color: #17324d; }
-    .reports-hero p { margin: .35rem 0 0; color: #66788a; }
     .reports-filter { margin-bottom: 1rem; }
     .reports-filter .card-header, .report-group .card-header { background: #fffaf2; border-bottom: 1px solid #f0e1c8; font-weight: 800; color: #6f4e1f; }
+    .reports-table th { white-space: nowrap; background: #faf7f0; }
+    .reports-table td { white-space: nowrap; }
+    .reports-table .sticky-end { min-width: 100px; }
 </style>
 
 <div class="reports-page">
@@ -32,7 +34,7 @@
             <form method="get" class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label">السنة</label>
-                <select asp-for="Year" asp-items="years" class="form-select select2"></select>
+                    <select asp-for="Year" asp-items="years" class="form-select select2"></select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">المدينة</label>
@@ -74,7 +76,6 @@
                         }
                     </select>
                 </div>
-
                 <div class="col-md-2 d-grid">
                     <button type="submit" class="btn btn-primary">بحث</button>
                 </div>
@@ -114,42 +115,42 @@
                     </div>
                     <div class="d-flex gap-2 flex-wrap">
                         <span class="badge text-bg-primary text-dark">الحجوزات: @group.ReservationCount</span>
-@*                         <span class="badge text-bg-success">الأفراد: @group.PassengerCount</span> *@
                         <span class="badge text-bg-dark text-dark">الإجمالي: @group.TotalAmount.ToString("N2")</span>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-striped align-middle mb-0">
+                        <table class="table table-striped align-middle mb-0 reports-table">
                             <thead>
                                 <tr>
-                                   @*  <th>#</th> *@
-                                    <th>الموظف</th>
-                                    <th>الهاتف</th>
-                                    <th>رقم الوحدة</th>
-                                    <th>نوع الوحدة</th>
-                                    <th>عدد الأفراد</th>
-                                    @* <th>النقل</th> *@
-                                    <th>الإجمالي</th>
-                                    <th>الحالة</th>
+                                    <th>الدور</th>
+                                    <th>رقم الشقة</th>
+                                    <th>قيمة الشقة</th>
+                                    <th>الاسم</th>
+                                    <th>الرقم</th>
+                                    <th>الوجهة</th>
+                                    <th>إيصال التأمين</th>
+                                    <th>عدد</th>
+                                    <th>القيمة</th>
+                                    <th>التليفون</th>
+                                    <th class="sticky-end">الحالة</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var item in group.Items)
                                 {
                                     <tr>
-                                    @*     <td>@item.ReservationId</td> *@
-                                        <td>
-                                            <div>@item.EmployeeName</div>
-                                            <small class="text-muted">@item.EmployeeNumber</small>
-                                        </td>
-                                        <td>@(string.IsNullOrWhiteSpace(item.PhoneNumber) ? "-" : item.PhoneNumber)</td>
-                                        <td>@(string.IsNullOrWhiteSpace(item.UnitCode) ? item.UnitName : $"{item.UnitCode} - {item.UnitName}")</td>
-                                        <td>@item.UnitTypeName</td>
+                                        <td>@item.FloorDisplayName</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.UnitCode) ? item.UnitName : item.UnitCode)</td>
+                                        <td>@item.UnitAmount.ToString("N2")</td>
+                                        <td>@item.EmployeeName</td>
+                                        <td>@item.EmployeeNumber</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.FacadeName) ? "-" : item.FacadeName)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.InsuranceReceiptNumber) ? "-" : item.InsuranceReceiptNumber)</td>
                                         <td>@item.NumberOfGuests</td>
-                                        @* <td>@(item.IsTransportationRequired ? "مطلوب" : "غير مطلوب")</td> *@
                                         <td>@item.TotalAmount.ToString("N2")</td>
-                                        <td>@item.Status</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.PhoneNumber) ? "-" : item.PhoneNumber)</td>
+                                        <td class="sticky-end">@item.Status</td>
                                     </tr>
                                 }
                             </tbody>

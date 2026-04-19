@@ -29,6 +29,7 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         public int TotalReservations { get; set; }
         public int PendingReservations { get; set; }
         public int ConfirmedReservations { get; set; }
+        public int CancelledReservations { get; set; }
         public int ExpiredTemporaryHolds { get; set; }
 
         public decimal TotalRevenue { get; set; }
@@ -69,6 +70,7 @@ namespace ECM.ReservationSystem.Models.ViewModels.Admin
         public int TotalUnits { get; set; }
         public int AvailableUnits { get; set; }
         public int ReservedUnits { get; set; }
+        public int PendingUnits { get; set; }
         public decimal Revenue { get; set; }
     }
 }

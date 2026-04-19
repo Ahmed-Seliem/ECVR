@@ -2,11 +2,54 @@
 @{
     ViewData["Title"] = "لوحة التحكم";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    var statusLabelsJson = System.Text.Json.JsonSerializer.Serialize(new[] { "حجز مؤقت", "مؤكد", "ملغي" });
+    var statusCountsJson = System.Text.Json.JsonSerializer.Serialize(new[] { Model.PendingReservations, Model.ConfirmedReservations, Model.CancelledReservations });
+    var cityLabelsJson = System.Text.Json.JsonSerializer.Serialize(Model.CityStatistics.Select(c => c.CityName));
+    var cityRevenueJson = System.Text.Json.JsonSerializer.Serialize(Model.CityStatistics.Select(c => c.Revenue));
+    var cityConfirmedJson = System.Text.Json.JsonSerializer.Serialize(Model.CityStatistics.Select(c => c.ReservedUnits));
+
+    static (string CssClass, string Text) GetStatusPresentation(ECM.ReservationSystem.Domain.Entities.ReservationStatus status)
+    {
+        return status switch
+        {
+            ECM.ReservationSystem.Domain.Entities.ReservationStatus.TemporaryHold => ("warning", "حجز مؤقت"),
+            ECM.ReservationSystem.Domain.Entities.ReservationStatus.Cancelled => ("danger", "ملغي"),
+            ECM.ReservationSystem.Domain.Entities.ReservationStatus.Approved => ("success", "مؤكد"),
+            ECM.ReservationSystem.Domain.Entities.ReservationStatus.Confirmed => ("success", "مؤكد"),
+            ECM.ReservationSystem.Domain.Entities.ReservationStatus.Paid => ("success", "مؤكد"),
+            _ => ("secondary", status.ToString())
+        };
+    }
 }
+
+<style>
+    .dashboard-chart-card canvas {
+        max-height: 320px;
+    }
+
+    .dashboard-revenue-card {
+        background: linear-gradient(135deg, #f8fcfa, #ffffff, #eef6ff);
+    }
+
+    .dashboard-revenue-value {
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: #17324d;
+    }
+
+    .dashboard-metric-label {
+        font-size: .8rem;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        margin-bottom: .35rem;
+    }
+</style>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">
-        <i class="fas fa-dashboard"></i>
+        <i class="fas fa-chart-line"></i>
         لوحة التحكم الرئيسية
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
@@ -23,16 +66,13 @@
     </div>
 </div>
 
-<!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-right-primary shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            المدن المتاحة
-                        </div>
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">المدن المتاحة</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalCities</div>
                     </div>
                     <div class="col-auto">
@@ -44,13 +84,11 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-right-success shadow h-100 py-2">
+        <div class="card border-right-dark shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            إجمالي الوحدات
-                        </div>
+                        <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">إجمالي الوحدات</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalUnits</div>
                     </div>
                     <div class="col-auto">
@@ -62,17 +100,15 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-right-info shadow h-100 py-2">
+        <div class="card border-right-secondary shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            الحجوزات المؤكدة
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ConfirmedReservations</div>
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">إجمالي الحجوزات</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalReservations</div>
                     </div>
                     <div class="col-auto">
-                        <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                        <i class="fas fa-layer-group fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
@@ -80,17 +116,65 @@
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-right-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">الحجوزات المؤكدة</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ConfirmedReservations</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
         <div class="card border-right-warning shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            في انتظار الدفع
-                        </div>
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">الحجوزات المؤقتة</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PendingReservations</div>
                     </div>
                     <div class="col-auto">
-                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        <i class="fas fa-hourglass-half fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-right-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">الحجوزات الملغية</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.CancelledReservations</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-md-12 mb-4">
+        <div class="card border-right-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">الحجوزات المؤقتة المنتهية</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ExpiredTemporaryHolds</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
@@ -98,56 +182,21 @@
     </div>
 </div>
 
-<!-- Revenue Cards -->
-<div class="row mb-4">
-    <div class="col-xl-6 col-lg-7">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">الإيرادات</h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            إجمالي الإيرادات
-                        </div>
-                        <div class="h4 mb-0 font-weight-bold text-gray-800">
-                            @Model.TotalRevenue.ToString("C", new System.Globalization.CultureInfo("ar-EG"))
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            إيرادات هذا الشهر
-                        </div>
-                        <div class="h4 mb-0 font-weight-bold text-gray-800">
-                            @Model.MonthlyRevenue.ToString("C", new System.Globalization.CultureInfo("ar-EG"))
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Expired Holds Alert -->
-    @if (Model.ExpiredTemporaryHolds > 0)
-    {
-        <div class="col-xl-6 col-lg-5">
+@if (Model.ExpiredTemporaryHolds > 0)
+{
+    <div class="row mb-4">
+        <div class="col-12">
             <div class="card bg-danger text-white shadow">
                 <div class="card-body">
-                    <div class="text-white-50 small">تحذير</div>
-                    <div class="text-white h5">
-                        يوجد @Model.ExpiredTemporaryHolds حجز منتهي الصلاحية
-                    </div>
-                    <a href="/Admin/Reservations?status=1" class="btn btn-light btn-sm mt-2">
-                        عرض الحجوزات المنتهية
-                    </a>
+                    <div class="text-white-50 small">تنبيه</div>
+                    <div class="text-white h5">يوجد @Model.ExpiredTemporaryHolds حجز مؤقت منتهي الصلاحية</div>
+                    <a href="/Admin/Reservations?status=1" class="btn btn-light btn-sm mt-2">عرض الحجوزات المؤقتة</a>
                 </div>
             </div>
         </div>
-    }
-</div>
+    </div>
+}
 
-<!-- Expiring Holds Alert -->
 @if (Model.ExpiringHolds.Any())
 {
     <div class="row mb-4">
@@ -156,7 +205,7 @@
                 <div class="card-header bg-warning text-dark">
                     <h6 class="m-0 font-weight-bold">
                         <i class="fas fa-exclamation-triangle"></i>
-                        حجوزات على وشك انتهاء المهلة
+                        حجوزات مؤقتة أوشكت على انتهاء المهلة
                     </h6>
                 </div>
                 <div class="card-body">
@@ -186,9 +235,7 @@
                                             @hours ساعة و @minutes دقيقة
                                         </td>
                                         <td>
-                                            <a href="/Admin/Reservations/Details/@hold.Id" class="btn btn-sm btn-outline-primary">
-                                                عرض التفاصيل
-                                            </a>
+                                            <a href="/Admin/Reservations/Details/@hold.Id" class="btn btn-sm btn-outline-primary">عرض التفاصيل</a>
                                         </td>
                                     </tr>
                                 }
@@ -201,9 +248,7 @@
     </div>
 }
 
-<!-- Recent Activities and Statistics -->
 <div class="row">
-    <!-- Recent Reservations -->
     <div class="col-lg-6 mb-4">
         <div class="card shadow h-100">
             <div class="card-header py-3">
@@ -228,6 +273,7 @@
                             <tbody>
                                 @foreach (var reservation in Model.RecentReservations)
                                 {
+                                    var status = GetStatusPresentation(reservation.Status);
                                     <tr>
                                         <td>@reservation.EmployeeName</td>
                                         <td>
@@ -235,27 +281,7 @@
                                             @reservation.UnitName
                                         </td>
                                         <td>
-                                            @{
-                                                var statusClass = reservation.Status switch
-                                                {
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.TemporaryHold => "warning",
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Confirmed => "info",
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Paid => "success",
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Cancelled => "danger",
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Approved => "success",
-                                                    _ => "secondary"
-                                                };
-                                                var statusText = reservation.Status switch
-                                                {
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.TemporaryHold => "حجز مؤقت",
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Confirmed => "مؤكد",
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Paid => "مدفوع",
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Cancelled => "ملغي",
-                                                    ECM.ReservationSystem.Domain.Entities.ReservationStatus.Approved => "مؤكد",
-                                                    _ => reservation.Status.ToString()
-                                                };
-                                            }
-                                            <span class="badge bg-@statusClass">@statusText</span>
+                                            <span class="badge bg-@status.CssClass">@status.Text</span>
                                         </td>
                                         <td>
                                             <small>@reservation.CreatedAt.ToString("dd/MM/yyyy")</small>
@@ -271,15 +297,12 @@
                     <p class="text-muted text-center">لا توجد حجوزات حديثة</p>
                 }
                 <div class="text-center">
-                    <a href="/Admin/Reservations" class="btn btn-primary btn-sm">
-                        عرض جميع الحجوزات
-                    </a>
+                    <a href="/Admin/Reservations" class="btn btn-primary btn-sm">عرض جميع الحجوزات</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- City Statistics -->
     <div class="col-lg-6 mb-4">
         <div class="card shadow h-100">
             <div class="card-header py-3">
@@ -297,8 +320,9 @@
                                 <tr>
                                     <th>المدينة</th>
                                     <th>الوحدات</th>
-                                    <th>محجوزة</th>
-                                    <th>متاحة</th>
+                                    <th>مؤكد</th>
+                                    <th>مؤقت</th>
+                                    <th>متاح</th>
                                     <th>الإيرادات</th>
                                 </tr>
                             </thead>
@@ -308,15 +332,10 @@
                                     <tr>
                                         <td>@city.CityName</td>
                                         <td>@city.TotalUnits</td>
-                                        <td>
-                                            <span class="badge bg-danger">@city.ReservedUnits</span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-success">@city.AvailableUnits</span>
-                                        </td>
-                                        <td>
-                                            <small>@city.Revenue.ToString("C", new System.Globalization.CultureInfo("ar-EG"))</small>
-                                        </td>
+                                        <td><span class="badge bg-success">@city.ReservedUnits</span></td>
+                                        <td><span class="badge bg-warning text-dark">@city.PendingUnits</span></td>
+                                        <td><span class="badge bg-primary">@city.AvailableUnits</span></td>
+                                        <td><small>@city.Revenue.ToString("C", new System.Globalization.CultureInfo("ar-EG"))</small></td>
                                     </tr>
                                 }
                             </tbody>
@@ -331,3 +350,157 @@
         </div>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow h-100 dashboard-chart-card">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-donut"></i>
+                    توزيع الحالات
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="reservationStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow h-100 dashboard-chart-card">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar"></i>
+                    أداء المدن
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="cityRevenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow dashboard-revenue-card">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-wallet"></i>
+                    الإيرادات المؤكدة
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="dashboard-metric-label">إجمالي الإيرادات</div>
+                        <div class="dashboard-revenue-value">
+                            @Model.TotalRevenue.ToString("C", new System.Globalization.CultureInfo("ar-EG"))
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="dashboard-metric-label">إيرادات هذا الشهر</div>
+                        <div class="dashboard-revenue-value">
+                            @Model.MonthlyRevenue.ToString("C", new System.Globalization.CultureInfo("ar-EG"))
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="dashboard-metric-label">نسبة المؤكد من كل الحجوزات</div>
+                        <div class="dashboard-revenue-value">
+                            @{
+                                var confirmedRatio = Model.TotalReservations > 0
+                                    ? (Model.ConfirmedReservations * 100m / Model.TotalReservations)
+                                    : 0m;
+                            }
+                            @confirmedRatio.ToString("N1")%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (() => {
+        const statusLabels = @Html.Raw(statusLabelsJson);
+        const statusCounts = @Html.Raw(statusCountsJson);
+        const cityLabels = @Html.Raw(cityLabelsJson);
+        const cityRevenue = @Html.Raw(cityRevenueJson);
+        const cityConfirmed = @Html.Raw(cityConfirmedJson);
+
+        const commonFont = {
+            family: 'Tahoma, Arial, sans-serif',
+            size: 12
+        };
+
+        const statusChartCanvas = document.getElementById('reservationStatusChart');
+        if (statusChartCanvas) {
+            new Chart(statusChartCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusCounts,
+                        backgroundColor: ['#f0ad4e', '#198754', '#dc3545'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: commonFont }
+                        }
+                    }
+                }
+            });
+        }
+
+        const cityRevenueCanvas = document.getElementById('cityRevenueChart');
+        if (cityRevenueCanvas) {
+            new Chart(cityRevenueCanvas, {
+                type: 'bar',
+                data: {
+                    labels: cityLabels,
+                    datasets: [
+                        {
+                            label: 'الإيرادات',
+                            data: cityRevenue,
+                            backgroundColor: '#0d6efd',
+                            borderRadius: 8
+                        },
+                        {
+                            label: 'الحجوزات المؤكدة',
+                            data: cityConfirmed,
+                            backgroundColor: '#20c997',
+                            borderRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: { font: commonFont }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { font: commonFont }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: commonFont }
+                        }
+                    }
+                }
+            });
+        }
+    })();
+</script>
