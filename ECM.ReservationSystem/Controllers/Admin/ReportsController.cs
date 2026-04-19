@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Models.ViewModels.Admin;
@@ -5,7 +7,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
 
 namespace ECM.ReservationSystem.Controllers.Admin;
 
@@ -24,7 +25,31 @@ public class ReportsController : Controller
     public async Task<IActionResult> Index(int? cityId, int? unitTypeId, int? year, string? weekId, ReservationStatus? status)
     {
         var targetYear = year ?? DateTime.Now.Year;
+        var model = await BuildReportsModelAsync(cityId, unitTypeId, targetYear, weekId, status);
+        await PopulateFiltersAsync(cityId, unitTypeId, targetYear, weekId, status);
+        return View(model);
+    }
 
+    [HttpGet("ExportExcel")]
+    public async Task<IActionResult> ExportExcel(int? cityId, int? unitTypeId, int? year, string? weekId, ReservationStatus? status)
+    {
+        var targetYear = year ?? DateTime.Now.Year;
+        var model = await BuildReportsModelAsync(cityId, unitTypeId, targetYear, weekId, status);
+        var content = BuildExcelHtml(model);
+        var fileName = $"reservation-reports-{DateTime.Now:yyyyMMdd-HHmmss}.xls";
+        return File(Encoding.UTF8.GetBytes(content), "application/vnd.ms-excel; charset=utf-8", fileName);
+    }
+
+    [HttpGet("ExportPdf")]
+    public async Task<IActionResult> ExportPdf(int? cityId, int? unitTypeId, int? year, string? weekId, ReservationStatus? status)
+    {
+        var targetYear = year ?? DateTime.Now.Year;
+        var model = await BuildReportsModelAsync(cityId, unitTypeId, targetYear, weekId, status);
+        return View("Print", model);
+    }
+
+    private async Task<ReportsIndexViewModel> BuildReportsModelAsync(int? cityId, int? unitTypeId, int targetYear, string? weekId, ReservationStatus? status)
+    {
         var query = _context.Reservations
             .Include(r => r.Unit)
             .ThenInclude(u => u.City)
@@ -61,7 +86,7 @@ public class ReportsController : Controller
             .ThenBy(r => r.EmployeeName)
             .ToListAsync();
 
-        var model = new ReportsIndexViewModel
+        return new ReportsIndexViewModel
         {
             Year = targetYear,
             CityId = cityId,
@@ -95,30 +120,24 @@ public class ReportsController : Controller
                         NumberOfGuests = r.NumberOfGuests,
                         IsTransportationRequired = r.IsTransportationRequired,
                         TotalAmount = r.TotalAmount,
-                        Status = r.Status switch
-                        {
-                            ReservationStatus.TemporaryHold => "حجز مؤقت",
-                            ReservationStatus.Approved => "مؤكد",
-                            ReservationStatus.Cancelled => "ملغي",
-                            ReservationStatus.Confirmed => "مؤكد",
-                            ReservationStatus.Paid => "مدفوع",
-                            _ => r.Status.ToString()
-                        }
+                        Status = GetStatusText(r.Status)
                     }).ToList()
                 })
                 .OrderBy(g => g.WeekStartDate)
                 .ThenBy(g => g.CityName)
                 .ToList()
         };
+    }
 
+    private async Task PopulateFiltersAsync(int? cityId, int? unitTypeId, int targetYear, string? weekId, ReservationStatus? status)
+    {
         ViewBag.Cities = new SelectList(await _context.Cities.Where(c => c.IsActive).ToListAsync(), "Id", "Name", cityId);
         ViewBag.UnitTypes = new SelectList(await _context.UnitTypes.Where(ut => ut.IsActive).ToListAsync(), "Id", "Name", unitTypeId);
         ViewBag.Years = new SelectList(
-                GetAvailableYears().Select(y => new { Value = y, Text = y }),
-                "Value",
-                "Text",
-                targetYear
-            );
+            GetAvailableYears().Select(y => new { Value = y, Text = y }),
+            "Value",
+            "Text",
+            targetYear);
         ViewBag.Statuses = new SelectList(
             new[]
             {
@@ -130,8 +149,6 @@ public class ReportsController : Controller
             "Text",
             status);
         ViewBag.Weeks = new SelectList(await BuildWeekOptionsAsync(targetYear, cityId, unitTypeId), "Id", "DisplayName", weekId);
-
-        return View(model);
     }
 
     private async Task<List<object>> BuildWeekOptionsAsync(int year, int? cityId, int? unitTypeId)
@@ -175,6 +192,53 @@ public class ReportsController : Controller
             })
             .Cast<object>()
             .ToList();
+    }
+
+    private static string GetStatusText(ReservationStatus status)
+    {
+        return status switch
+        {
+            ReservationStatus.TemporaryHold => "حجز مؤقت",
+            ReservationStatus.Approved => "مؤكد",
+            ReservationStatus.Cancelled => "ملغي",
+            ReservationStatus.Confirmed => "مؤكد",
+            ReservationStatus.Paid => "مدفوع",
+            _ => status.ToString()
+        };
+    }
+
+    private static string BuildExcelHtml(ReportsIndexViewModel model)
+    {
+        var html = new StringBuilder();
+        html.AppendLine("<html><head><meta charset='utf-8' /></head><body dir='rtl'>");
+        html.AppendLine("<table border='1' style='border-collapse:collapse;width:100%;font-family:Tahoma;'>");
+        html.AppendLine("<thead>");
+        html.AppendLine("<tr style='background:#f3ead8;font-weight:bold;'>");
+        html.AppendLine("<th>المدينة</th><th>الفوج</th><th>الموظف</th><th>رقم العامل</th><th>الهاتف</th><th>رقم الوحدة</th><th>نوع الوحدة</th><th>عدد الأفراد</th><th>الإجمالي</th><th>الحالة</th>");
+        html.AppendLine("</tr>");
+        html.AppendLine("</thead><tbody>");
+
+        foreach (var group in model.Groups)
+        {
+            foreach (var item in group.Items)
+            {
+                html.AppendLine("<tr>");
+                html.AppendLine($"<td>{group.CityName}</td>");
+                html.AppendLine($"<td>{group.WeekStartDate:dd/MM/yyyy} - {group.WeekEndDate:dd/MM/yyyy}</td>");
+                html.AppendLine($"<td>{item.EmployeeName}</td>");
+                html.AppendLine($"<td>{item.EmployeeNumber}</td>");
+                html.AppendLine($"<td>{item.PhoneNumber}</td>");
+                html.AppendLine($"<td>{(string.IsNullOrWhiteSpace(item.UnitCode) ? item.UnitName : item.UnitCode)}</td>");
+                html.AppendLine($"<td>{item.UnitTypeName}</td>");
+                html.AppendLine($"<td>{item.NumberOfGuests}</td>");
+                html.AppendLine($"<td>{item.TotalAmount:N2}</td>");
+                html.AppendLine($"<td>{item.Status}</td>");
+                html.AppendLine("</tr>");
+            }
+        }
+
+        html.AppendLine("</tbody></table></body></html>");
+        return html.ToString();
     }
 
     private static bool TryParseWeekId(string? weekId, out int cityId, out DateTime weekStartDate)

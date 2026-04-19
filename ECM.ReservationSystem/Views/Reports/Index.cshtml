@@ -64,7 +64,7 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label">الفوج</label>
                     <select name="weekId" class="form-select select2">
                         <option value="">الكل</option>
@@ -80,6 +80,19 @@
                 </div>
                 <div class="col-md-2 d-grid">
                     <a href="/Admin/Reports" class="btn btn-outline-secondary">مسح</a>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <a class="btn btn-outline-success"
+                       href="@Url.Action("ExportExcel", "Reports", new { year = Model.Year, cityId = Model.CityId, unitTypeId = Model.UnitTypeId, status = Model.Status, weekId = Model.WeekId })">
+                        تصدير Excel
+                    </a>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <a class="btn btn-outline-danger"
+                       target="_blank"
+                       href="@Url.Action("ExportPdf", "Reports", new { year = Model.Year, cityId = Model.CityId, unitTypeId = Model.UnitTypeId, status = Model.Status, weekId = Model.WeekId })">
+                        تصدير PDF
+                    </a>
                 </div>
             </form>
         </div>

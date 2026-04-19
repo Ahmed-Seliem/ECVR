@@ -1,0 +1,109 @@
+@model ECM.ReservationSystem.Models.ViewModels.Admin.ReportsIndexViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>تقرير الحجوزات</title>
+    <style>
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            margin: 24px;
+            color: #222;
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: 24px;
+        }
+
+        .group {
+            margin-bottom: 24px;
+            page-break-inside: avoid;
+        }
+
+        .group-header {
+            padding: 10px 12px;
+            background: #f3ead8;
+            border: 1px solid #d9c8a7;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #cfcfcf;
+            padding: 8px;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f7f7f7;
+        }
+
+        .summary {
+            margin-top: 6px;
+            color: #555;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <h1>تقرير الحجوزات</h1>
+
+    @foreach (var group in Model.Groups)
+    {
+        <section class="group">
+            <div class="group-header">
+                @group.CityName | @group.WeekStartDate.ToString("dd/MM/yyyy") - @group.WeekEndDate.ToString("dd/MM/yyyy")
+            </div>
+            <div class="summary">
+                عدد الحجوزات: @group.ReservationCount |
+                إجمالي المبالغ: @group.TotalAmount.ToString("N2")
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>الموظف</th>
+                        <th>رقم العامل</th>
+                        <th>الهاتف</th>
+                        <th>رقم الوحدة</th>
+                        <th>نوع الوحدة</th>
+                        <th>عدد الأفراد</th>
+                        <th>الإجمالي</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in group.Items)
+                    {
+                        <tr>
+                            <td>@item.EmployeeName</td>
+                            <td>@item.EmployeeNumber</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.PhoneNumber) ? "-" : item.PhoneNumber)</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.UnitCode) ? item.UnitName : item.UnitCode)</td>
+                            <td>@item.UnitTypeName</td>
+                            <td>@item.NumberOfGuests</td>
+                            <td>@item.TotalAmount.ToString("N2")</td>
+                            <td>@item.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    }
+
+    <script>
+        window.addEventListener('load', function () {
+            window.print();
+        });
+    </script>
+</body>
+</html>
