@@ -3,12 +3,15 @@ using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Models.DTOs;
 using ECM.ReservationSystem.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Data;
 
 namespace ECM.ReservationSystem.Services.Implementations
 {
     public class ReservationService : IReservationService
     {
         private const int MaxGuestsLimit = 6;
+        private const int ReservationLockTimeoutMs = 15000;
         private readonly ApplicationDbContext _context;
         private readonly IPricingService _pricingService;
 
@@ -247,61 +250,91 @@ namespace ECM.ReservationSystem.Services.Implementations
 
         public async Task<ReservationResponseDto> CreateReservationAsync(ReservationRequestDto request)
         {
-            var costCalculation = await CalculateCostAsync(
-                request.UnitId,
-                request.CheckInDate,
-                request.CheckOutDate,
-                request.NumberOfGuests,
-                request.IsTransportationRequired);
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
 
-            if (!costCalculation.IsAvailable)
+            try
             {
-                throw new InvalidOperationException(costCalculation.Message);
+                var unit = await _context.Units
+                    .Include(u => u.City)
+                    .FirstOrDefaultAsync(u => u.Id == request.UnitId);
+
+                if (unit == null)
+                {
+                    throw new InvalidOperationException("الوحدة غير موجودة.");
+                }
+
+                foreach (var lockResource in BuildReservationLockResources(request, unit.CityId))
+                {
+                    await AcquireExclusiveReservationLockAsync(lockResource);
+                }
+
+                var costCalculation = await CalculateCostAsync(
+                    request.UnitId,
+                    request.CheckInDate,
+                    request.CheckOutDate,
+                    request.NumberOfGuests,
+                    request.IsTransportationRequired);
+
+                if (!costCalculation.IsAvailable)
+                {
+                    throw new InvalidOperationException(costCalculation.Message);
+                }
+
+                var seasonEligibility = await GetSeasonEligibilityAsync(request.EmployeeNumber, request.CheckInDate.Year);
+                if (seasonEligibility.HasExistingReservation)
+                {
+                    throw new InvalidOperationException("تم الحجز لهذا الموظف من قبل خلال نفس الموسم.");
+                }
+
+                var reservation = new Reservation
+                {
+                    EmployeeNumber = request.EmployeeNumber,
+                    EmployeeName = request.EmployeeName,
+                    PhoneNumber = request.PhoneNumber,
+                    Year = request.CheckInDate.Year.ToString(),
+                    UnitId = request.UnitId,
+                    CheckInDate = request.CheckInDate,
+                    CheckOutDate = request.CheckOutDate,
+                    NumberOfGuests = request.NumberOfGuests,
+                    WeeklyRent = costCalculation.WeeklyRent,
+                    InsuranceAmount = costCalculation.InsuranceAmount,
+                    TransportationCost = costCalculation.TransportationCost,
+                    TotalAmount = costCalculation.TotalAmount,
+                    IsTransportationRequired = request.IsTransportationRequired,
+                    PaymentReceiptNumber = request.PaymentReceiptNumber ?? string.Empty,
+                    InsuranceReceiptNumber = request.InsuranceReceiptNumber ?? string.Empty,
+                    Notes = request.Notes ?? string.Empty,
+                    Status = ReservationStatus.TemporaryHold,
+                    PaymentDeadline = AddBusinessDays(DateTime.Now, 3),
+                    CaseSystemId = request.CaseSystemId ?? string.Empty,
+                    DocumentId = request.DocumentId
+                };
+
+                _context.Reservations.Add(reservation);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return MapReservationResponse(reservation, unit.Name, unit.City.Name);
             }
-
-            var unit = await _context.Units
-                .Include(u => u.City)
-                .FirstOrDefaultAsync(u => u.Id == request.UnitId);
-
-            if (unit == null)
+            catch
             {
-                throw new InvalidOperationException("الوحدة غير موجودة.");
+                await transaction.RollbackAsync();
+                throw;
             }
+        }
 
-            var seasonEligibility = await GetSeasonEligibilityAsync(request.EmployeeNumber, request.CheckInDate.Year);
-            if (seasonEligibility.HasExistingReservation)
-            {
-                throw new InvalidOperationException("تم الحجز لهذا الموظف من قبل خلال نفس الموسم.");
-            }
+        public async Task<bool> IsReservationBookedAsync(ReservationRequestDto request)
+        {
+            var query = _context.Reservations
+                .AsNoTracking()
+                .Where(r => r.Status != ReservationStatus.Cancelled);
 
-            var reservation = new Reservation
-            {
-                EmployeeNumber = request.EmployeeNumber,
-                EmployeeName = request.EmployeeName,
-                PhoneNumber = request.PhoneNumber,
-                Year = request.CheckInDate.Year.ToString(),
-                UnitId = request.UnitId,
-                CheckInDate = request.CheckInDate,
-                CheckOutDate = request.CheckOutDate,
-                NumberOfGuests = request.NumberOfGuests,
-                WeeklyRent = costCalculation.WeeklyRent,
-                InsuranceAmount = costCalculation.InsuranceAmount,
-                TransportationCost = costCalculation.TransportationCost,
-                TotalAmount = costCalculation.TotalAmount,
-                IsTransportationRequired = request.IsTransportationRequired,
-                PaymentReceiptNumber = request.PaymentReceiptNumber ?? string.Empty,
-                InsuranceReceiptNumber = request.InsuranceReceiptNumber ?? string.Empty,
-                Notes = request.Notes ?? string.Empty,
-                Status = ReservationStatus.TemporaryHold,
-                PaymentDeadline = AddBusinessDays(DateTime.Now, 3),
-                CaseSystemId = request.CaseSystemId ?? string.Empty,
-                DocumentId = request.DocumentId
-            };
 
-            _context.Reservations.Add(reservation);
-            await _context.SaveChangesAsync();
+            return await query.AnyAsync(r =>
 
-            return MapReservationResponse(reservation, unit.Name, unit.City.Name);
+                r.UnitId == request.UnitId &&
+                r.CheckInDate == request.CheckInDate &&
+                r.CheckOutDate == request.CheckOutDate);
         }
 
         public async Task<bool> ConfirmReservationAsync(int reservationId)
@@ -594,6 +627,65 @@ namespace ECM.ReservationSystem.Services.Implementations
             }
 
             return current;
+        }
+
+        private async Task AcquireExclusiveReservationLockAsync(string resource)
+        {
+            var currentTransaction = _context.Database.CurrentTransaction?.GetDbTransaction()
+                ?? throw new InvalidOperationException("Reservation locking requires an active database transaction.");
+
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != ConnectionState.Open)
+            {
+                await connection.OpenAsync();
+            }
+
+            await using var command = connection.CreateCommand();
+            command.Transaction = currentTransaction;
+            command.CommandText = """
+                DECLARE @result int;
+                EXEC @result = sp_getapplock
+                    @Resource = @resource,
+                    @LockMode = 'Exclusive',
+                    @LockOwner = 'Transaction',
+                    @LockTimeout = @lockTimeout;
+                SELECT @result;
+                """;
+
+            var resourceParameter = command.CreateParameter();
+            resourceParameter.ParameterName = "@resource";
+            resourceParameter.Value = resource;
+            command.Parameters.Add(resourceParameter);
+
+            var timeoutParameter = command.CreateParameter();
+            timeoutParameter.ParameterName = "@lockTimeout";
+            timeoutParameter.Value = ReservationLockTimeoutMs;
+            command.Parameters.Add(timeoutParameter);
+
+            var result = Convert.ToInt32(await command.ExecuteScalarAsync());
+            if (result < 0)
+            {
+                throw new InvalidOperationException("تعذر تأمين الحجز لأن طلبًا آخر يعالج نفس الوحدة أو نفس الفترة الآن.");
+            }
+        }
+
+        private static IEnumerable<string> BuildReservationLockResources(ReservationRequestDto request, int cityId)
+        {
+            var resources = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(request.EmployeeNumber))
+            {
+                resources.Add($"reservation-lock:employee:{request.EmployeeNumber.Trim().ToUpperInvariant()}:{request.CheckInDate.Year}");
+            }
+
+            if (request.IsTransportationRequired && request.NumberOfGuests > 0)
+            {
+                resources.Add($"reservation-lock:transport:{cityId}:{request.CheckInDate:yyyyMMdd}:{request.CheckOutDate:yyyyMMdd}");
+            }
+
+            resources.Add($"reservation-lock:unit:{request.UnitId}:{request.CheckInDate:yyyyMMdd}:{request.CheckOutDate:yyyyMMdd}");
+
+            return resources.OrderBy(resource => resource, StringComparer.Ordinal);
         }
 
         private static ReservationResponseDto MapReservationResponse(Reservation reservation, string unitName, string cityName)

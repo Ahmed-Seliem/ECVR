@@ -396,46 +396,34 @@ public class ReservationsApiController : ControllerBase
     [HttpPost("submit")]
     public async Task<IActionResult> Submit([FromBody] ReservationSubmissionRequest request)
     {
-        if (request.NumberOfGuests < 0 || request.NumberOfGuests > MaxGuestsLimit)
+        var (holdRequest, errorResult) = await TryBuildReservationRequestAsync(request);
+        if (errorResult is not null)
         {
-            return BadRequest(new { message = $"numberOfGuests must be between 0 and {MaxGuestsLimit}." });
+            return errorResult;
         }
-
-        var week = await ResolveWeekAsync(request.WeekId);
-        if (week is null)
-        {
-            return NotFound(new { message = "Invalid or unavailable week id." });
-        }
-
-        var normalizedGuests = request.NumberOfGuests > 0 ? request.NumberOfGuests : 1;
-        var transportationRequired = request.IsTransportationRequired && request.NumberOfGuests > 0;
-
-        var holdRequest = new ReservationRequestDto
-        {
-            EmployeeNumber = request.EmployeeNumber,
-            EmployeeName = request.EmployeeName,
-            PhoneNumber = request.PhoneNumber,
-            UnitId = request.UnitId,
-            CheckInDate = week.StartDate,
-            CheckOutDate = week.EndDate,
-            NumberOfGuests = normalizedGuests,
-            IsTransportationRequired = transportationRequired,
-            PaymentReceiptNumber = request.PaymentReceiptNumber ?? string.Empty,
-            InsuranceReceiptNumber = request.InsuranceReceiptNumber ?? string.Empty,
-            Notes = request.Notes ?? string.Empty,
-            CaseSystemId = BuildReferenceId(request),
-            DocumentId = request.DocumentId
-        };
 
         try
         {
-            var reservation = await _reservationService.CreateReservationAsync(holdRequest);
+            var reservation = await _reservationService.CreateReservationAsync(holdRequest!);
             return Ok(reservation);
         }
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    [HttpPost("is-booked")]
+    public async Task<IActionResult> IsBooked([FromBody] ReservationSubmissionRequest request)
+    {
+        var (holdRequest, errorResult) = await TryBuildReservationRequestAsync(request);
+        if (errorResult is not null)
+        {
+            return errorResult;
+        }
+
+        var isBooked = await _reservationService.IsReservationBookedAsync(holdRequest!);
+        return Ok(isBooked);
     }
 
     [HttpPost("update-reservation")]
@@ -486,6 +474,41 @@ public class ReservationsApiController : ControllerBase
         }
 
         return request.CaseSystemId ?? string.Empty;
+    }
+
+    private async Task<(ReservationRequestDto? HoldRequest, IActionResult? ErrorResult)> TryBuildReservationRequestAsync(
+        ReservationSubmissionRequest request)
+    {
+        if (request.NumberOfGuests < 0 || request.NumberOfGuests > MaxGuestsLimit)
+        {
+            return (null, BadRequest(new { message = $"numberOfGuests must be between 0 and {MaxGuestsLimit}." }));
+        }
+
+        var week = await ResolveWeekAsync(request.WeekId);
+        if (week is null)
+        {
+            return (null, NotFound(new { message = "Invalid or unavailable week id." }));
+        }
+
+        var normalizedGuests = request.NumberOfGuests > 0 ? request.NumberOfGuests : 1;
+        var transportationRequired = request.IsTransportationRequired && request.NumberOfGuests > 0;
+
+        return (new ReservationRequestDto
+        {
+            EmployeeNumber = request.EmployeeNumber,
+            EmployeeName = request.EmployeeName,
+            PhoneNumber = request.PhoneNumber,
+            UnitId = request.UnitId,
+            CheckInDate = week.StartDate,
+            CheckOutDate = week.EndDate,
+            NumberOfGuests = normalizedGuests,
+            IsTransportationRequired = transportationRequired,
+            PaymentReceiptNumber = request.PaymentReceiptNumber ?? string.Empty,
+            InsuranceReceiptNumber = request.InsuranceReceiptNumber ?? string.Empty,
+            Notes = request.Notes ?? string.Empty,
+            CaseSystemId = BuildReferenceId(request),
+            DocumentId = request.DocumentId
+        }, null);
     }
 
     private async Task<List<WeekOption>> BuildWeeksAsync(int cityId, AudienceFilter filter)

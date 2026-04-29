@@ -11,7 +11,7 @@ namespace Reservation
 
         public override void Complete(WorkflowItem workflowItem)
         {
-            ProcessWorkflowItem(workflowItem);
+            //ProcessWorkflowItem(workflowItem);
         }
 
         public override void Execute(WorkflowItem workflowItem)
@@ -22,37 +22,43 @@ namespace Reservation
         private static void ProcessWorkflowItem(WorkflowItem workflowItem)
         {
             var currentDocumentId = 0L;
-            try
-            {
-                var reservationUrl = GetPropertyValue(workflowItem, "ReservationURL");
-                var workflowId = workflowItem.ActivityInstance.ActivityDefinition.WorkflowDefinition.WorkflowId;
-                currentDocumentId = GetLongPropertyValue(workflowItem, "DocumentId");
-                var formData = ResolveFormData(workflowItem, currentDocumentId);
+            //try
+            //{
+            var reservationUrl = GetPropertyValue(workflowItem, "ReservationURL");
+            var ReservationStructure = GetPropertyValue(workflowItem, "ReservationStructure");
+            var workflowId = workflowItem.ActivityInstance.ActivityDefinition.WorkflowDefinition.WorkflowId;
+            currentDocumentId = GetLongPropertyValue(workflowItem, "DocumentId");
+            var formData = ResolveFormData(workflowItem, currentDocumentId);
 
-                using var json = JsonDocument.Parse(formData);
-                var root = json.RootElement;
-                var submitRequest = BuildSubmitRequest(root, workflowId, currentDocumentId);
-                var submitUrl = BuildUrl(reservationUrl, "/api/Reservation/submit");
-                var requestBody = JsonSerializer.Serialize(submitRequest);
+            using var json = JsonDocument.Parse(formData);
+            var root = json.RootElement;
+            var submitRequest = BuildSubmitRequest(root, workflowId, currentDocumentId);
+            var submitUrl = BuildUrl(reservationUrl, "/api/Reservation/submit");
+            var requestBody = JsonSerializer.Serialize(submitRequest);
 
-                WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitUrl", submitUrl);
-                WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitRequest", requestBody);
+            WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitUrl", submitUrl);
+            WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitRequest", requestBody);
 
-                var responseBody = SendPostRequest(submitUrl, requestBody);
-                WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitResponse", responseBody);
-            }
-            catch (Exception ex)
-            {
-                WriteDebugArtifact(
-                    workflowItem,
-                    currentDocumentId,
-                    "SubmitException",
-                    $"{ex.Message}{Environment.NewLine}{ex.StackTrace}");
-                Intalio.Core.ExceptionLogger.WriteEntry(
-                    $"Exception in Reservation Code Activity: {ex.Message}\nStack Trace: {ex.StackTrace}");
-                throw;
-            }
+            var responseBody = SendPostRequest(submitUrl, requestBody);
+            WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitResponse", responseBody);
         }
+        //    catch (Exception ex)
+        //    {
+        //        if (ex is ReservationSubmissionFailedException submitFailure)
+        //        {
+        //            WriteDebugArtifact(workflowItem, currentDocumentId, "SubmitResponse", submitFailure.ResponseBody);
+        //        }
+
+        //        WriteDebugArtifact(
+        //            workflowItem,
+        //            currentDocumentId,
+        //            "SubmitException",
+        //            $"{ex.Message}{Environment.NewLine}{ex.StackTrace}");
+        //        Intalio.Core.ExceptionLogger.WriteEntry(
+        //            $"Exception in Reservation Code Activity: {ex.Message}\nStack Trace: {ex.StackTrace}");
+        //        throw;
+        //    }
+        //}
 
         private static string ResolveFormData(WorkflowItem workflowItem, long currentDocumentId)
         {
@@ -152,11 +158,44 @@ namespace Reservation
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new InvalidOperationException(
-                    $"Reservation request failed with status {(int)response.StatusCode}. Response: {responseBody}");
+                //throw new ReservationSubmissionFailedException(
+                //    BuildReservationFailureMessage((int)response.StatusCode, responseBody),
+                //    responseBody);
             }
 
             return responseBody;
+        }
+
+        private static string BuildReservationFailureMessage(int statusCode, string responseBody)
+        {
+            var apiMessage = TryExtractApiMessage(responseBody);
+            return !string.IsNullOrWhiteSpace(apiMessage)
+                ? apiMessage
+                : $"Reservation request failed with status {statusCode}. Response: {responseBody}";
+        }
+
+        private static string? TryExtractApiMessage(string responseBody)
+        {
+            if (string.IsNullOrWhiteSpace(responseBody))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var json = JsonDocument.Parse(responseBody);
+                if (json.RootElement.TryGetProperty("message", out var messageElement) &&
+                    messageElement.ValueKind == JsonValueKind.String)
+                {
+                    return messageElement.GetString();
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
+            return null;
         }
 
         private static string BuildUrl(string reservationUrl, string path)
@@ -223,6 +262,17 @@ namespace Reservation
             public string Notes { get; set; } = string.Empty;
             public long WorkflowId { get; set; }
             public long DocumentId { get; set; }
+        }
+
+        private sealed class ReservationSubmissionFailedException : InvalidOperationException
+        {
+            public ReservationSubmissionFailedException(string message, string responseBody)
+                : base(message)
+            {
+                ResponseBody = responseBody;
+            }
+
+            public string ResponseBody { get; }
         }
     }
 }
