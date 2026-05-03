@@ -106,6 +106,7 @@ namespace Reservation
             {
                 EmployeeNumber = GetStringValue(root, "number") ?? string.Empty,
                 EmployeeName = GetStringValue(root, "name") ?? string.Empty,
+                Sector = ResolveSector(root),
                 PhoneNumber = GetStringValue(root, "phoneNumber") ?? string.Empty,
                 UnitId = GetIntValue(root, "propertyWithFloor") ?? 0,
                 WeekId = GetStringValue(root, "weeks") ?? string.Empty,
@@ -117,6 +118,14 @@ namespace Reservation
                 WorkflowId = workflowId,
                 DocumentId = documentId
             };
+        }
+
+        private static string ResolveSector(JsonElement root)
+        {
+            return GetStringValue(root, "department")
+                   ?? GetStringValue(root, "employeeDepartment")
+                   ?? GetStringValue(root, "sector")
+                   ?? string.Empty;
         }
 
         private static string BuildNotes(JsonElement root)
@@ -252,6 +261,7 @@ namespace Reservation
         {
             public string EmployeeNumber { get; set; } = string.Empty;
             public string EmployeeName { get; set; } = string.Empty;
+            public string Sector { get; set; } = string.Empty;
             public string PhoneNumber { get; set; } = string.Empty;
             public int UnitId { get; set; }
             public string WeekId { get; set; } = string.Empty;

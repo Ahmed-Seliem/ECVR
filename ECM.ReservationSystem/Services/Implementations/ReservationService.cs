@@ -290,6 +290,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 {
                     EmployeeNumber = request.EmployeeNumber,
                     EmployeeName = request.EmployeeName,
+                    Sector = request.Sector,
                     PhoneNumber = request.PhoneNumber,
                     Year = request.CheckInDate.Year.ToString(),
                     UnitId = request.UnitId,
@@ -695,6 +696,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                 ReservationId = reservation.Id,
                 EmployeeNumber = reservation.EmployeeNumber,
                 EmployeeName = reservation.EmployeeName,
+                Sector = reservation.Sector,
                 PhoneNumber = reservation.PhoneNumber,
                 UnitName = unitName,
                 CityName = cityName,

@@ -81,7 +81,7 @@
                         <th>قيمة الشقة</th>
                         <th>الاسم</th>
                         <th>الرقم</th>
-                        <th>الوجهة</th>
+                        <th>القطاع</th>
                         <th>إيصال التأمين</th>
                         <th>عدد</th>
                         <th>القيمة</th>
@@ -98,7 +98,7 @@
                             <td>@item.UnitAmount.ToString("N2")</td>
                             <td>@item.EmployeeName</td>
                             <td>@item.EmployeeNumber</td>
-                            <td>@(string.IsNullOrWhiteSpace(item.FacadeName) ? "-" : item.FacadeName)</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.Sector) ? "-" : item.Sector)</td>
                             <td>@(string.IsNullOrWhiteSpace(item.InsuranceReceiptNumber) ? "-" : item.InsuranceReceiptNumber)</td>
                             <td>@item.NumberOfGuests</td>
                             <td>@item.TotalAmount.ToString("N2")</td>

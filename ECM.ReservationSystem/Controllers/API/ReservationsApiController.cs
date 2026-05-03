@@ -497,6 +497,7 @@ public class ReservationsApiController : ControllerBase
         {
             EmployeeNumber = request.EmployeeNumber,
             EmployeeName = request.EmployeeName,
+            Sector = ResolveSector(request),
             PhoneNumber = request.PhoneNumber,
             UnitId = request.UnitId,
             CheckInDate = week.StartDate,
@@ -509,6 +510,57 @@ public class ReservationsApiController : ControllerBase
             CaseSystemId = BuildReferenceId(request),
             DocumentId = request.DocumentId
         }, null);
+    }
+
+    private static string ResolveSector(ReservationSubmissionRequest request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.Sector))
+        {
+            return request.Sector.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Department))
+        {
+            return request.Department.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.EmployeeDepartment))
+        {
+            return request.EmployeeDepartment.Trim();
+        }
+
+        return ExtractSectorFromNotes(request.Notes);
+    }
+
+    private static string ExtractSectorFromNotes(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            return string.Empty;
+        }
+
+        foreach (var prefix in new[] { "Department:", "EmployeeDepartment:" })
+        {
+            var startIndex = notes.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+            if (startIndex < 0)
+            {
+                continue;
+            }
+
+            startIndex += prefix.Length;
+            var endIndex = notes.IndexOf('|', startIndex);
+            var value = (endIndex >= 0
+                    ? notes[startIndex..endIndex]
+                    : notes[startIndex..])
+                .Trim();
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return string.Empty;
     }
 
     private async Task<List<WeekOption>> BuildWeeksAsync(int cityId, AudienceFilter filter)
@@ -791,6 +843,9 @@ public class ReservationsApiController : ControllerBase
     {
         public string EmployeeNumber { get; set; } = string.Empty;
         public string EmployeeName { get; set; } = string.Empty;
+        public string? Sector { get; set; }
+        public string? Department { get; set; }
+        public string? EmployeeDepartment { get; set; }
         public string PhoneNumber { get; set; } = string.Empty;
         public int UnitId { get; set; }
         public string WeekId { get; set; } = string.Empty;

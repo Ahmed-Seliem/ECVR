@@ -14,6 +14,9 @@ public class Reservation : AuditableEntity
     [StringLength(100)]
     public string EmployeeName { get; set; } = string.Empty;
 
+    [StringLength(200)]
+    public string Sector { get; set; } = string.Empty;
+
     [StringLength(20)]
     public string PhoneNumber { get; set; } = string.Empty;
 

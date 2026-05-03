@@ -27,7 +27,7 @@ public class ReportsReservationItemViewModel
 {
     public int ReservationId { get; set; }
     public string FloorDisplayName { get; set; } = string.Empty;
-    public string FacadeName { get; set; } = string.Empty;
+    public string Sector { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
     public string EmployeeNumber { get; set; } = string.Empty;
     public string InsuranceReceiptNumber { get; set; } = string.Empty;

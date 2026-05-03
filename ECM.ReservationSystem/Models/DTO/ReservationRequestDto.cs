@@ -10,6 +10,8 @@ namespace ECM.ReservationSystem.Models.DTOs
         [Required]
         public string EmployeeName { get; set; } = string.Empty;
 
+        public string Sector { get; set; } = string.Empty;
+
         [Required]
         [RegularExpression("^(010|011|012|015)[0-9]{8}$")]
         public string PhoneNumber { get; set; } = string.Empty;

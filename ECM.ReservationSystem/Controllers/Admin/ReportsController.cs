@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text;
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Models.ViewModels.Admin;
@@ -7,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text;
 
 namespace ECM.ReservationSystem.Controllers.Admin;
 
@@ -58,6 +58,7 @@ public class ReportsController : Controller
             .Include(r => r.Unit)
             .ThenInclude(u => u.UnitFacade)
             .Where(r => r.CheckInDate.Year == targetYear)
+            .Where(r => r.Status != ReservationStatus.Cancelled)
             .AsQueryable();
 
         if (cityId.HasValue)
@@ -114,9 +115,7 @@ public class ReportsController : Controller
                     {
                         ReservationId = r.Id,
                         FloorDisplayName = BuildFloorDisplayName(r.Unit.FloorNumber),
-                        FacadeName = r.Unit.UnitFacade != null
-                            ? (r.Unit.UnitFacade.NameAr ?? r.Unit.UnitFacade.Name)
-                            : string.Empty,
+                        Sector = GetSectorValue(r),
                         EmployeeName = r.EmployeeName,
                         EmployeeNumber = r.EmployeeNumber,
                         InsuranceReceiptNumber = r.InsuranceReceiptNumber,
@@ -150,8 +149,7 @@ public class ReportsController : Controller
             new[]
             {
                 new { Value = ReservationStatus.TemporaryHold, Text = "حجز مؤقت" },
-                new { Value = ReservationStatus.Approved, Text = "مؤكد" },
-                new { Value = ReservationStatus.Cancelled, Text = "ملغي" }
+                new { Value = ReservationStatus.Approved, Text = "مؤكد" }
             },
             "Value",
             "Text",
@@ -215,6 +213,47 @@ public class ReportsController : Controller
         };
     }
 
+    private static string GetSectorValue(Reservation reservation)
+    {
+        if (!string.IsNullOrWhiteSpace(reservation.Sector))
+        {
+            return reservation.Sector;
+        }
+
+        return ExtractSectorFromNotes(reservation.Notes);
+    }
+
+    private static string ExtractSectorFromNotes(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            return string.Empty;
+        }
+
+        foreach (var prefix in new[] { "Department:", "EmployeeDepartment:" })
+        {
+            var startIndex = notes.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+            if (startIndex < 0)
+            {
+                continue;
+            }
+
+            startIndex += prefix.Length;
+            var endIndex = notes.IndexOf('|', startIndex);
+            var value = (endIndex >= 0
+                    ? notes[startIndex..endIndex]
+                    : notes[startIndex..])
+                .Trim();
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return string.Empty;
+    }
+
     private static string BuildExcelHtml(ReportsIndexViewModel model)
     {
         var html = new StringBuilder();
@@ -222,7 +261,7 @@ public class ReportsController : Controller
         html.AppendLine("<table border='1' style='border-collapse:collapse;width:100%;font-family:Tahoma;'>");
         html.AppendLine("<thead>");
         html.AppendLine("<tr style='background:#f3ead8;font-weight:bold;'>");
-        html.AppendLine("<th>المدينة</th><th>الفوج</th><th>الدور</th><th>رقم الشقة</th><th>قيمة الشقة</th><th>الاسم</th><th>الرقم</th><th>الوجهة</th><th>إيصال التأمين</th><th>عدد</th><th>القيمة</th><th>التليفون</th><th>الحالة</th>");
+        html.AppendLine("<th>المدينة</th><th>الفوج</th><th>الدور</th><th>رقم الشقة</th><th>قيمة الشقة</th><th>الاسم</th><th>الرقم</th><th>القطاع</th><th>إيصال التأمين</th><th>عدد</th><th>القيمة</th><th>التليفون</th><th>الحالة</th>");
         html.AppendLine("</tr>");
         html.AppendLine("</thead><tbody>");
 
@@ -238,7 +277,7 @@ public class ReportsController : Controller
                 html.AppendLine($"<td>{item.UnitAmount:N2}</td>");
                 html.AppendLine($"<td>{item.EmployeeName}</td>");
                 html.AppendLine($"<td>{item.EmployeeNumber}</td>");
-                html.AppendLine($"<td>{(string.IsNullOrWhiteSpace(item.FacadeName) ? "-" : item.FacadeName)}</td>");
+                html.AppendLine($"<td>{(string.IsNullOrWhiteSpace(item.Sector) ? "-" : item.Sector)}</td>");
                 html.AppendLine($"<td>{(string.IsNullOrWhiteSpace(item.InsuranceReceiptNumber) ? "-" : item.InsuranceReceiptNumber)}</td>");
                 html.AppendLine($"<td>{item.NumberOfGuests}</td>");
                 html.AppendLine($"<td>{item.TotalAmount:N2}</td>");
@@ -265,7 +304,7 @@ public class ReportsController : Controller
         var parts = weekId.Split('-', StringSplitOptions.RemoveEmptyEntries);
         return parts.Length == 2
                && int.TryParse(parts[0], out cityId)
-               && DateTime.TryParseExact(parts[1], "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out weekStartDate);
+            && DateTime.TryParseExact(parts[1], "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out weekStartDate);
     }
 
     private static List<int> GetAvailableYears()

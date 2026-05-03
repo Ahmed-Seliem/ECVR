@@ -7,6 +7,7 @@ namespace ECM.ReservationSystem.Models.DTOs
         public int ReservationId { get; set; }
         public string EmployeeNumber { get; set; } = string.Empty;
         public string EmployeeName { get; set; } = string.Empty;
+        public string Sector { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
         public string UnitName { get; set; } = string.Empty;
         public string CityName { get; set; } = string.Empty;
