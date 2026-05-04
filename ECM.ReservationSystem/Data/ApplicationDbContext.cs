@@ -23,6 +23,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Unit> Units { get; set; }
     public DbSet<UnitFacade> UnitFacades { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<ReservationSubmissionAttempt> ReservationSubmissionAttempts { get; set; }
     public DbSet<ReservationType> ReservationTypes { get; set; }
     public DbSet<Pricing> Pricings { get; set; }
     public DbSet<TransportationCost> TransportationCosts { get; set; }
@@ -89,6 +90,12 @@ public class ApplicationDbContext : DbContext
             .WithMany(u => u.Reservations)
             .HasForeignKey(r => r.UnitId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ReservationSubmissionAttempt>()
+            .HasIndex(a => a.DocumentId);
+
+        modelBuilder.Entity<ReservationSubmissionAttempt>()
+            .HasIndex(a => new { a.UnitId, a.CheckInDate, a.CheckOutDate });
 
         modelBuilder.Entity<Pricing>()
             .HasOne(p => p.Unit)

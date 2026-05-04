@@ -79,6 +79,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // Register Services
 builder.Services.AddScoped<IReservationService, ReservationService>();
+builder.Services.AddScoped<IReservationSubmissionAttemptService, ReservationSubmissionAttemptService>();
 builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<IUnitService, UnitService>();
 

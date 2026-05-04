@@ -5,6 +5,7 @@ using ECM.ReservationSystem.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Text.Json;
 
 namespace ECM.ReservationSystem.Controllers.API;
 
@@ -16,13 +17,16 @@ public class ReservationsApiController : ControllerBase
 {
     private const int MaxGuestsLimit = 6;
     private readonly IReservationService _reservationService;
+    private readonly IReservationSubmissionAttemptService _reservationSubmissionAttemptService;
     private readonly ApplicationDbContext _context;
 
     public ReservationsApiController(
         IReservationService reservationService,
+        IReservationSubmissionAttemptService reservationSubmissionAttemptService,
         ApplicationDbContext context)
     {
         _reservationService = reservationService;
+        _reservationSubmissionAttemptService = reservationSubmissionAttemptService;
         _context = context;
     }
 
@@ -399,17 +403,45 @@ public class ReservationsApiController : ControllerBase
         var (holdRequest, errorResult) = await TryBuildReservationRequestAsync(request);
         if (errorResult is not null)
         {
+            await _reservationSubmissionAttemptService.LogAsync(
+                BuildAuditReservationRequest(request),
+                outcome: "Rejected",
+                failureReason: ExtractErrorMessage(errorResult),
+                requestPayload: JsonSerializer.Serialize(request),
+                responsePayload: SerializeActionResult(errorResult));
             return errorResult;
         }
 
         try
         {
             var reservation = await _reservationService.CreateReservationAsync(holdRequest!);
+            await _reservationSubmissionAttemptService.LogAsync(
+                holdRequest!,
+                outcome: "Succeeded",
+                reservationId: reservation.ReservationId,
+                requestPayload: JsonSerializer.Serialize(request),
+                responsePayload: JsonSerializer.Serialize(reservation));
             return Ok(reservation);
         }
         catch (InvalidOperationException ex)
         {
+            await _reservationSubmissionAttemptService.LogAsync(
+                holdRequest!,
+                outcome: "Failed",
+                failureReason: ex.Message,
+                requestPayload: JsonSerializer.Serialize(request),
+                responsePayload: JsonSerializer.Serialize(new { message = ex.Message }));
             return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            await _reservationSubmissionAttemptService.LogAsync(
+                holdRequest!,
+                outcome: "Error",
+                failureReason: ex.Message,
+                requestPayload: JsonSerializer.Serialize(request),
+                responsePayload: ex.ToString());
+            throw;
         }
     }
 
@@ -508,8 +540,64 @@ public class ReservationsApiController : ControllerBase
             InsuranceReceiptNumber = request.InsuranceReceiptNumber ?? string.Empty,
             Notes = request.Notes ?? string.Empty,
             CaseSystemId = BuildReferenceId(request),
+            WorkflowId = request.WorkflowId,
             DocumentId = request.DocumentId
         }, null);
+    }
+
+    private ReservationRequestDto BuildAuditReservationRequest(ReservationSubmissionRequest request)
+    {
+        return new ReservationRequestDto
+        {
+            EmployeeNumber = request.EmployeeNumber,
+            EmployeeName = request.EmployeeName,
+            Sector = ResolveSector(request),
+            PhoneNumber = request.PhoneNumber,
+            UnitId = request.UnitId,
+            CheckInDate = DateTime.MinValue,
+            CheckOutDate = DateTime.MinValue,
+            NumberOfGuests = Math.Max(request.NumberOfGuests, 0),
+            IsTransportationRequired = request.IsTransportationRequired,
+            PaymentReceiptNumber = request.PaymentReceiptNumber ?? string.Empty,
+            InsuranceReceiptNumber = request.InsuranceReceiptNumber ?? string.Empty,
+            Notes = request.Notes ?? string.Empty,
+            CaseSystemId = BuildReferenceId(request),
+            WorkflowId = request.WorkflowId,
+            DocumentId = request.DocumentId
+        };
+    }
+
+    private static string ExtractErrorMessage(IActionResult errorResult)
+    {
+        if (errorResult is ObjectResult { Value: not null } objectResult)
+        {
+            using var document = JsonDocument.Parse(JsonSerializer.Serialize(objectResult.Value));
+            if (document.RootElement.ValueKind == JsonValueKind.Object &&
+                document.RootElement.TryGetProperty("message", out var messageElement) &&
+                messageElement.ValueKind == JsonValueKind.String)
+            {
+                return messageElement.GetString() ?? "Request failed before reservation creation.";
+            }
+
+            return JsonSerializer.Serialize(objectResult.Value);
+        }
+
+        if (errorResult is StatusCodeResult statusCodeResult)
+        {
+            return $"Request failed with status code {statusCodeResult.StatusCode}.";
+        }
+
+        return "Request failed before reservation creation.";
+    }
+
+    private static string SerializeActionResult(IActionResult result)
+    {
+        return result switch
+        {
+            ObjectResult { Value: not null } objectResult => JsonSerializer.Serialize(objectResult.Value),
+            StatusCodeResult statusCodeResult => JsonSerializer.Serialize(new { statusCode = statusCodeResult.StatusCode }),
+            _ => string.Empty
+        };
     }
 
     private static string ResolveSector(ReservationSubmissionRequest request)
