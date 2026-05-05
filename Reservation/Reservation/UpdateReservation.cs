@@ -58,6 +58,7 @@ namespace Reservation
             {
                 Intalio.Core.ExceptionLogger.WriteEntry(
                     $"Exception in UpdateReservation Code Activity: {ex.Message}\nStack Trace: {ex.StackTrace}");
+                throw;
             }
         }
 
@@ -95,9 +96,36 @@ namespace Reservation
 
             if (!response.IsSuccessStatusCode)
             {
+                var apiMessage = TryExtractApiMessage(responseBody);
                 throw new InvalidOperationException(
-                    $"Update reservation request failed with status {(int)response.StatusCode}. Response: {responseBody}");
+                    !string.IsNullOrWhiteSpace(apiMessage)
+                        ? apiMessage
+                        : $"Update reservation request failed with status {(int)response.StatusCode}. Response: {responseBody}");
             }
+        }
+
+        private static string? TryExtractApiMessage(string responseBody)
+        {
+            if (string.IsNullOrWhiteSpace(responseBody))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var json = JsonDocument.Parse(responseBody);
+                if (json.RootElement.TryGetProperty("message", out var messageElement) &&
+                    messageElement.ValueKind == JsonValueKind.String)
+                {
+                    return messageElement.GetString();
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
+            return null;
         }
 
         private static string BuildUrl(string reservationUrl, string path)

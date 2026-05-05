@@ -472,6 +472,36 @@ public class ReservationsApiController : ControllerBase
             return BadRequest(new { message = "reservationStatus must be Approved or Cancelled." });
         }
 
+        var existingReservation = await _context.Reservations
+            .AsNoTracking()
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync(r => r.DocumentId == request.DocumentId);
+
+        if (existingReservation == null)
+        {
+            if (request.ReservationStatus == ReservationStatus.Cancelled)
+            {
+                return Ok(new
+                {
+                    documentId = request.DocumentId,
+                    status = ReservationStatus.Cancelled.ToString(),
+                    skippedReservationUpdate = true,
+                    message = "No reservation was created for this request. Workflow cancellation can continue."
+                });
+            }
+
+            var latestAttempt = await _context.ReservationSubmissionAttempts
+                .AsNoTracking()
+                .Where(a => a.DocumentId == request.DocumentId)
+                .OrderByDescending(a => a.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            return Conflict(new
+            {
+                message = BuildApprovalBlockedMessage(latestAttempt)
+            });
+        }
+
         var success = await _reservationService.UpdateWorkflowStatusAsync(
             request.DocumentId,
             request.ReservationStatus,
@@ -496,6 +526,29 @@ public class ReservationsApiController : ControllerBase
             documentId = updatedReservation.DocumentId,
             status = updatedReservation.Status.ToString()
         });
+    }
+
+    private static string BuildApprovalBlockedMessage(ReservationSubmissionAttempt? latestAttempt)
+    {
+        const string defaultMessage =
+            "لا يمكن اعتماد الطلب لأن الحجز لم يتم إنشاؤه بنجاح.";
+
+        if (latestAttempt == null)
+        {
+            return defaultMessage;
+        }
+
+        if (!string.IsNullOrWhiteSpace(latestAttempt.FailureReason))
+        {
+            return $"{defaultMessage} سبب الفشل: {latestAttempt.FailureReason}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(latestAttempt.Outcome))
+        {
+            return $"{defaultMessage} آخر حالة مسجلة: {latestAttempt.Outcome}.";
+        }
+
+        return defaultMessage;
     }
 
     private static string BuildReferenceId(ReservationSubmissionRequest request)

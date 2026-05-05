@@ -167,9 +167,9 @@ namespace Reservation
 
             if (!response.IsSuccessStatusCode)
             {
-                //throw new ReservationSubmissionFailedException(
-                //    BuildReservationFailureMessage((int)response.StatusCode, responseBody),
-                //    responseBody);
+                throw new ReservationSubmissionFailedException(
+                    BuildReservationFailureMessage((int)response.StatusCode, responseBody),
+                    responseBody);
             }
 
             return responseBody;
