@@ -91,6 +91,13 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(r => r.UnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<Reservation>()
+            .HasIndex(r => r.DocumentId)
+            .HasFilter("[DocumentId] IS NOT NULL");
+
+        modelBuilder.Entity<Reservation>()
+            .HasIndex(r => new { r.UnitId, r.CheckInDate, r.CheckOutDate });
+
         modelBuilder.Entity<ReservationSubmissionAttempt>()
             .HasIndex(a => a.DocumentId);
 
