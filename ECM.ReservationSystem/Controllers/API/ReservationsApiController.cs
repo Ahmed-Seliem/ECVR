@@ -365,7 +365,10 @@ public class ReservationsApiController : ControllerBase
         }
 
         var lastTrip = await _context.Reservations
-            .Where(r => r.EmployeeNumber == employeeNumber)
+            .Where(r => r.EmployeeNumber == employeeNumber
+                        && (r.Status == ReservationStatus.Approved
+                            || r.Status == ReservationStatus.Confirmed
+                            || r.Status == ReservationStatus.Paid))
             .OrderByDescending(r => r.CheckOutDate)
             .Select(r => new
             {
@@ -438,6 +441,53 @@ public class ReservationsApiController : ControllerBase
             await _reservationSubmissionAttemptService.LogAsync(
                 holdRequest!,
                 outcome: "Error",
+                failureReason: ex.Message,
+                requestPayload: JsonSerializer.Serialize(request),
+                responsePayload: ex.ToString());
+            throw;
+        }
+    }
+
+    [HttpPost("hold")]
+    public async Task<IActionResult> Hold([FromBody] ReservationSubmissionRequest request)
+    {
+        var (holdRequest, errorResult) = await TryBuildReservationRequestAsync(request);
+        if (errorResult is not null)
+        {
+            await _reservationSubmissionAttemptService.LogAsync(
+                BuildAuditReservationRequest(request),
+                outcome: "HoldRejected",
+                failureReason: ExtractErrorMessage(errorResult),
+                requestPayload: JsonSerializer.Serialize(request),
+                responsePayload: SerializeActionResult(errorResult));
+            return errorResult;
+        }
+
+        try
+        {
+            var hold = await _reservationService.AcquirePreSubmitHoldAsync(holdRequest!);
+            await _reservationSubmissionAttemptService.LogAsync(
+                holdRequest!,
+                outcome: "HoldSucceeded",
+                requestPayload: JsonSerializer.Serialize(request),
+                responsePayload: JsonSerializer.Serialize(hold));
+            return Ok(hold);
+        }
+        catch (InvalidOperationException ex)
+        {
+            await _reservationSubmissionAttemptService.LogAsync(
+                holdRequest!,
+                outcome: "HoldFailed",
+                failureReason: ex.Message,
+                requestPayload: JsonSerializer.Serialize(request),
+                responsePayload: JsonSerializer.Serialize(new { message = ex.Message }));
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            await _reservationSubmissionAttemptService.LogAsync(
+                holdRequest!,
+                outcome: "HoldError",
                 failureReason: ex.Message,
                 requestPayload: JsonSerializer.Serialize(request),
                 responsePayload: ex.ToString());

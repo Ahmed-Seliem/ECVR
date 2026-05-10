@@ -23,6 +23,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Unit> Units { get; set; }
     public DbSet<UnitFacade> UnitFacades { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<ReservationHold> ReservationHolds { get; set; }
     public DbSet<ReservationSubmissionAttempt> ReservationSubmissionAttempts { get; set; }
     public DbSet<ReservationType> ReservationTypes { get; set; }
     public DbSet<Pricing> Pricings { get; set; }
@@ -91,12 +92,28 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(r => r.UnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<ReservationHold>()
+            .HasOne(r => r.Unit)
+            .WithMany()
+            .HasForeignKey(r => r.UnitId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<Reservation>()
             .HasIndex(r => r.DocumentId)
             .HasFilter("[DocumentId] IS NOT NULL");
 
         modelBuilder.Entity<Reservation>()
             .HasIndex(r => new { r.UnitId, r.CheckInDate, r.CheckOutDate });
+
+        modelBuilder.Entity<ReservationHold>()
+            .HasIndex(h => h.HoldToken)
+            .IsUnique();
+
+        modelBuilder.Entity<ReservationHold>()
+            .HasIndex(h => new { h.UnitId, h.CheckInDate, h.CheckOutDate });
+
+        modelBuilder.Entity<ReservationHold>()
+            .HasIndex(h => new { h.EmployeeNumber, h.CheckInDate, h.CheckOutDate });
 
         modelBuilder.Entity<ReservationSubmissionAttempt>()
             .HasIndex(a => a.DocumentId);

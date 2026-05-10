@@ -13,6 +13,7 @@ namespace ECM.ReservationSystem.Services.Interfaces
             bool? isForManagement = null,
             bool? isForPensioners = null);
         Task<CostCalculationDto> CalculateCostAsync(int unitId, DateTime checkInDate, DateTime checkOutDate, int numberOfGuests, bool isTransportationRequired);
+        Task<ReservationHoldResponseDto> AcquirePreSubmitHoldAsync(ReservationRequestDto request);
         Task<ReservationResponseDto> CreateReservationAsync(ReservationRequestDto request);
         Task<bool> IsReservationBookedAsync(ReservationRequestDto request);
         Task<bool> ConfirmReservationAsync(int reservationId);

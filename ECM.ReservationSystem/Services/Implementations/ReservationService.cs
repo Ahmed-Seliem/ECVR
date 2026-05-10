@@ -1,5 +1,6 @@
 using ECM.ReservationSystem.Data;
 using ECM.ReservationSystem.Domain.Entities;
+using ECM.ReservationSystem.Domain.Reservations;
 using ECM.ReservationSystem.Models.DTOs;
 using ECM.ReservationSystem.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -49,11 +50,20 @@ namespace ECM.ReservationSystem.Services.Implementations
             }
 
             var units = await query.ToListAsync();
+            var now = DateTime.Now;
+            var activeHolds = await _context.ReservationHolds
+                .AsNoTracking()
+                .Where(h => h.CityId == cityId
+                            && h.CheckInDate.Year == year
+                            && !h.ReleasedAt.HasValue
+                            && h.ExpiresAt > now)
+                .ToListAsync();
+
             var availableUnits = new List<UnitAvailabilityDto>();
 
             foreach (var unit in units)
             {
-                bool isAvailable = true;
+                var isAvailable = true;
                 List<AvailableWeekDto> availableWeeks = new();
 
                 if (checkInDate.HasValue && checkOutDate.HasValue)
@@ -69,10 +79,13 @@ namespace ECM.ReservationSystem.Services.Implementations
                     }
 
                     isAvailable = !await _context.Reservations
-                        .AnyAsync(r => r.UnitId == unit.Id
-                                      && r.Status != ReservationStatus.Cancelled
-                                      && r.CheckInDate < checkOutDate.Value
-                                      && r.CheckOutDate > checkInDate.Value)
+                                      .AnyAsync(r => r.UnitId == unit.Id
+                                                     && r.Status != ReservationStatus.Cancelled
+                                                     && r.CheckInDate < checkOutDate.Value
+                                                     && r.CheckOutDate > checkInDate.Value)
+                                  && !activeHolds.Any(h => h.UnitId == unit.Id
+                                                        && h.CheckInDate < checkOutDate.Value
+                                                        && h.CheckOutDate > checkInDate.Value)
                                   && isAvailable;
 
                     if (isAvailable && matchingSlot != null)
@@ -102,35 +115,37 @@ namespace ECM.ReservationSystem.Services.Implementations
 
                     continue;
                 }
-                else
+
+                var activeSlots = unit.ScheduleSlots
+                    .Where(s => s.IsActive && s.Year == year)
+                    .OrderBy(s => s.SlotStartDate)
+                    .ToList();
+
+                if (activeSlots.Any())
                 {
-                    var activeSlots = unit.ScheduleSlots
-                        .Where(s => s.IsActive && s.Year == year)
-                        .OrderBy(s => s.SlotStartDate)
-                        .ToList();
-
-                    if (activeSlots.Any())
+                    foreach (var slot in activeSlots)
                     {
-                        foreach (var slot in activeSlots)
+                        var isSlotBooked = unit.Reservations.Any(r =>
+                                               r.Status != ReservationStatus.Cancelled &&
+                                               r.CheckInDate < slot.SlotEndDate.Date &&
+                                               r.CheckOutDate > slot.SlotStartDate.Date)
+                                           || activeHolds.Any(h =>
+                                               h.UnitId == unit.Id &&
+                                               h.CheckInDate < slot.SlotEndDate.Date &&
+                                               h.CheckOutDate > slot.SlotStartDate.Date);
+
+                        if (!isSlotBooked)
                         {
-                            var isSlotBooked = unit.Reservations.Any(r =>
-                                r.Status != ReservationStatus.Cancelled &&
-                                r.CheckInDate < slot.SlotEndDate.Date &&
-                                r.CheckOutDate > slot.SlotStartDate.Date);
-
-                            if (!isSlotBooked)
+                            availableWeeks.Add(new AvailableWeekDto
                             {
-                                availableWeeks.Add(new AvailableWeekDto
-                                {
-                                    WeekStartDate = slot.SlotStartDate,
-                                    WeekEndDate = slot.SlotEndDate,
-                                    IsBookingOpen = true
-                                });
-                            }
+                                WeekStartDate = slot.SlotStartDate,
+                                WeekEndDate = slot.SlotEndDate,
+                                IsBookingOpen = true
+                            });
                         }
-
-                        isAvailable = availableWeeks.Any();
                     }
+
+                    isAvailable = availableWeeks.Any();
                 }
 
                 if (isAvailable)
@@ -154,7 +169,7 @@ namespace ECM.ReservationSystem.Services.Implementations
                         WeeklyRentDefaultCapacity = pricing?.WeeklyRentDefaultCapacity ?? 0,
                         InsuranceAmount = pricing?.InsuranceAmount ?? 0,
                         TransportationCostPerPerson = pricing?.TransportationCostPerPerson ?? 0,
-                        IsAvailable = isAvailable,
+                        IsAvailable = true,
                         AvailableWeeks = availableWeeks
                     });
                 }
@@ -163,7 +178,12 @@ namespace ECM.ReservationSystem.Services.Implementations
             return availableUnits;
         }
 
-        public async Task<CostCalculationDto> CalculateCostAsync(int unitId, DateTime checkInDate, DateTime checkOutDate, int numberOfGuests, bool isTransportationRequired)
+        public async Task<CostCalculationDto> CalculateCostAsync(
+            int unitId,
+            DateTime checkInDate,
+            DateTime checkOutDate,
+            int numberOfGuests,
+            bool isTransportationRequired)
         {
             if (numberOfGuests < 0 || numberOfGuests > MaxGuestsLimit)
             {
@@ -199,9 +219,20 @@ namespace ECM.ReservationSystem.Services.Implementations
 
             var isAvailable = !await _context.Reservations
                 .AnyAsync(r => r.UnitId == unitId
-                              && r.Status != ReservationStatus.Cancelled
-                              && r.CheckInDate < checkOutDate
-                              && r.CheckOutDate > checkInDate);
+                               && r.Status != ReservationStatus.Cancelled
+                               && r.CheckInDate < checkOutDate
+                               && r.CheckOutDate > checkInDate);
+
+            if (isAvailable)
+            {
+                isAvailable = !await _context.ReservationHolds
+                    .AsNoTracking()
+                    .AnyAsync(h => h.UnitId == unitId
+                                   && !h.ReleasedAt.HasValue
+                                   && h.ExpiresAt > DateTime.Now
+                                   && h.CheckInDate < checkOutDate
+                                   && h.CheckOutDate > checkInDate);
+            }
 
             if (!isAvailable)
             {
@@ -268,23 +299,17 @@ namespace ECM.ReservationSystem.Services.Implementations
                     await AcquireExclusiveReservationLockAsync(lockResource);
                 }
 
-                var costCalculation = await CalculateCostAsync(
-                    request.UnitId,
-                    request.CheckInDate,
-                    request.CheckOutDate,
-                    request.NumberOfGuests,
-                    request.IsTransportationRequired);
-
-                if (!costCalculation.IsAvailable)
-                {
-                    throw new InvalidOperationException(costCalculation.Message);
-                }
-
                 var seasonEligibility = await GetSeasonEligibilityAsync(request.EmployeeNumber, request.CheckInDate.Year);
                 if (seasonEligibility.HasExistingReservation)
                 {
                     throw new InvalidOperationException("تم الحجز لهذا الموظف من قبل خلال نفس الموسم.");
                 }
+
+                var ownedHoldIds = await GetOwnedActiveHoldIdsAsync(request);
+                var costCalculation = await CalculateReservationCostForSubmissionAsync(
+                    request,
+                    unit.CityId,
+                    ownedHoldIds);
 
                 var reservation = new Reservation
                 {
@@ -306,12 +331,16 @@ namespace ECM.ReservationSystem.Services.Implementations
                     InsuranceReceiptNumber = request.InsuranceReceiptNumber ?? string.Empty,
                     Notes = request.Notes ?? string.Empty,
                     Status = ReservationStatus.TemporaryHold,
-                    PaymentDeadline = AddBusinessDays(DateTime.Now, 3),
+                    PaymentDeadline = AddBusinessDays(DateTime.Now, ReservationRules.SubmittedHoldBusinessDays),
                     CaseSystemId = request.CaseSystemId ?? string.Empty,
                     DocumentId = request.DocumentId
                 };
 
                 _context.Reservations.Add(reservation);
+                await ReleaseEmployeeHoldsAsync(
+                    request,
+                    unit.CityId,
+                    "Temporary hold consumed by reservation submission.");
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -324,18 +353,139 @@ namespace ECM.ReservationSystem.Services.Implementations
             }
         }
 
+        public async Task<ReservationHoldResponseDto> AcquirePreSubmitHoldAsync(ReservationRequestDto request)
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+
+            try
+            {
+                var unit = await _context.Units
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == request.UnitId);
+
+                if (unit == null)
+                {
+                    throw new InvalidOperationException("الوحدة غير موجودة.");
+                }
+
+                foreach (var lockResource in BuildReservationLockResources(request, unit.CityId))
+                {
+                    await AcquireExclusiveReservationLockAsync(lockResource);
+                }
+
+                var seasonEligibility = await GetSeasonEligibilityAsync(request.EmployeeNumber, request.CheckInDate.Year);
+                if (seasonEligibility.HasExistingReservation)
+                {
+                    throw new InvalidOperationException("تم الحجز لهذا الموظف من قبل خلال نفس الموسم.");
+                }
+
+                var existingHold = await _context.ReservationHolds
+                    .OrderByDescending(h => h.CreatedAt)
+                    .FirstOrDefaultAsync(h =>
+                        h.EmployeeNumber == request.EmployeeNumber &&
+                        h.UnitId == request.UnitId &&
+                        h.CheckInDate == request.CheckInDate &&
+                        h.CheckOutDate == request.CheckOutDate &&
+                        !h.ReleasedAt.HasValue &&
+                        h.ExpiresAt > DateTime.Now);
+
+                var excludedHoldIds = existingHold == null
+                    ? Array.Empty<int>()
+                    : new[] { existingHold.Id };
+
+                await EnsureReservationAvailabilityAsync(request, excludedHoldIds);
+                await EnsureTransportAvailabilityAsync(request, unit.CityId, excludedHoldIds);
+                await ReleaseEmployeeHoldsAsync(
+                    request,
+                    unit.CityId,
+                    "Temporary hold superseded by a newer selection.",
+                    existingHold?.Id);
+
+                if (existingHold == null)
+                {
+                    existingHold = new ReservationHold
+                    {
+                        HoldToken = Guid.NewGuid().ToString("N"),
+                        EmployeeNumber = request.EmployeeNumber,
+                        EmployeeName = request.EmployeeName,
+                        Sector = request.Sector,
+                        PhoneNumber = request.PhoneNumber,
+                        UnitId = request.UnitId,
+                        CityId = unit.CityId,
+                        CheckInDate = request.CheckInDate,
+                        CheckOutDate = request.CheckOutDate,
+                        NumberOfGuests = request.NumberOfGuests,
+                        IsTransportationRequired = request.IsTransportationRequired,
+                        CaseSystemId = request.CaseSystemId ?? string.Empty,
+                        WorkflowId = request.WorkflowId,
+                        DocumentId = request.DocumentId,
+                        ExpiresAt = DateTime.Now.Add(ReservationRules.PreSubmitHoldDuration)
+                    };
+
+                    _context.ReservationHolds.Add(existingHold);
+                }
+                else
+                {
+                    existingHold.EmployeeName = request.EmployeeName;
+                    existingHold.Sector = request.Sector;
+                    existingHold.PhoneNumber = request.PhoneNumber;
+                    existingHold.NumberOfGuests = request.NumberOfGuests;
+                    existingHold.IsTransportationRequired = request.IsTransportationRequired;
+                    existingHold.CaseSystemId = request.CaseSystemId ?? string.Empty;
+                    existingHold.WorkflowId = request.WorkflowId;
+                    existingHold.DocumentId = request.DocumentId;
+                    existingHold.ExpiresAt = DateTime.Now.Add(ReservationRules.PreSubmitHoldDuration);
+                    existingHold.ReleasedAt = null;
+                    existingHold.ReleaseReason = string.Empty;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new ReservationHoldResponseDto
+                {
+                    HoldId = existingHold.Id,
+                    HoldToken = existingHold.HoldToken,
+                    EmployeeNumber = existingHold.EmployeeNumber,
+                    UnitId = existingHold.UnitId,
+                    CityId = existingHold.CityId,
+                    CheckInDate = existingHold.CheckInDate,
+                    CheckOutDate = existingHold.CheckOutDate,
+                    ExpiresAt = existingHold.ExpiresAt
+                };
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         public async Task<bool> IsReservationBookedAsync(ReservationRequestDto request)
         {
-            var query = _context.Reservations
+            var hasReservationConflict = await _context.Reservations
                 .AsNoTracking()
-                .Where(r => r.Status != ReservationStatus.Cancelled);
+                .Where(r => r.Status != ReservationStatus.Cancelled)
+                .AnyAsync(r =>
+                    r.UnitId == request.UnitId &&
+                    r.CheckInDate == request.CheckInDate &&
+                    r.CheckOutDate == request.CheckOutDate &&
+                    (!request.DocumentId.HasValue || r.DocumentId != request.DocumentId));
 
+            if (hasReservationConflict)
+            {
+                return true;
+            }
 
-            return await query.AnyAsync(r =>
-
-                r.UnitId == request.UnitId &&
-                r.CheckInDate == request.CheckInDate &&
-                r.CheckOutDate == request.CheckOutDate);
+            return await _context.ReservationHolds
+                .AsNoTracking()
+                .AnyAsync(h =>
+                    h.UnitId == request.UnitId &&
+                    !h.ReleasedAt.HasValue &&
+                    h.ExpiresAt > DateTime.Now &&
+                    h.CheckInDate == request.CheckInDate &&
+                    h.CheckOutDate == request.CheckOutDate &&
+                    h.EmployeeNumber != request.EmployeeNumber);
         }
 
         public async Task<bool> ConfirmReservationAsync(int reservationId)
@@ -470,10 +620,15 @@ namespace ECM.ReservationSystem.Services.Implementations
 
         public async Task CleanupExpiredHoldsAsync()
         {
+            var now = DateTime.Now;
             var expiredReservations = await _context.Reservations
                 .Where(r => r.Status == ReservationStatus.TemporaryHold
-                           && r.PaymentDeadline.HasValue
-                           && r.PaymentDeadline < DateTime.Now)
+                            && r.PaymentDeadline.HasValue
+                            && r.PaymentDeadline < now)
+                .ToListAsync();
+
+            var expiredReservationHolds = await _context.ReservationHolds
+                .Where(h => !h.ReleasedAt.HasValue && h.ExpiresAt < now)
                 .ToListAsync();
 
             foreach (var reservation in expiredReservations)
@@ -495,9 +650,19 @@ namespace ECM.ReservationSystem.Services.Implementations
                 }
             }
 
+            foreach (var hold in expiredReservationHolds)
+            {
+                hold.ReleasedAt = now;
+                hold.ReleaseReason = "Temporary hold expired automatically.";
+            }
+
             if (expiredReservations.Any())
             {
                 _context.UpdateRange(expiredReservations);
+            }
+
+            if (expiredReservations.Any() || expiredReservationHolds.Any())
+            {
                 await _context.SaveChangesAsync();
             }
         }
@@ -547,7 +712,18 @@ namespace ECM.ReservationSystem.Services.Implementations
                             && r.CheckOutDate > checkInDate)
                 .SumAsync(r => (int?)r.NumberOfGuests) ?? 0;
 
+            var heldSeats = await _context.ReservationHolds
+                .AsNoTracking()
+                .Where(h => h.CityId == cityId
+                            && !h.ReleasedAt.HasValue
+                            && h.ExpiresAt > DateTime.Now
+                            && h.IsTransportationRequired
+                            && h.CheckInDate < checkOutDate
+                            && h.CheckOutDate > checkInDate)
+                .SumAsync(h => (int?)h.NumberOfGuests) ?? 0;
+
             var totalSeats = quota?.TotalSeats ?? 0;
+            var allReservedSeats = reservedSeats + heldSeats;
 
             return new TransportQuotaStatusDto
             {
@@ -558,8 +734,8 @@ namespace ECM.ReservationSystem.Services.Implementations
                 BusCount = quota?.BusCount ?? 0,
                 SeatsPerBus = quota?.SeatsPerBus ?? 0,
                 TotalSeats = totalSeats,
-                ReservedSeats = reservedSeats,
-                RemainingSeats = Math.Max(totalSeats - reservedSeats, 0),
+                ReservedSeats = allReservedSeats,
+                RemainingSeats = Math.Max(totalSeats - allReservedSeats, 0),
                 HasQuotaConfigured = quota != null
             };
         }
@@ -608,6 +784,168 @@ namespace ECM.ReservationSystem.Services.Implementations
                 CheckOutDate = reservation.CheckOutDate,
                 Status = reservation.Status.ToString()
             };
+        }
+
+        private async Task<CostCalculationDto> CalculateReservationCostForSubmissionAsync(
+            ReservationRequestDto request,
+            int cityId,
+            IReadOnlyCollection<int> ownedHoldIds)
+        {
+            await EnsureReservationAvailabilityAsync(request, ownedHoldIds);
+            await EnsureTransportAvailabilityAsync(request, cityId, ownedHoldIds);
+
+            var guestsCount = Math.Max(0, request.NumberOfGuests);
+            var transportationRequired = request.IsTransportationRequired && guestsCount > 0;
+
+            var hasScheduledSlot = await _context.UnitScheduleSlots
+                .FirstOrDefaultAsync(s => s.UnitId == request.UnitId
+                                          && s.IsActive
+                                          && s.SlotStartDate.Date == request.CheckInDate.Date
+                                          && s.SlotEndDate.Date == request.CheckOutDate.Date);
+
+            if (hasScheduledSlot == null)
+            {
+                throw new InvalidOperationException("الوحدة غير متاحة ضمن الجدولة المحددة.");
+            }
+
+            var weeklyRent = hasScheduledSlot.WeeklyRentOverride
+                ?? await _pricingService.CalculateWeeklyRentAsync(request.UnitId, guestsCount);
+            var pricing = await _pricingService.GetCurrentPricingAsync(request.UnitId);
+            var transportationCost = transportationRequired
+                ? await _pricingService.GetTransportationCostAsync(cityId, request.UnitId, guestsCount)
+                : 0;
+
+            return new CostCalculationDto
+            {
+                UnitId = request.UnitId,
+                CheckInDate = request.CheckInDate,
+                CheckOutDate = request.CheckOutDate,
+                NumberOfGuests = guestsCount,
+                IsTransportationRequired = transportationRequired,
+                WeeklyRent = weeklyRent,
+                InsuranceAmount = pricing?.InsuranceAmount ?? 0,
+                TransportationCost = transportationCost,
+                TotalAmount = weeklyRent + (pricing?.InsuranceAmount ?? 0) + transportationCost,
+                IsAvailable = true,
+                Message = "متاح للحجز"
+            };
+        }
+
+        private async Task EnsureReservationAvailabilityAsync(ReservationRequestDto request, IReadOnlyCollection<int> excludedHoldIds)
+        {
+            var hasReservationConflict = await _context.Reservations
+                .AnyAsync(r => r.UnitId == request.UnitId
+                               && r.Status != ReservationStatus.Cancelled
+                               && r.CheckInDate < request.CheckOutDate
+                               && r.CheckOutDate > request.CheckInDate);
+
+            if (hasReservationConflict)
+            {
+                throw new InvalidOperationException("الوحدة غير متاحة في هذه التواريخ");
+            }
+
+            var conflictingHoldsQuery = _context.ReservationHolds
+                .Where(h => h.UnitId == request.UnitId
+                            && !h.ReleasedAt.HasValue
+                            && h.ExpiresAt > DateTime.Now
+                            && h.CheckInDate < request.CheckOutDate
+                            && h.CheckOutDate > request.CheckInDate);
+
+            if (excludedHoldIds.Count > 0)
+            {
+                conflictingHoldsQuery = conflictingHoldsQuery.Where(h => !excludedHoldIds.Contains(h.Id));
+            }
+
+            if (await conflictingHoldsQuery.AnyAsync())
+            {
+                throw new InvalidOperationException("الوحدة محجوزة مؤقتًا حاليًا. برجاء المحاولة مرة أخرى.");
+            }
+        }
+
+        private async Task EnsureTransportAvailabilityAsync(
+            ReservationRequestDto request,
+            int cityId,
+            IReadOnlyCollection<int> excludedHoldIds)
+        {
+            if (!request.IsTransportationRequired || request.NumberOfGuests <= 0)
+            {
+                return;
+            }
+
+            var seasonYear = request.CheckInDate.Year;
+            var quota = await _context.TransportQuotas
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.CityId == cityId && q.SeasonYear == seasonYear && q.IsActive);
+
+            if (quota == null)
+            {
+                throw new InvalidOperationException("لم يتم إعداد سعة النقل لهذه المدينة في الموسم الحالي.");
+            }
+
+            var reservedSeats = await _context.Reservations
+                .Include(r => r.Unit)
+                .Where(r => r.Unit.CityId == cityId
+                            && r.Status != ReservationStatus.Cancelled
+                            && r.IsTransportationRequired
+                            && r.CheckInDate < request.CheckOutDate
+                            && r.CheckOutDate > request.CheckInDate)
+                .SumAsync(r => (int?)r.NumberOfGuests) ?? 0;
+
+            var heldSeatsQuery = _context.ReservationHolds
+                .Where(h => h.CityId == cityId
+                            && !h.ReleasedAt.HasValue
+                            && h.ExpiresAt > DateTime.Now
+                            && h.IsTransportationRequired
+                            && h.CheckInDate < request.CheckOutDate
+                            && h.CheckOutDate > request.CheckInDate);
+
+            if (excludedHoldIds.Count > 0)
+            {
+                heldSeatsQuery = heldSeatsQuery.Where(h => !excludedHoldIds.Contains(h.Id));
+            }
+
+            var heldSeats = await heldSeatsQuery.SumAsync(h => (int?)h.NumberOfGuests) ?? 0;
+            var remainingSeats = quota.TotalSeats - reservedSeats - heldSeats;
+
+            if (remainingSeats < request.NumberOfGuests)
+            {
+                throw new InvalidOperationException($"المقاعد المتبقية في هذا الفوج هي {Math.Max(remainingSeats, 0)} فقط.");
+            }
+        }
+
+        private async Task<List<int>> GetOwnedActiveHoldIdsAsync(ReservationRequestDto request)
+        {
+            return await _context.ReservationHolds
+                .Where(h => h.EmployeeNumber == request.EmployeeNumber
+                            && h.UnitId == request.UnitId
+                            && h.CheckInDate == request.CheckInDate
+                            && h.CheckOutDate == request.CheckOutDate
+                            && !h.ReleasedAt.HasValue
+                            && h.ExpiresAt > DateTime.Now)
+                .Select(h => h.Id)
+                .ToListAsync();
+        }
+
+        private async Task ReleaseEmployeeHoldsAsync(
+            ReservationRequestDto request,
+            int cityId,
+            string releaseReason,
+            int? keepHoldId = null)
+        {
+            var employeeHolds = await _context.ReservationHolds
+                .Where(h => h.EmployeeNumber == request.EmployeeNumber
+                            && h.CityId == cityId
+                            && h.CheckInDate.Year == request.CheckInDate.Year
+                            && !h.ReleasedAt.HasValue
+                            && h.ExpiresAt > DateTime.Now
+                            && (!keepHoldId.HasValue || h.Id != keepHoldId.Value))
+                .ToListAsync();
+
+            foreach (var hold in employeeHolds)
+            {
+                hold.ReleasedAt = DateTime.Now;
+                hold.ReleaseReason = releaseReason;
+            }
         }
 
         private static DateTime AddBusinessDays(DateTime startDate, int businessDays)
