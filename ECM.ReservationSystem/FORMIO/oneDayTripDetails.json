@@ -1,0 +1,355 @@
+{
+  "title": "تفاصيل رحلة اليوم الواحد",
+  "collapsible": false,
+  "key": "oneDayTripDetails",
+  "type": "panel",
+  "label": "Panel",
+  "input": false,
+  "tableView": false,
+  "components": [
+    {
+      "key": "reservationUrl",
+      "type": "hidden",
+      "input": true,
+      "defaultValue": "https://localhost:44382",
+      "persistent": true,
+      "label": "",
+      "id": "odt-url"
+    },
+    {
+      "key": "requestNonce",
+      "type": "hidden",
+      "input": true,
+      "persistent": false,
+      "calculateValue": "value = data.requestNonce || Date.now();",
+      "label": "",
+      "id": "odt-nonce"
+    },
+
+    {
+      "label": "المكان",
+      "widget": "choicesjs",
+      "dataSrc": "url",
+      "data": {
+        "url": "{{data.reservationUrl}}/api/OneDayTrip/locations?_ts={{data.requestNonce}}",
+        "headers": [{ "key": "", "value": "" }]
+      },
+      "valueProperty": "id",
+      "template": "<span>{{ item.name }}</span>",
+      "clearOnRefresh": true,
+      "selectThreshold": 0.3,
+      "validate": { "required": true },
+      "key": "location",
+      "type": "select",
+      "disableCache": true,
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "searchEnabled": true,
+      "lazyLoad": true,
+      "id": "odt-location"
+    },
+
+    {
+      "label": "الرحلات المتاحة",
+      "widget": "choicesjs",
+      "dataSrc": "url",
+      "data": {
+        "url": "{{data.reservationUrl}}/api/OneDayTrip/trips/{{data.location}}?_ts={{data.requestNonce}}",
+        "headers": [{ "key": "", "value": "" }]
+      },
+      "valueProperty": "id",
+      "template": "<span>{{ item.tripDateDisplay }}</span>",
+      "refreshOn": "location",
+      "clearOnRefresh": true,
+      "selectThreshold": 0.3,
+      "validate": { "required": true },
+      "key": "trip",
+      "type": "select",
+      "disableCache": true,
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "searchEnabled": true,
+      "lazyLoad": true,
+      "id": "odt-trip"
+    },
+
+    {
+      "label": "اسم المكان",
+      "disabled": true,
+      "calculateValue": "value = $('select[id*=\"location\"]').text().replace('<span>', '').replace('</span>', '');",
+      "key": "locationName",
+      "type": "textfield",
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "id": "odt-locationName"
+    },
+    {
+      "label": "تاريخ الرحلة",
+      "disabled": true,
+      "calculateValue": "value = $('select[id*=\"trip\"]').text().replace('<span>', '').replace('</span>', '');",
+      "key": "tripDateDisplay",
+      "type": "textfield",
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "id": "odt-tripDateDisplay"
+    },
+
+    {
+      "label": "إجمالي عدد الأفراد",
+      "widget": "choicesjs",
+      "defaultValue": "1",
+      "data": {
+        "values": [
+          { "label": "1", "value": "1" },
+          { "label": "2", "value": "2" },
+          { "label": "3", "value": "3" },
+          { "label": "4", "value": "4" },
+          { "label": "5", "value": "5" }
+        ]
+      },
+      "dataSrc": "values",
+      "selectThreshold": 0.3,
+      "validate": { "required": true },
+      "key": "totalGuests",
+      "type": "select",
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "clearOnRefresh": false,
+      "searchEnabled": false,
+      "id": "odt-totalGuests",
+      "description": "الحد الأقصى 5 أفراد لكل حجز (على الأقل بالغ واحد)"
+    },
+
+    {
+      "type": "columns",
+      "key": "guestsBreakdownColumns",
+      "input": false,
+      "tableView": false,
+      "label": "Columns",
+      "id": "odt-guestsColumns",
+      "columns": [
+        {
+          "width": 6,
+          "size": "md",
+          "currentWidth": 6,
+          "components": [
+            {
+              "label": "عدد البالغين",
+              "key": "adultsCount",
+              "type": "number",
+              "input": true,
+              "tableView": true,
+              "persistent": true,
+              "clearOnHide": true,
+              "defaultValue": 1,
+              "validate": {
+                "required": true,
+                "min": 1,
+                "integer": true,
+                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0)) <= Number(data.totalGuests||0) ? true : 'مجموع البالغين والأطفال لا يجب أن يتجاوز إجمالي عدد الأفراد المختار';"
+              },
+              "logic": [
+                {
+                  "name": "recalcOnAdultsChange",
+                  "trigger": { "type": "javascript", "javascript": "result = true;" },
+                  "actions": [
+                    {
+                      "name": "noop",
+                      "type": "customAction",
+                      "customAction": "// تحديث السعر بيحصل عن طريق reservationContext تحت"
+                    }
+                  ]
+                }
+              ],
+              "id": "odt-adultsCount"
+            }
+          ]
+        },
+        {
+          "width": 6,
+          "size": "md",
+          "currentWidth": 6,
+          "components": [
+            {
+              "label": "عدد الأطفال",
+              "key": "childrenCount",
+              "type": "number",
+              "input": true,
+              "tableView": true,
+              "persistent": true,
+              "clearOnHide": true,
+              "defaultValue": 0,
+              "validate": {
+                "required": true,
+                "min": 0,
+                "integer": true,
+                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0)) === Number(data.totalGuests||0) ? true : 'مجموع البالغين والأطفال يجب أن يساوي بالظبط إجمالي عدد الأفراد المختار';"
+              },
+              "id": "odt-childrenCount"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "key": "reservationContext",
+      "type": "hidden",
+      "input": true,
+      "persistent": false,
+      "calculateValue": "var adults = Number(data.adultsCount || 0); var children = Number(data.childrenCount || 0); function clearAll() { form.getComponent('adultUnitPrice').setValue(null); form.getComponent('childUnitPrice').setValue(null); form.getComponent('price').setValue(null); } var form = instance.root; if (!data.reservationUrl || !data.trip) { clearAll(); value=''; } else { try { var ts = Date.now(); var priceUrl = data.reservationUrl + '/api/OneDayTrip/price/' + encodeURIComponent(data.trip) + '?adults=' + encodeURIComponent(adults) + '&children=' + encodeURIComponent(children) + '&_ts=' + ts; var xhr = new XMLHttpRequest(); xhr.open('GET', priceUrl, false); xhr.setRequestHeader('Accept', 'application/json'); xhr.send(null); if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText) { var res = JSON.parse(xhr.responseText); form.getComponent('adultUnitPrice').setValue(res.adultUnitPrice || 0); form.getComponent('childUnitPrice').setValue(res.childUnitPrice || 0); form.getComponent('price').setValue(res.total || 0); value = JSON.stringify(res); } else { clearAll(); value=''; } } catch(e) { clearAll(); value=''; } }",
+      "refreshOn": "trip",
+      "id": "odt-reservationContext"
+    },
+
+    {
+      "label": "إجمالي السعر",
+      "disabled": true,
+      "clearOnHide": false,
+      "key": "price",
+      "type": "number",
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "id": "odt-price"
+    },
+
+    {
+      "title": "تفاصيل السعر",
+      "collapsible": false,
+      "key": "priceDetails",
+      "type": "panel",
+      "label": "Panel",
+      "input": false,
+      "tableView": false,
+      "id": "odt-priceDetails",
+      "components": [
+        {
+          "label": "سعر تذكرة البالغ",
+          "disabled": true,
+          "clearOnHide": false,
+          "key": "adultUnitPrice",
+          "type": "number",
+          "input": true,
+          "tableView": true,
+          "persistent": true,
+          "id": "odt-adultUnitPrice"
+        },
+        {
+          "label": "سعر تذكرة الطفل",
+          "disabled": true,
+          "clearOnHide": false,
+          "key": "childUnitPrice",
+          "type": "number",
+          "input": true,
+          "tableView": true,
+          "persistent": true,
+          "id": "odt-childUnitPrice"
+        }
+      ]
+    },
+
+    {
+      "key": "bookingContext",
+      "type": "hidden",
+      "input": true,
+      "persistent": false,
+      "calculateValue": "function empty(){value='';} if(!data.number || !data.trip || !data.reservationUrl){empty();} else { try { var xhr = new XMLHttpRequest(); xhr.open('GET', data.reservationUrl + '/api/OneDayTrip/booking-context?employeeNumber=' + encodeURIComponent(data.number) + '&tripId=' + encodeURIComponent(data.trip) + '&adults=' + encodeURIComponent(Number(data.adultsCount||0)) + '&children=' + encodeURIComponent(Number(data.childrenCount||0)) + '&_ts=' + Date.now(), false); xhr.setRequestHeader('Accept','application/json'); xhr.send(null); value = (xhr.status >= 200 && xhr.status < 300) ? xhr.responseText : ''; } catch(e){ empty(); } }",
+      "id": "odt-bookingContext"
+    },
+
+    {
+      "key": "lastTripContext",
+      "type": "hidden",
+      "input": true,
+      "persistent": false,
+      "calculateValue": "function empty(){value='';} if(!data.number || !data.reservationUrl){empty();} else { try { var xhr = new XMLHttpRequest(); xhr.open('GET', data.reservationUrl + '/api/OneDayTrip/last-trip/' + encodeURIComponent(data.number) + '?_ts=' + Date.now(), false); xhr.setRequestHeader('Accept','application/json'); xhr.send(null); value = (xhr.status >= 200 && xhr.status < 300) ? xhr.responseText : ''; } catch(e){ empty(); } }",
+      "id": "odt-lastTripContext"
+    },
+
+    {
+      "label": "اضغط هنا لتأكيد الحجز وارسال الطلب",
+      "tag": "div",
+      "content": "<div style=\"margin:12px 0;text-align:center;\">\r\n  <button type=\"button\" id=\"reserveOneDayTripHoldBtn\" class=\"btn btn-warning\" style=\"min-width:220px;\">\r\n    اضغط هنا لتأكيد الحجز وارسال الطلب\r\n  </button>\r\n\r\n  <div id=\"reserveOneDayTripHoldStatus\" style=\"margin-top:8px;font-size:13px;\"></div>\r\n\r\n  <div id=\"reserveOneDayTripHoldTimer\" style=\"margin-top:6px;font-size:13px;font-weight:bold;color:#b36b00;\"></div>\r\n</div>",
+      "key": "holdReservationButton",
+      "type": "htmlelement",
+      "input": false,
+      "tableView": false,
+      "hideLabel": true,
+      "id": "odt-holdBtn"
+    },
+
+    {
+      "title": "تفاصيل آخر رحلة يوم واحد",
+      "collapsible": false,
+      "key": "lastTrip",
+      "type": "panel",
+      "label": "Panel",
+      "input": false,
+      "tableView": false,
+      "id": "odt-lastTripPanel",
+      "components": [
+        {
+          "type": "columns",
+          "key": "lastTripColumns",
+          "input": false,
+          "tableView": false,
+          "label": "Columns",
+          "id": "odt-lastTripColumns",
+          "columns": [
+            {
+              "width": 6,
+              "size": "md",
+              "currentWidth": 6,
+              "components": [
+                {
+                  "label": "المكان",
+                  "key": "lastTripLocationDisplay",
+                  "type": "textfield",
+                  "input": true,
+                  "tableView": true,
+                  "disabled": true,
+                  "clearOnHide": false,
+                  "persistent": true,
+                  "refreshOn": "lastTripContext",
+                  "calculateValue": "try { var ctx = data.lastTripContext ? JSON.parse(data.lastTripContext) : null; value = ctx && ctx.hasPreviousTrip && ctx.location ? ctx.location.name : ''; } catch (e) { value = ''; }",
+                  "id": "odt-lastTripLocation"
+                }
+              ]
+            },
+            {
+              "width": 6,
+              "size": "md",
+              "currentWidth": 6,
+              "components": [
+                {
+                  "label": "التاريخ",
+                  "key": "lastTripDateDisplay",
+                  "type": "textfield",
+                  "input": true,
+                  "tableView": true,
+                  "disabled": true,
+                  "clearOnHide": false,
+                  "persistent": true,
+                  "refreshOn": "lastTripContext",
+                  "calculateValue": "try { var ctx = data.lastTripContext ? JSON.parse(data.lastTripContext) : null; value = ctx && ctx.hasPreviousTrip && ctx.tripDate ? ctx.tripDate : ''; } catch (e) { value = ''; }",
+                  "id": "odt-lastTripDate"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

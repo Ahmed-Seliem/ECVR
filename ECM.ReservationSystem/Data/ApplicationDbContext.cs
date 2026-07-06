@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using ECM.ReservationSystem.Domain.Common;
 using ECM.ReservationSystem.Domain.Entities;
+using ECM.ReservationSystem.Domain.Entities.OneDayTrips;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,6 +32,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<TransportQuota> TransportQuotas { get; set; }
     public DbSet<AvailableDate> AvailableDates { get; set; }
     public DbSet<UnitScheduleSlot> UnitScheduleSlots { get; set; }
+
+    // One Day Trips module (isolated from the legacy reservation business)
+    public DbSet<TripLocation> TripLocations { get; set; }
+    public DbSet<Trip> Trips { get; set; }
+    public DbSet<TripBooking> TripBookings { get; set; }
 
     public override int SaveChanges()
     {
@@ -170,6 +176,41 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TransportQuota>()
             .HasIndex(tq => new { tq.CityId, tq.SeasonYear })
             .IsUnique();
+
+        // ===== One Day Trips module (isolated) =====
+        modelBuilder.Entity<TripLocation>()
+            .HasIndex(l => l.Name)
+            .IsUnique();
+
+        modelBuilder.Entity<Trip>()
+            .HasOne(t => t.TripLocation)
+            .WithMany(l => l.Trips)
+            .HasForeignKey(t => t.TripLocationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Trip>()
+            .HasIndex(t => new { t.TripLocationId, t.TripDate });
+
+        modelBuilder.Entity<TripBooking>()
+            .HasOne(b => b.Trip)
+            .WithMany(t => t.Bookings)
+            .HasForeignKey(b => b.TripId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TripBooking>()
+            .HasIndex(b => b.TripId);
+
+        modelBuilder.Entity<TripBooking>()
+            .HasIndex(b => new { b.EmployeeNumber, b.TripId });
+
+        // DB-level guard for booking business rules (extra layer beside the service validation)
+        modelBuilder.Entity<TripBooking>()
+            .ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_TripBookings_AdultsCount_Min", "[AdultsCount] >= 1");
+                t.HasCheckConstraint("CK_TripBookings_ChildrenCount_NonNegative", "[ChildrenCount] >= 0");
+                t.HasCheckConstraint("CK_TripBookings_TotalGuests_Max", "[AdultsCount] + [ChildrenCount] <= 5");
+            });
     }
 
     private void ApplyAuditInfo()

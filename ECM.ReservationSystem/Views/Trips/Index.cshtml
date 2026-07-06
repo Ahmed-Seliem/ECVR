@@ -1,0 +1,266 @@
+@using ECM.ReservationSystem.Domain.Entities.OneDayTrips
+@model IEnumerable<ECM.ReservationSystem.Models.DTOs.OneDayTrips.TripResponseDto>
+@{
+    ViewData["Title"] = "رحلات اليوم الواحد";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var locations = ViewBag.Locations as SelectList;
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0">
+        <i class="fas fa-route"></i>
+        رحلات اليوم الواحد
+    </h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTripModal">
+        <i class="fas fa-plus"></i>
+        إضافة رحلة
+    </button>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">المكان</label>
+                <select name="locationId" class="form-select select2">
+                    <option value="">الكل</option>
+                    @if (locations != null)
+                    {
+                        foreach (var item in locations)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> بحث
+                </button>
+                <a href="/Admin/Trips" class="btn btn-outline-secondary">
+                    <i class="fas fa-eraser"></i> مسح
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @await Html.PartialAsync("_TripsTable", Model)
+    </div>
+</div>
+
+<div class="modal fade" id="createTripModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="/Admin/Trips/Create" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة رحلة جديدة</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">المكان</label>
+                        <select name="TripLocationId" class="form-select modal-select" data-parent="#createTripModal" required>
+                            <option value="">-- اختر المكان --</option>
+                            @if (locations != null)
+                            {
+                                foreach (var item in locations)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">تاريخ الرحلة</label>
+                        <input name="TripDate" type="text" class="form-control js-date-picker" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">سعر تذكرة البالغ</label>
+                            <input name="AdultTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">سعر تذكرة الطفل</label>
+                            <input name="ChildTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الحالة</label>
+                        <select name="Status" class="form-select modal-select" data-parent="#createTripModal">
+                            <option value="@((int)TripStatus.Open)" selected>مفتوحة</option>
+                            <option value="@((int)TripStatus.Closed)">مقفولة</option>
+                            <option value="@((int)TripStatus.Cancelled)">ملغاة</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات</label>
+                        <textarea name="Notes" class="form-control" maxlength="500" rows="2"></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="createTripActive" name="IsActive" value="true" checked />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="createTripActive">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editTripModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editTripForm" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الرحلة</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">المكان</label>
+                        <select id="editTripLocationId" name="TripLocationId" class="form-select modal-select" data-parent="#editTripModal" required>
+                            @if (locations != null)
+                            {
+                                foreach (var item in locations)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">تاريخ الرحلة</label>
+                        <input id="editTripDate" name="TripDate" type="text" class="form-control js-date-picker" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">سعر تذكرة البالغ</label>
+                            <input id="editAdultPrice" name="AdultTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">سعر تذكرة الطفل</label>
+                            <input id="editChildPrice" name="ChildTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الحالة</label>
+                        <select id="editTripStatus" name="Status" class="form-select modal-select" data-parent="#editTripModal">
+                            <option value="@((int)TripStatus.Open)">مفتوحة</option>
+                            <option value="@((int)TripStatus.Closed)">مقفولة</option>
+                            <option value="@((int)TripStatus.Cancelled)">ملغاة</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات</label>
+                        <textarea id="editTripNotes" name="Notes" class="form-control" maxlength="500" rows="2"></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="editTripIsActive" name="IsActive" value="true" />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="editTripIsActive">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Bootstrap 5 modals steal focus from the Select2 search box and close the
+        // dropdown instantly. Let focus events coming from inside Select2 through.
+        document.addEventListener('focusin', function (e) {
+            if (e.target.closest && e.target.closest('.select2-container')) {
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        $(function () {
+            const editModal = new bootstrap.Modal(document.getElementById('editTripModal'));
+
+            const setupModalSelect2 = function (modalSelector) {
+                $(`${modalSelector} .modal-select`).each(function () {
+                    const parent = $(this).data('parent');
+                    if ($(this).hasClass('select2-hidden-accessible')) {
+                        $(this).select2('destroy');
+                    }
+                    $(this).select2({ dropdownParent: $(parent), width: '100%' });
+                });
+            };
+
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr('.js-date-picker', {
+                    dateFormat: 'Y-m-d',
+                    locale: typeof Arabic !== 'undefined' ? Arabic : 'default'
+                });
+            }
+
+            $('#createTripModal').on('shown.bs.modal', function () {
+                setupModalSelect2('#createTripModal');
+            });
+
+            $('#editTripModal').on('shown.bs.modal', function () {
+                setupModalSelect2('#editTripModal');
+            });
+
+            $(document).on('click', '.js-edit-trip', function () {
+                const row = $(this);
+                $('#editTripLocationId').val(row.data('locationid')).trigger('change');
+                $('#editAdultPrice').val(row.data('adultprice'));
+                $('#editChildPrice').val(row.data('childprice'));
+                $('#editTripStatus').val(row.data('status')).trigger('change');
+                $('#editTripNotes').val(row.data('notes'));
+                $('#editTripIsActive').prop('checked', row.data('active') === true || row.data('active') === 'True');
+                $('#editTripForm').attr('action', '/Admin/Trips/Edit/' + row.data('id'));
+
+                const dateEl = document.querySelector('#editTripDate');
+                if (dateEl && dateEl._flatpickr) {
+                    dateEl._flatpickr.setDate(row.data('tripdate'), true);
+                } else {
+                    $('#editTripDate').val(row.data('tripdate'));
+                }
+
+                editModal.show();
+            });
+
+            $(document).on('click', '.js-delete-trip', function () {
+                const id = $(this).data('id');
+                swal({
+                    title: 'تأكيد الحذف',
+                    text: 'سيتم حذف الرحلة',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، حذف',
+                    cancelButtonText: 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) return;
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = '/Admin/Trips/Delete/' + id;
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token;
+                    form.appendChild(tokenInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+        });
+    </script>
+}

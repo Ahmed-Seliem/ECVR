@@ -7,6 +7,8 @@ using ECM.ReservationSystem.OpenIdSettings;
 using ECM.ReservationSystem.Services;
 using ECM.ReservationSystem.Services.Implementations;
 using ECM.ReservationSystem.Services.Interfaces;
+using ECM.ReservationSystem.Services.OneDayTrips.Interfaces;
+using ECM.ReservationSystem.Services.OneDayTrips.Implementations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -82,6 +84,11 @@ builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IReservationSubmissionAttemptService, ReservationSubmissionAttemptService>();
 builder.Services.AddScoped<IPricingService, PricingService>();
 builder.Services.AddScoped<IUnitService, UnitService>();
+
+// One Day Trips module (isolated)
+builder.Services.AddScoped<ITripLocationService, TripLocationService>();
+builder.Services.AddScoped<ITripService, TripService>();
+builder.Services.AddScoped<ITripBookingService, TripBookingService>();
 
 
 builder.Services.AddHostedService<ExpiredHoldsCleanupService>();

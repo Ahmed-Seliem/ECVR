@@ -1,0 +1,79 @@
+@model IEnumerable<ECM.ReservationSystem.Models.DTOs.OneDayTrips.TripBookingResponseDto>
+@{
+    ViewData["Title"] = "حجوزات رحلات اليوم الواحد";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var trips = ViewBag.Trips as SelectList;
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0">
+        <i class="fas fa-ticket-alt"></i>
+        حجوزات رحلات اليوم الواحد
+    </h1>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">الرحلة</label>
+                <select name="tripId" class="form-select select2">
+                    <option value="">الكل</option>
+                    @if (trips != null)
+                    {
+                        foreach (var item in trips)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> بحث
+                </button>
+                <a href="/Admin/TripBookings" class="btn btn-outline-secondary">
+                    <i class="fas fa-eraser"></i> مسح
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @await Html.PartialAsync("_TripBookingsTable", Model)
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $(document).on('click', '.js-cancel-booking', function () {
+                const id = $(this).data('id');
+                swal({
+                    title: 'تأكيد الإلغاء',
+                    text: 'سيتم إلغاء هذا الحجز',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، إلغاء الحجز',
+                    cancelButtonText: 'تراجع',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) return;
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = '/Admin/TripBookings/Cancel/' + id;
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token;
+                    form.appendChild(tokenInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+        });
+    </script>
+}

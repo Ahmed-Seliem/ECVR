@@ -59,6 +59,48 @@
         .brand-logo-collapsed img {
             display: block;
         }
+
+        /* Make the sidebar scrollable when items exceed the viewport height */
+        .aside {
+            overflow-y: auto;
+        }
+
+        /* One Day Trips: collapsible sidebar submenu */
+        .sidebar .nav .submenu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar .nav .submenu li a {
+            padding-inline-start: 2.5rem;
+            font-size: 0.9rem;
+        }
+
+        .sidebar .nav a .menu-arrow {
+            margin-inline-start: auto;
+            font-size: 0.75rem;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar .nav a[aria-expanded="true"] .menu-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Parent-group "active" must not bleed into every sub-item;
+           only the truly-active sub-item (or hover) keeps the highlight */
+        .sidebar .nav li.active .submenu li a {
+            background: transparent;
+            color: var(--dark-color);
+            transform: none;
+        }
+
+            .sidebar .nav li.active .submenu li.active a,
+            .sidebar .nav li.active .submenu li a:hover {
+                background: linear-gradient(135deg, var(--primary-color));
+                color: white;
+                transform: translateX(-5px);
+            }
     </style>
    
 </head>
@@ -163,6 +205,39 @@
                             <i class="fas fa-calendar-check"></i>
                             <span>الحجوزات</span>
                         </a>
+                    </li>
+                    @{
+                        var oneDayTripsActive = IsActive("/Admin/TripLocations")
+                            || IsActive("/Admin/Trips")
+                            || IsActive("/Admin/TripBookings");
+                    }
+                    <li class="@(oneDayTripsActive ? "active" : "")">
+                        <a href="#oneDayTripsMenu" data-bs-toggle="collapse" role="button"
+                           aria-expanded="@(oneDayTripsActive ? "true" : "false")" aria-controls="oneDayTripsMenu">
+                            <i class="fas fa-bus-alt"></i>
+                            <span>رحلات اليوم الواحد</span>
+                            <i class="fas fa-chevron-down menu-arrow"></i>
+                        </a>
+                        <ul class="submenu collapse @(oneDayTripsActive ? "show" : "")" id="oneDayTripsMenu">
+                            <li class="@(IsActive("/Admin/TripLocations") ? "active" : "")">
+                                <a href="/Admin/TripLocations">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                    <span>الأماكن</span>
+                                </a>
+                            </li>
+                            <li class="@(IsActive("/Admin/Trips") ? "active" : "")">
+                                <a href="/Admin/Trips">
+                                    <i class="fas fa-route"></i>
+                                    <span>الرحلات</span>
+                                </a>
+                            </li>
+                            <li class="@(IsActive("/Admin/TripBookings") ? "active" : "")">
+                                <a href="/Admin/TripBookings">
+                                    <i class="fas fa-ticket-alt"></i>
+                                    <span>الحجوزات</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     <li class="@(IsActive("/Admin/Reports") ? "active" : "")">
                         <a href="/Admin/Reports">

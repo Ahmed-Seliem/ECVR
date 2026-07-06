@@ -1,0 +1,68 @@
+@model IEnumerable<ECM.ReservationSystem.Models.DTOs.OneDayTrips.TripLocationResponseDto>
+
+@if (Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover datatable">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>الاسم بالعربية</th>
+                    <th>الوصف</th>
+                    <th>عدد الرحلات</th>
+                    <th>الحالة</th>
+                    <th>تاريخ الإنشاء</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var location in Model)
+                {
+                    <tr>
+                        <td>@location.Name</td>
+                        <td>@(string.IsNullOrWhiteSpace(location.NameAr) ? "-" : location.NameAr)</td>
+                        <td>@(string.IsNullOrWhiteSpace(location.Description) ? "-" : location.Description)</td>
+                        <td><span class="badge bg-info">@location.TripsCount</span></td>
+                        <td>
+                            @if (location.IsActive)
+                            {
+                                <span class="badge bg-success">نشط</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">غير نشط</span>
+                            }
+                        </td>
+                        <td>@location.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-warning js-edit-location"
+                                        data-id="@location.Id"
+                                        data-name="@location.Name"
+                                        data-namear="@location.NameAr"
+                                        data-description="@location.Description"
+                                        data-active="@location.IsActive">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger js-delete-location"
+                                        data-id="@location.Id"
+                                        data-name="@location.Name">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-map-marked-alt fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">لا توجد أماكن مضافة</h5>
+    </div>
+}

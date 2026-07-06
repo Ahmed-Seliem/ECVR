@@ -1,0 +1,78 @@
+@using ECM.ReservationSystem.Domain.Entities.OneDayTrips
+@model ECM.ReservationSystem.Models.DTOs.OneDayTrips.TripBookingResponseDto
+@{
+    ViewData["Title"] = "تفاصيل الحجز";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var statusLabel = Model.Status == BookingStatus.Confirmed ? "مؤكد" : "ملغي";
+    var statusCss = Model.Status == BookingStatus.Confirmed ? "success" : "danger";
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0">
+        <i class="fas fa-ticket-alt"></i>
+        تفاصيل الحجز
+    </h1>
+    <a href="/Admin/TripBookings" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right"></i>
+        رجوع للقائمة
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-muted">المكان</label>
+                <div class="fw-bold">@Model.LocationName</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-muted">تاريخ الرحلة</label>
+                <div class="fw-bold">@Model.TripDate.ToString("dd/MM/yyyy")</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-muted">رقم الموظف</label>
+                <div class="fw-bold">@Model.EmployeeNumber</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-muted">اسم الموظف</label>
+                <div class="fw-bold">@Model.EmployeeName</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-muted">القطاع</label>
+                <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.Sector) ? "-" : Model.Sector)</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label text-muted">رقم الهاتف</label>
+                <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "-" : Model.PhoneNumber)</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label text-muted">عدد البالغين</label>
+                <div class="fw-bold">@Model.AdultsCount</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label text-muted">عدد الأطفال</label>
+                <div class="fw-bold">@Model.ChildrenCount</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label text-muted">الحالة</label>
+                <div><span class="badge bg-@statusCss">@statusLabel</span></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label text-muted">سعر تذكرة البالغ</label>
+                <div class="fw-bold">@Model.AdultUnitPrice.ToString("N2")</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label text-muted">سعر تذكرة الطفل</label>
+                <div class="fw-bold">@Model.ChildUnitPrice.ToString("N2")</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label text-muted">الإجمالي</label>
+                <div class="fw-bold text-primary">@Model.TotalAmount.ToString("N2")</div>
+            </div>
+            <div class="col-md-12 mb-3">
+                <label class="form-label text-muted">ملاحظات</label>
+                <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.Notes) ? "-" : Model.Notes)</div>
+            </div>
+        </div>
+    </div>
+</div>
