@@ -9,6 +9,8 @@
                     <th>الاسم</th>
                     <th>الاسم بالعربية</th>
                     <th>الوصف</th>
+                    <th>عدد التذاكر</th>
+                    <th>المتبقي</th>
                     <th>عدد الرحلات</th>
                     <th>الحالة</th>
                     <th>تاريخ الإنشاء</th>
@@ -22,6 +24,8 @@
                         <td>@location.Name</td>
                         <td>@(string.IsNullOrWhiteSpace(location.NameAr) ? "-" : location.NameAr)</td>
                         <td>@(string.IsNullOrWhiteSpace(location.Description) ? "-" : location.Description)</td>
+                        <td><span class="badge bg-primary">@location.TicketCount</span></td>
+                        <td><span class="badge bg-@(location.RemainingTickets > 0 ? "success" : "danger")">@location.RemainingTickets</span></td>
                         <td><span class="badge bg-info">@location.TripsCount</span></td>
                         <td>
                             @if (location.IsActive)
@@ -42,6 +46,7 @@
                                         data-name="@location.Name"
                                         data-namear="@location.NameAr"
                                         data-description="@location.Description"
+                                        data-ticketcount="@location.TicketCount"
                                         data-active="@location.IsActive">
                                     <i class="fas fa-edit"></i>
                                 </button>

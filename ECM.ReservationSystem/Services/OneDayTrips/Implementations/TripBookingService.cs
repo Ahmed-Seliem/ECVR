@@ -10,10 +10,12 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
     public class TripBookingService : ITripBookingService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITripLocationService _tripLocationService;
 
-        public TripBookingService(ApplicationDbContext context)
+        public TripBookingService(ApplicationDbContext context, ITripLocationService tripLocationService)
         {
             _context = context;
+            _tripLocationService = tripLocationService;
         }
 
         public async Task<List<TripBookingResponseDto>> GetAllAsync(int? tripId = null)
@@ -60,18 +62,20 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
 
         public async Task<TripBookingResponseDto> CreateAsync(TripBookingRequestDto request)
         {
+            var totalGuests = request.AdultsCount + request.ChildrenCount + request.CompanionsCount;
+
             // ===== Business validation (service layer, beside the DB check constraints) =====
             if (request.AdultsCount < TripBookingRules.MinAdultsPerBooking)
             {
                 throw new InvalidOperationException("يجب أن يحتوي الحجز على بالغ واحد على الأقل.");
             }
 
-            if (request.ChildrenCount < 0)
+            if (request.ChildrenCount < 0 || request.CompanionsCount < 0)
             {
-                throw new InvalidOperationException("عدد الأطفال لا يمكن أن يكون بالسالب.");
+                throw new InvalidOperationException("عدد الأطفال أو المرافقين لا يمكن أن يكون بالسالب.");
             }
 
-            if (request.AdultsCount + request.ChildrenCount > TripBookingRules.MaxGuestsPerBooking)
+            if (totalGuests > TripBookingRules.MaxGuestsPerBooking)
             {
                 throw new InvalidOperationException(
                     $"إجمالي عدد الأشخاص لا يمكن أن يتجاوز {TripBookingRules.MaxGuestsPerBooking}.");
@@ -86,23 +90,35 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 throw new InvalidOperationException("الرحلة غير موجودة.");
             }
 
-            if (!trip.IsActive || trip.Status != TripStatus.Open)
+            if (!trip.IsActive)
             {
                 throw new InvalidOperationException("الرحلة غير متاحة للحجز.");
             }
 
+            var now = DateTime.Now;
             var alreadyBooked = await _context.TripBookings.AnyAsync(b =>
                 b.TripId == trip.Id
                 && b.EmployeeNumber == request.EmployeeNumber
-                && b.Status == BookingStatus.Confirmed);
+                && (b.Status == BookingStatus.Confirmed
+                    || (b.Status == BookingStatus.PendingPayment
+                        && b.PaymentDeadline != null
+                        && b.PaymentDeadline > now)));
 
             if (alreadyBooked)
             {
-                throw new InvalidOperationException("الموظف لديه بالفعل حجز مؤكد على هذه الرحلة.");
+                throw new InvalidOperationException("الموظف لديه بالفعل حجز نشط على هذه الرحلة.");
+            }
+
+            // Ticket availability is a shared pool on the location (1 ticket per person).
+            var remaining = await _tripLocationService.GetRemainingTicketsAsync(trip.TripLocationId);
+            if (totalGuests > remaining)
+            {
+                throw new InvalidOperationException($"لا توجد تذاكر كافية. المتبقي: {remaining}.");
             }
 
             var totalAmount = (request.AdultsCount * trip.AdultTicketPrice)
-                            + (request.ChildrenCount * trip.ChildTicketPrice);
+                            + (request.ChildrenCount * trip.ChildTicketPrice)
+                            + (request.CompanionsCount * trip.CompanionTicketPrice);
 
             var booking = new TripBooking
             {
@@ -113,10 +129,13 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 PhoneNumber = request.PhoneNumber,
                 AdultsCount = request.AdultsCount,
                 ChildrenCount = request.ChildrenCount,
+                CompanionsCount = request.CompanionsCount,
                 AdultUnitPrice = trip.AdultTicketPrice,
                 ChildUnitPrice = trip.ChildTicketPrice,
+                CompanionUnitPrice = trip.CompanionTicketPrice,
                 TotalAmount = totalAmount,
-                Status = BookingStatus.Confirmed,
+                Status = BookingStatus.PendingPayment,
+                PaymentDeadline = TripBookingRules.ComputePaymentDeadline(now),
                 CaseSystemId = request.CaseSystemId,
                 WorkflowId = request.WorkflowId,
                 DocumentId = request.DocumentId,
@@ -127,6 +146,24 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             await _context.SaveChangesAsync();
 
             return await GetByIdAsync(booking.Id) ?? MapToDto(booking);
+        }
+
+        public async Task<bool> ConfirmPaymentAsync(int id)
+        {
+            var booking = await _context.TripBookings.FirstOrDefaultAsync(b => b.Id == id);
+            if (booking is null)
+            {
+                return false;
+            }
+
+            if (booking.Status == BookingStatus.Cancelled)
+            {
+                throw new InvalidOperationException("لا يمكن تأكيد دفع حجز ملغي.");
+            }
+
+            booking.Status = BookingStatus.Confirmed;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> CancelAsync(int id)
@@ -140,6 +177,62 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             booking.Status = BookingStatus.Cancelled;
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<bool> SetStatusAsync(int id, BookingStatus status)
+        {
+            var booking = await _context.TripBookings.FirstOrDefaultAsync(b => b.Id == id);
+            if (booking is null)
+            {
+                return false;
+            }
+
+            booking.Status = status;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateStatusByDocumentIdAsync(long documentId, BookingStatus status)
+        {
+            if (status != BookingStatus.Confirmed && status != BookingStatus.Cancelled)
+            {
+                throw new InvalidOperationException("الحالة المطلوبة غير صحيحة.");
+            }
+
+            var booking = await _context.TripBookings
+                .FirstOrDefaultAsync(b => b.DocumentId == documentId);
+
+            if (booking is null)
+            {
+                return false;
+            }
+
+            booking.Status = status;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<int> CancelExpiredAsync()
+        {
+            var now = DateTime.Now;
+            var expired = await _context.TripBookings
+                .Where(b => b.Status == BookingStatus.PendingPayment
+                            && b.PaymentDeadline != null
+                            && b.PaymentDeadline <= now)
+                .ToListAsync();
+
+            if (expired.Count == 0)
+            {
+                return 0;
+            }
+
+            foreach (var booking in expired)
+            {
+                booking.Status = BookingStatus.Cancelled;
+            }
+
+            await _context.SaveChangesAsync();
+            return expired.Count;
         }
 
         private static TripBookingResponseDto MapToDto(TripBooking booking) => new()
@@ -158,10 +251,13 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             PhoneNumber = booking.PhoneNumber,
             AdultsCount = booking.AdultsCount,
             ChildrenCount = booking.ChildrenCount,
+            CompanionsCount = booking.CompanionsCount,
             AdultUnitPrice = booking.AdultUnitPrice,
             ChildUnitPrice = booking.ChildUnitPrice,
+            CompanionUnitPrice = booking.CompanionUnitPrice,
             TotalAmount = booking.TotalAmount,
             Status = booking.Status,
+            PaymentDeadline = booking.PaymentDeadline,
             CaseSystemId = booking.CaseSystemId,
             WorkflowId = booking.WorkflowId,
             DocumentId = booking.DocumentId,

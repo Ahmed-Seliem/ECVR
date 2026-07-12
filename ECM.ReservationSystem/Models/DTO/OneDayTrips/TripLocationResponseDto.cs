@@ -6,6 +6,8 @@ namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
         public string Name { get; set; } = string.Empty;
         public string NameAr { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public int TicketCount { get; set; }
+        public int RemainingTickets { get; set; }
         public bool IsActive { get; set; }
         public int TripsCount { get; set; }
         public DateTime CreatedAt { get; set; }

@@ -56,6 +56,21 @@ public class TripBookingsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // POST: Admin/TripBookings/UpdateStatus/5
+    [HttpPost("UpdateStatus/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateStatus(int id, Domain.Entities.OneDayTrips.BookingStatus status)
+    {
+        var updated = await _tripBookingService.SetStatusAsync(id, status);
+        if (!updated)
+        {
+            return NotFound();
+        }
+
+        TempData["Success"] = "تم تحديث حالة الحجز بنجاح";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     private async Task PopulateTripsAsync(int? selectedId)
     {
         var trips = await _tripService.GetAllAsync();

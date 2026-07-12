@@ -1,4 +1,3 @@
-@using ECM.ReservationSystem.Domain.Entities.OneDayTrips
 @model IEnumerable<ECM.ReservationSystem.Models.DTOs.OneDayTrips.TripResponseDto>
 @{
     ViewData["Title"] = "رحلات اليوم الواحد";
@@ -79,22 +78,18 @@
                         <input name="TripDate" type="text" class="form-control js-date-picker" required />
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">سعر تذكرة البالغ</label>
                             <input name="AdultTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">سعر تذكرة الطفل</label>
                             <input name="ChildTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">الحالة</label>
-                        <select name="Status" class="form-select modal-select" data-parent="#createTripModal">
-                            <option value="@((int)TripStatus.Open)" selected>مفتوحة</option>
-                            <option value="@((int)TripStatus.Closed)">مقفولة</option>
-                            <option value="@((int)TripStatus.Cancelled)">ملغاة</option>
-                        </select>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">سعر تذكرة المرافق</label>
+                            <input name="CompanionTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">ملاحظات</label>
@@ -142,22 +137,18 @@
                         <input id="editTripDate" name="TripDate" type="text" class="form-control js-date-picker" required />
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">سعر تذكرة البالغ</label>
                             <input id="editAdultPrice" name="AdultTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">سعر تذكرة الطفل</label>
                             <input id="editChildPrice" name="ChildTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">الحالة</label>
-                        <select id="editTripStatus" name="Status" class="form-select modal-select" data-parent="#editTripModal">
-                            <option value="@((int)TripStatus.Open)">مفتوحة</option>
-                            <option value="@((int)TripStatus.Closed)">مقفولة</option>
-                            <option value="@((int)TripStatus.Cancelled)">ملغاة</option>
-                        </select>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">سعر تذكرة المرافق</label>
+                            <input id="editCompanionPrice" name="CompanionTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">ملاحظات</label>
@@ -221,7 +212,7 @@
                 $('#editTripLocationId').val(row.data('locationid')).trigger('change');
                 $('#editAdultPrice').val(row.data('adultprice'));
                 $('#editChildPrice').val(row.data('childprice'));
-                $('#editTripStatus').val(row.data('status')).trigger('change');
+                $('#editCompanionPrice').val(row.data('companionprice'));
                 $('#editTripNotes').val(row.data('notes'));
                 $('#editTripIsActive').prop('checked', row.data('active') === true || row.data('active') === 'True');
                 $('#editTripForm').attr('action', '/Admin/Trips/Edit/' + row.data('id'));

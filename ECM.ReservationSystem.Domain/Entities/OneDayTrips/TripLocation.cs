@@ -15,6 +15,9 @@ public class TripLocation : AuditableEntity
     [StringLength(500)]
     public string? Description { get; set; }
 
+    // Total ticket pool for this location, shared across all its trips (1 ticket per person).
+    public int TicketCount { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public ICollection<Trip> Trips { get; set; } = new List<Trip>();

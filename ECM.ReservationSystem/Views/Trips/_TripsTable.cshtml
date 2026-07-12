@@ -1,15 +1,4 @@
-@using ECM.ReservationSystem.Domain.Entities.OneDayTrips
 @model IEnumerable<ECM.ReservationSystem.Models.DTOs.OneDayTrips.TripResponseDto>
-
-@functions {
-    (string CssClass, string Label) GetTripStatus(TripStatus status) => status switch
-    {
-        TripStatus.Open => ("success", "مفتوحة"),
-        TripStatus.Closed => ("secondary", "مقفولة"),
-        TripStatus.Cancelled => ("danger", "ملغاة"),
-        _ => ("light", status.ToString())
-    };
-}
 
 @if (Model.Any())
 {
@@ -21,7 +10,7 @@
                     <th>تاريخ الرحلة</th>
                     <th>سعر البالغ</th>
                     <th>سعر الطفل</th>
-                    <th>الحالة</th>
+                    <th>سعر المرافق</th>
                     <th>عدد الحجوزات</th>
                     <th>نشطة</th>
                     <th>الإجراءات</th>
@@ -30,13 +19,12 @@
             <tbody>
                 @foreach (var trip in Model)
                 {
-                    var status = GetTripStatus(trip.Status);
                     <tr>
                         <td>@trip.LocationName</td>
                         <td>@trip.TripDate.ToString("dd/MM/yyyy")</td>
                         <td>@trip.AdultTicketPrice.ToString("N2")</td>
                         <td>@trip.ChildTicketPrice.ToString("N2")</td>
-                        <td><span class="badge bg-@status.CssClass">@status.Label</span></td>
+                        <td>@trip.CompanionTicketPrice.ToString("N2")</td>
                         <td><span class="badge bg-info">@trip.BookingsCount</span></td>
                         <td>
                             @if (trip.IsActive)
@@ -57,7 +45,7 @@
                                         data-tripdate="@trip.TripDate.ToString("yyyy-MM-dd")"
                                         data-adultprice="@trip.AdultTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                         data-childprice="@trip.ChildTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-status="@((int)trip.Status)"
+                                        data-companionprice="@trip.CompanionTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                         data-notes="@trip.Notes"
                                         data-active="@trip.IsActive">
                                     <i class="fas fa-edit"></i>

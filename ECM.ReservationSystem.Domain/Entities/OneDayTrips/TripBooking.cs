@@ -25,6 +25,7 @@ public class TripBooking : AuditableEntity
 
     public int AdultsCount { get; set; }
     public int ChildrenCount { get; set; }
+    public int CompanionsCount { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal AdultUnitPrice { get; set; }
@@ -33,9 +34,15 @@ public class TripBooking : AuditableEntity
     public decimal ChildUnitPrice { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
+    public decimal CompanionUnitPrice { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
     public decimal TotalAmount { get; set; }
 
-    public BookingStatus Status { get; set; } = BookingStatus.Confirmed;
+    public BookingStatus Status { get; set; } = BookingStatus.PendingPayment;
+
+    // Deadline to pay before the booking is auto-cancelled and its tickets are released.
+    public DateTime? PaymentDeadline { get; set; }
 
     public string CaseSystemId { get; set; } = string.Empty;
     public long? WorkflowId { get; set; }
@@ -47,6 +54,7 @@ public class TripBooking : AuditableEntity
 
 public enum BookingStatus
 {
-    Confirmed = 1,
-    Cancelled = 2
+    PendingPayment = 1,
+    Confirmed = 2,
+    Cancelled = 3
 }

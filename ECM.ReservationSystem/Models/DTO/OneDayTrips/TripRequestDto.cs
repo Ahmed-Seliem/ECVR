@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using ECM.ReservationSystem.Domain.Entities.OneDayTrips;
 
 namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
 {
@@ -20,7 +19,9 @@ namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
         [Range(0, 9999999.99, ErrorMessage = "سعر تذكرة الطفل يجب أن يكون رقمًا موجبًا")]
         public decimal? ChildTicketPrice { get; set; }
 
-        public TripStatus Status { get; set; } = TripStatus.Open;
+        [Required(ErrorMessage = "سعر تذكرة المرافق مطلوب")]
+        [Range(0, 9999999.99, ErrorMessage = "سعر تذكرة المرافق يجب أن يكون رقمًا موجبًا")]
+        public decimal? CompanionTicketPrice { get; set; }
 
         [StringLength(500, ErrorMessage = "الملاحظات يجب ألا تتجاوز 500 حرف")]
         public string? Notes { get; set; }

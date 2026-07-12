@@ -59,7 +59,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 TripDate = request.TripDate!.Value,
                 AdultTicketPrice = request.AdultTicketPrice!.Value,
                 ChildTicketPrice = request.ChildTicketPrice!.Value,
-                Status = request.Status,
+                CompanionTicketPrice = request.CompanionTicketPrice!.Value,
                 Notes = request.Notes,
                 IsActive = request.IsActive
             };
@@ -88,7 +88,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             trip.TripDate = request.TripDate!.Value;
             trip.AdultTicketPrice = request.AdultTicketPrice!.Value;
             trip.ChildTicketPrice = request.ChildTicketPrice!.Value;
-            trip.Status = request.Status;
+            trip.CompanionTicketPrice = request.CompanionTicketPrice!.Value;
             trip.Notes = request.Notes;
             trip.IsActive = request.IsActive;
 
@@ -125,7 +125,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             TripDate = trip.TripDate,
             AdultTicketPrice = trip.AdultTicketPrice,
             ChildTicketPrice = trip.ChildTicketPrice,
-            Status = trip.Status,
+            CompanionTicketPrice = trip.CompanionTicketPrice,
             Notes = trip.Notes,
             IsActive = trip.IsActive,
             BookingsCount = trip.Bookings?.Count ?? 0,

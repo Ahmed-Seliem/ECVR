@@ -11,7 +11,7 @@
       "key": "reservationUrl",
       "type": "hidden",
       "input": true,
-      "defaultValue": "https://localhost:44382",
+      "defaultValue": "http://localhost:5212",
       "persistent": true,
       "label": "",
       "id": "odt-url"
@@ -139,9 +139,9 @@
       "id": "odt-guestsColumns",
       "columns": [
         {
-          "width": 6,
+          "width": 4,
           "size": "md",
-          "currentWidth": 6,
+          "currentWidth": 4,
           "components": [
             {
               "label": "عدد البالغين",
@@ -156,29 +156,16 @@
                 "required": true,
                 "min": 1,
                 "integer": true,
-                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0)) <= Number(data.totalGuests||0) ? true : 'مجموع البالغين والأطفال لا يجب أن يتجاوز إجمالي عدد الأفراد المختار';"
+                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0) + Number(data.companionsCount||0)) <= Number(data.totalGuests||0) ? true : 'مجموع الأفراد لا يجب أن يتجاوز إجمالي عدد الأفراد المختار';"
               },
-              "logic": [
-                {
-                  "name": "recalcOnAdultsChange",
-                  "trigger": { "type": "javascript", "javascript": "result = true;" },
-                  "actions": [
-                    {
-                      "name": "noop",
-                      "type": "customAction",
-                      "customAction": "// تحديث السعر بيحصل عن طريق reservationContext تحت"
-                    }
-                  ]
-                }
-              ],
               "id": "odt-adultsCount"
             }
           ]
         },
         {
-          "width": 6,
+          "width": 4,
           "size": "md",
-          "currentWidth": 6,
+          "currentWidth": 4,
           "components": [
             {
               "label": "عدد الأطفال",
@@ -193,9 +180,33 @@
                 "required": true,
                 "min": 0,
                 "integer": true,
-                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0)) === Number(data.totalGuests||0) ? true : 'مجموع البالغين والأطفال يجب أن يساوي بالظبط إجمالي عدد الأفراد المختار';"
+                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0) + Number(data.companionsCount||0)) <= Number(data.totalGuests||0) ? true : 'مجموع الأفراد لا يجب أن يتجاوز إجمالي عدد الأفراد المختار';"
               },
               "id": "odt-childrenCount"
+            }
+          ]
+        },
+        {
+          "width": 4,
+          "size": "md",
+          "currentWidth": 4,
+          "components": [
+            {
+              "label": "عدد المرافقين",
+              "key": "companionsCount",
+              "type": "number",
+              "input": true,
+              "tableView": true,
+              "persistent": true,
+              "clearOnHide": true,
+              "defaultValue": 0,
+              "validate": {
+                "required": true,
+                "min": 0,
+                "integer": true,
+                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0) + Number(data.companionsCount||0)) === Number(data.totalGuests||0) ? true : 'مجموع البالغين والأطفال والمرافقين يجب أن يساوي إجمالي عدد الأفراد المختار';"
+              },
+              "id": "odt-companionsCount"
             }
           ]
         }
@@ -207,7 +218,7 @@
       "type": "hidden",
       "input": true,
       "persistent": false,
-      "calculateValue": "var adults = Number(data.adultsCount || 0); var children = Number(data.childrenCount || 0); function clearAll() { form.getComponent('adultUnitPrice').setValue(null); form.getComponent('childUnitPrice').setValue(null); form.getComponent('price').setValue(null); } var form = instance.root; if (!data.reservationUrl || !data.trip) { clearAll(); value=''; } else { try { var ts = Date.now(); var priceUrl = data.reservationUrl + '/api/OneDayTrip/price/' + encodeURIComponent(data.trip) + '?adults=' + encodeURIComponent(adults) + '&children=' + encodeURIComponent(children) + '&_ts=' + ts; var xhr = new XMLHttpRequest(); xhr.open('GET', priceUrl, false); xhr.setRequestHeader('Accept', 'application/json'); xhr.send(null); if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText) { var res = JSON.parse(xhr.responseText); form.getComponent('adultUnitPrice').setValue(res.adultUnitPrice || 0); form.getComponent('childUnitPrice').setValue(res.childUnitPrice || 0); form.getComponent('price').setValue(res.total || 0); value = JSON.stringify(res); } else { clearAll(); value=''; } } catch(e) { clearAll(); value=''; } }",
+      "calculateValue": "var adults = Number(data.adultsCount || 0); var children = Number(data.childrenCount || 0); var companions = Number(data.companionsCount || 0); var form = instance.root; function clearAll() { form.getComponent('adultUnitPrice').setValue(null); form.getComponent('childUnitPrice').setValue(null); form.getComponent('companionUnitPrice').setValue(null); form.getComponent('price').setValue(null); } if (!data.reservationUrl || !data.trip) { clearAll(); value=''; } else { try { var ts = Date.now(); var priceUrl = data.reservationUrl + '/api/OneDayTrip/price/' + encodeURIComponent(data.trip) + '?adults=' + encodeURIComponent(adults) + '&children=' + encodeURIComponent(children) + '&companions=' + encodeURIComponent(companions) + '&_ts=' + ts; var xhr = new XMLHttpRequest(); xhr.open('GET', priceUrl, false); xhr.setRequestHeader('Accept', 'application/json'); xhr.send(null); if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText) { var res = JSON.parse(xhr.responseText); form.getComponent('adultUnitPrice').setValue(res.adultUnitPrice || 0); form.getComponent('childUnitPrice').setValue(res.childUnitPrice || 0); form.getComponent('companionUnitPrice').setValue(res.companionUnitPrice || 0); form.getComponent('price').setValue(res.total || 0); value = JSON.stringify(res); } else { clearAll(); value=''; } } catch(e) { clearAll(); value=''; } }",
       "refreshOn": "trip",
       "id": "odt-reservationContext"
     },
@@ -255,6 +266,17 @@
           "tableView": true,
           "persistent": true,
           "id": "odt-childUnitPrice"
+        },
+        {
+          "label": "سعر تذكرة المرافق",
+          "disabled": true,
+          "clearOnHide": false,
+          "key": "companionUnitPrice",
+          "type": "number",
+          "input": true,
+          "tableView": true,
+          "persistent": true,
+          "id": "odt-companionUnitPrice"
         }
       ]
     },
@@ -264,7 +286,7 @@
       "type": "hidden",
       "input": true,
       "persistent": false,
-      "calculateValue": "function empty(){value='';} if(!data.number || !data.trip || !data.reservationUrl){empty();} else { try { var xhr = new XMLHttpRequest(); xhr.open('GET', data.reservationUrl + '/api/OneDayTrip/booking-context?employeeNumber=' + encodeURIComponent(data.number) + '&tripId=' + encodeURIComponent(data.trip) + '&adults=' + encodeURIComponent(Number(data.adultsCount||0)) + '&children=' + encodeURIComponent(Number(data.childrenCount||0)) + '&_ts=' + Date.now(), false); xhr.setRequestHeader('Accept','application/json'); xhr.send(null); value = (xhr.status >= 200 && xhr.status < 300) ? xhr.responseText : ''; } catch(e){ empty(); } }",
+      "calculateValue": "function empty(){value='';} if(!data.number || !data.trip || !data.reservationUrl){empty();} else { try { var xhr = new XMLHttpRequest(); xhr.open('GET', data.reservationUrl + '/api/OneDayTrip/booking-context?employeeNumber=' + encodeURIComponent(data.number) + '&tripId=' + encodeURIComponent(data.trip) + '&adults=' + encodeURIComponent(Number(data.adultsCount||0)) + '&children=' + encodeURIComponent(Number(data.childrenCount||0)) + '&companions=' + encodeURIComponent(Number(data.companionsCount||0)) + '&_ts=' + Date.now(), false); xhr.setRequestHeader('Accept','application/json'); xhr.send(null); value = (xhr.status >= 200 && xhr.status < 300) ? xhr.responseText : ''; } catch(e){ empty(); } }",
       "id": "odt-bookingContext"
     },
 

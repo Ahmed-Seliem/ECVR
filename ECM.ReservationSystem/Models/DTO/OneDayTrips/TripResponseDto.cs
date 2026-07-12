@@ -1,5 +1,3 @@
-using ECM.ReservationSystem.Domain.Entities.OneDayTrips;
-
 namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
 {
     public class TripResponseDto
@@ -10,7 +8,7 @@ namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
         public DateTime TripDate { get; set; }
         public decimal AdultTicketPrice { get; set; }
         public decimal ChildTicketPrice { get; set; }
-        public TripStatus Status { get; set; }
+        public decimal CompanionTicketPrice { get; set; }
         public string? Notes { get; set; }
         public bool IsActive { get; set; }
         public int BookingsCount { get; set; }

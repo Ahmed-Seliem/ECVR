@@ -18,7 +18,8 @@ public class Trip : AuditableEntity
     [Column(TypeName = "decimal(18,2)")]
     public decimal ChildTicketPrice { get; set; }
 
-    public TripStatus Status { get; set; } = TripStatus.Open;
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal CompanionTicketPrice { get; set; }
 
     [StringLength(500)]
     public string? Notes { get; set; }
@@ -26,11 +27,4 @@ public class Trip : AuditableEntity
     public bool IsActive { get; set; } = true;
 
     public ICollection<TripBooking> Bookings { get; set; } = new List<TripBooking>();
-}
-
-public enum TripStatus
-{
-    Open = 1,
-    Closed = 2,
-    Cancelled = 3
 }

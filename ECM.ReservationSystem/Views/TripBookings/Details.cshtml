@@ -3,76 +3,138 @@
 @{
     ViewData["Title"] = "تفاصيل الحجز";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
-    var statusLabel = Model.Status == BookingStatus.Confirmed ? "مؤكد" : "ملغي";
-    var statusCss = Model.Status == BookingStatus.Confirmed ? "success" : "danger";
+
+    var (statusCss, statusLabel) = Model.Status switch
+    {
+        BookingStatus.PendingPayment => ("warning", "بانتظار الدفع"),
+        BookingStatus.Confirmed => ("success", "مؤكد"),
+        BookingStatus.Cancelled => ("danger", "ملغي"),
+        _ => ("secondary", Model.Status.ToString())
+    };
+
+    var totalGuests = Model.AdultsCount + Model.ChildrenCount + Model.CompanionsCount;
+
+    var statusOptions = new[]
+    {
+        new { Value = BookingStatus.PendingPayment, Text = "بانتظار الدفع" },
+        new { Value = BookingStatus.Confirmed, Text = "مؤكد" },
+        new { Value = BookingStatus.Cancelled, Text = "ملغي" }
+    };
 }
 
 <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2 mb-0">
-        <i class="fas fa-ticket-alt"></i>
-        تفاصيل الحجز
-    </h1>
+    <h1 class="h2 mb-0"><i class="fas fa-ticket-alt"></i> تفاصيل الحجز #@Model.Id</h1>
     <a href="/Admin/TripBookings" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-right"></i>
-        رجوع للقائمة
+        <i class="fas fa-arrow-right"></i> رجوع للقائمة
     </a>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label text-muted">المكان</label>
-                <div class="fw-bold">@Model.LocationName</div>
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">المكان</dt><dd class="col-sm-8">@Model.LocationName</dd>
+                    <dt class="col-sm-4">تاريخ الرحلة</dt><dd class="col-sm-8">@Model.TripDate.ToString("dd/MM/yyyy")</dd>
+                    <dt class="col-sm-4">الموظف</dt><dd class="col-sm-8">@Model.EmployeeName (@Model.EmployeeNumber)</dd>
+                    <dt class="col-sm-4">رقم الهاتف</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "-" : Model.PhoneNumber)</dd>
+                    <dt class="col-sm-4">القطاع</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Sector) ? "-" : Model.Sector)</dd>
+                    <dt class="col-sm-4">عدد الأشخاص</dt>
+                    <dd class="col-sm-8">
+                        <strong>@totalGuests</strong>
+                        <span class="text-muted">(بالغين @Model.AdultsCount، أطفال @Model.ChildrenCount، مرافقين @Model.CompanionsCount)</span>
+                    </dd>
+                    <dt class="col-sm-4">أسعار التذاكر</dt>
+                    <dd class="col-sm-8">
+                        البالغ @Model.AdultUnitPrice.ToString("N2") /
+                        الطفل @Model.ChildUnitPrice.ToString("N2") /
+                        المرافق @Model.CompanionUnitPrice.ToString("N2")
+                    </dd>
+                    <dt class="col-sm-4">الإجمالي</dt><dd class="col-sm-8"><strong class="text-primary">@Model.TotalAmount.ToString("N2")</strong></dd>
+                    <dt class="col-sm-4">الحالة</dt>
+                    <dd class="col-sm-8"><span class="badge bg-@statusCss">@statusLabel</span></dd>
+                    <dt class="col-sm-4">آخر ميعاد للدفع</dt><dd class="col-sm-8">@(Model.PaymentDeadline.HasValue ? Model.PaymentDeadline.Value.ToString("dd/MM/yyyy HH:mm") : "-")</dd>
+                    <dt class="col-sm-4">رقم الوثيقة</dt><dd class="col-sm-8">@(Model.DocumentId?.ToString() ?? "-")</dd>
+                    <dt class="col-sm-4">مرجع الحجز</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CaseSystemId) ? "-" : Model.CaseSystemId)</dd>
+                    <dt class="col-sm-4">ملاحظات</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Notes) ? "-" : Model.Notes)</dd>
+                </dl>
             </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label text-muted">تاريخ الرحلة</label>
-                <div class="fw-bold">@Model.TripDate.ToString("dd/MM/yyyy")</div>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label text-muted">رقم الموظف</label>
-                <div class="fw-bold">@Model.EmployeeNumber</div>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label text-muted">اسم الموظف</label>
-                <div class="fw-bold">@Model.EmployeeName</div>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label text-muted">القطاع</label>
-                <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.Sector) ? "-" : Model.Sector)</div>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label text-muted">رقم الهاتف</label>
-                <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "-" : Model.PhoneNumber)</div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label text-muted">عدد البالغين</label>
-                <div class="fw-bold">@Model.AdultsCount</div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label text-muted">عدد الأطفال</label>
-                <div class="fw-bold">@Model.ChildrenCount</div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label text-muted">الحالة</label>
-                <div><span class="badge bg-@statusCss">@statusLabel</span></div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label text-muted">سعر تذكرة البالغ</label>
-                <div class="fw-bold">@Model.AdultUnitPrice.ToString("N2")</div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label text-muted">سعر تذكرة الطفل</label>
-                <div class="fw-bold">@Model.ChildUnitPrice.ToString("N2")</div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label text-muted">الإجمالي</label>
-                <div class="fw-bold text-primary">@Model.TotalAmount.ToString("N2")</div>
-            </div>
-            <div class="col-md-12 mb-3">
-                <label class="form-label text-muted">ملاحظات</label>
-                <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.Notes) ? "-" : Model.Notes)</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="mb-3">تعديل حالة الحجز</h6>
+                <form method="post"
+                      action="/Admin/TripBookings/UpdateStatus/@Model.Id"
+                      class="js-confirm-action"
+                      data-title="تأكيد تعديل الحالة"
+                      data-text="هل تريد حفظ تغيير حالة الحجز؟"
+                      data-confirm-button="نعم، حفظ"
+                      data-cancel-button="إلغاء">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <select class="form-select" name="status">
+                            @foreach (var option in statusOptions)
+                            {
+                                if (Model.Status == option.Value)
+                                {
+                                    <option value="@option.Value" selected>@option.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@option.Value">@option.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save"></i> حفظ الحالة
+                    </button>
+                </form>
+
+                @if (Model.Status != BookingStatus.Cancelled)
+                {
+                    <form method="post"
+                          action="/Admin/TripBookings/Cancel/@Model.Id"
+                          class="mt-2 js-confirm-action"
+                          data-title="تأكيد الإلغاء"
+                          data-text="هل تريد إلغاء هذا الحجز؟ سيتم إرجاع التذاكر."
+                          data-confirm-button="نعم، إلغاء"
+                          data-cancel-button="تراجع">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-times"></i> إلغاء الحجز
+                        </button>
+                    </form>
+                }
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $(document).on('submit', '.js-confirm-action', function (event) {
+                event.preventDefault();
+                const form = this;
+                const $form = $(form);
+
+                swal({
+                    title: $form.data('title') || 'تأكيد الإجراء',
+                    text: $form.data('text') || 'هل أنت متأكد من تنفيذ هذا الإجراء؟',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: $form.data('confirm-button') || 'نعم',
+                    cancelButtonText: $form.data('cancel-button') || 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (isConfirm) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

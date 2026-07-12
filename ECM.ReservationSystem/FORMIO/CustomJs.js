@@ -7,6 +7,10 @@
     window.reservationHoldKey = "";
     window.reservationAutoSending = false;
 
+    // One Day Trips (isolated from the legacy reservation flow)
+    window.oneDayTripHoldSucceeded = false;
+    window.oneDayTripHoldKey = "";
+
     $.ajax = function (options) {
         if (
             !options ||
@@ -18,8 +22,13 @@
         }
 
         const dataObj = parseRequestPayload(options.data);
-		
+
 		const currentDocTypeId = Number(dataObj.DocumentTypeId);
+
+		// One Day Trips: gated separately (isolated from the legacy reservation flow).
+		if (currentDocTypeId === Number(window.OneDayTripDocTypeBaseID)) {
+			return handleOneDayTripSend(options);
+		}
 
 		const allowedDocTypes = [
 			Number(window.EmployeeDocTypeBaseID),
@@ -130,6 +139,69 @@
         function () {
             resetHoldState();
             showHoldStatus("تم تغيير بيانات الحجز. برجاء الضغط على حجز الوحدة  مرة أخرى.", "warning");
+        }
+    );
+
+    // ===== One Day Trips =====
+    $(document).on("click", "#reserveOneDayTripHoldBtn", function () {
+        const payload = buildOneDayTripPayload();
+
+        const validationMessage = validateOneDayTripBeforeHold(payload);
+        if (validationMessage) {
+            resetOneDayTripHoldState();
+            showOdtStatus(validationMessage, "error");
+            Common.alertMsg(validationMessage);
+            return;
+        }
+
+        showOdtStatus("جاري التحقق من التوفّر...", "info");
+        disableSendButton();
+        $("#reserveOneDayTripHoldBtn").prop("disabled", true);
+
+        originalAjax({
+            url: window.ReservationURL + "/api/OneDayTrip/booking-context?employeeNumber=" +
+                encodeURIComponent(payload.employeeNumber) + "&tripId=" + encodeURIComponent(payload.tripId) +
+                "&adults=" + encodeURIComponent(payload.adultsCount) + "&children=" + encodeURIComponent(payload.childrenCount) +
+                "&companions=" + encodeURIComponent(payload.companionsCount) + "&_ts=" + Date.now(),
+            type: "GET",
+            dataType: "json"
+        })
+            .done(function (ctx) {
+                if (ctx && ctx.canBook) {
+                    window.oneDayTripHoldSucceeded = true;
+                    window.oneDayTripHoldKey = buildOneDayTripHoldKey(payload);
+
+                    showOdtStatus("تم التحقق من الحجز، جاري إرسال الطلب...", "success");
+                    enableSendButton();
+                    triggerSendButton();
+                } else {
+                    resetOneDayTripHoldState();
+                    const msg = (ctx && ctx.message) ? ctx.message : "لا يمكن إتمام الحجز.";
+                    showOdtStatus(msg, "error");
+                    $("#reserveOneDayTripHoldBtn").prop("disabled", false);
+                }
+            })
+            .fail(function (xhr) {
+                resetOneDayTripHoldState();
+
+                let msg = "فشل التحقق من الحجز.";
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+
+                showOdtStatus(msg, "error");
+                $("#reserveOneDayTripHoldBtn").prop("disabled", false);
+            });
+    });
+
+    $(document).on(
+        "change",
+        "[name='data[trip]'], [name='data[location]'], [name='data[totalGuests]'], [name='data[adultsCount]'], [name='data[childrenCount]'], [name='data[companionsCount]']",
+        function () {
+            if ($("#reserveOneDayTripHoldBtn").length) {
+                resetOneDayTripHoldState();
+                showOdtStatus("تم تغيير بيانات الحجز. برجاء الضغط على زر تأكيد الحجز مرة أخرى.", "warning");
+            }
         }
     );
 
@@ -263,6 +335,117 @@
         if (type === "warning") color = "#b36b00";
 
         $("#reserveUnitHoldStatus").html(
+            "<span style='color:" + color + ";font-weight:bold;'>" + message + "</span>"
+        );
+    }
+
+    // ===== One Day Trips helpers (isolated) =====
+    function handleOneDayTripSend(options) {
+        const deferred = $.Deferred();
+        const payload = buildOneDayTripPayload();
+        const currentKey = buildOneDayTripHoldKey(payload);
+
+        if (!window.oneDayTripHoldSucceeded || !window.oneDayTripHoldKey || window.oneDayTripHoldKey !== currentKey) {
+            showOdtStatus("برجاء الضغط على زر تأكيد الحجز وإرسال الطلب", "error");
+            Common.alertMsg("برجاء الضغط على زر تأكيد الحجز وإرسال الطلب");
+            disableSendButton();
+            deferred.reject();
+            return deferred.promise();
+        }
+
+        const saveOptions = $.extend(true, {}, options, { skipReservationValidation: true });
+
+        originalAjax(saveOptions)
+            .done(function (data, textStatus, jqXHR) {
+                if (typeof options.success === "function") {
+                    options.success(data, textStatus, jqXHR);
+                }
+                deferred.resolve(data, textStatus, jqXHR);
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                if (typeof options.error === "function") {
+                    options.error(jqXHR, textStatus, errorThrown);
+                }
+
+                let msg = "فشل إرسال الطلب.";
+                if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                    msg = jqXHR.responseJSON.message;
+                }
+
+                showOdtStatus(msg, "error");
+                deferred.reject(jqXHR, textStatus, errorThrown);
+            })
+            .always(function (dataOrJqXHR, textStatus) {
+                if (typeof options.complete === "function") {
+                    options.complete(dataOrJqXHR, textStatus);
+                }
+            });
+
+        return deferred.promise();
+    }
+
+    function buildOneDayTripPayload() {
+        return {
+            employeeNumber: getFieldValue("number") || "",
+            phoneNumber: getFieldValue("phoneNumber") || "",
+            tripId: toNumber(getFieldValue("trip")),
+            adultsCount: toNumber(getFieldValue("adultsCount")),
+            childrenCount: toNumber(getFieldValue("childrenCount")),
+            companionsCount: toNumber(getFieldValue("companionsCount"))
+        };
+    }
+
+    function buildOneDayTripHoldKey(payload) {
+        return [
+            payload.tripId || 0,
+            payload.adultsCount || 0,
+            payload.childrenCount || 0,
+            payload.companionsCount || 0
+        ].join("|");
+    }
+
+    function validateOneDayTripBeforeHold(payload) {
+        if (!payload.employeeNumber || !String(payload.employeeNumber).trim()) {
+            return "برجاء إدخال رقم الموظف.";
+        }
+
+        if (!payload.phoneNumber || !String(payload.phoneNumber).trim()) {
+            return "برجاء إدخال رقم التليفون.";
+        }
+
+        if (!phoneRegex.test(String(payload.phoneNumber).trim())) {
+            return "رقم التليفون غير صحيح.";
+        }
+
+        if (!payload.tripId) {
+            return "اختر الرحلة أولًا.";
+        }
+
+        if (payload.adultsCount < 1) {
+            return "يجب أن يحتوي الحجز على بالغ واحد على الأقل.";
+        }
+
+        if ((payload.adultsCount + payload.childrenCount + payload.companionsCount) > 5) {
+            return "إجمالي عدد الأشخاص لا يمكن أن يتجاوز 5.";
+        }
+
+        return "";
+    }
+
+    function resetOneDayTripHoldState() {
+        window.oneDayTripHoldSucceeded = false;
+        window.oneDayTripHoldKey = "";
+        disableSendButton();
+        $("#reserveOneDayTripHoldBtn").prop("disabled", false).show();
+    }
+
+    function showOdtStatus(message, type) {
+        let color = "#0c5460";
+        if (type === "success") color = "green";
+        if (type === "error") color = "red";
+        if (type === "warning") color = "#b36b00";
+
+        $("#reserveOneDayTripHoldStatus").html(
             "<span style='color:" + color + ";font-weight:bold;'>" + message + "</span>"
         );
     }

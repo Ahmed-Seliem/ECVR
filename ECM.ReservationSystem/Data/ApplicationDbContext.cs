@@ -209,7 +209,8 @@ public class ApplicationDbContext : DbContext
             {
                 t.HasCheckConstraint("CK_TripBookings_AdultsCount_Min", "[AdultsCount] >= 1");
                 t.HasCheckConstraint("CK_TripBookings_ChildrenCount_NonNegative", "[ChildrenCount] >= 0");
-                t.HasCheckConstraint("CK_TripBookings_TotalGuests_Max", "[AdultsCount] + [ChildrenCount] <= 5");
+                t.HasCheckConstraint("CK_TripBookings_CompanionsCount_NonNegative", "[CompanionsCount] >= 0");
+                t.HasCheckConstraint("CK_TripBookings_TotalGuests_Max", "[AdultsCount] + [ChildrenCount] + [CompanionsCount] <= 5");
             });
     }
 

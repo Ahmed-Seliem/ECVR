@@ -7,6 +7,7 @@ using ECM.ReservationSystem.OpenIdSettings;
 using ECM.ReservationSystem.Services;
 using ECM.ReservationSystem.Services.Implementations;
 using ECM.ReservationSystem.Services.Interfaces;
+using ECM.ReservationSystem.Services.OneDayTrips;
 using ECM.ReservationSystem.Services.OneDayTrips.Interfaces;
 using ECM.ReservationSystem.Services.OneDayTrips.Implementations;
 using Microsoft.AspNetCore.Authentication;
@@ -92,6 +93,7 @@ builder.Services.AddScoped<ITripBookingService, TripBookingService>();
 
 
 builder.Services.AddHostedService<ExpiredHoldsCleanupService>();
+builder.Services.AddHostedService<ExpiredTripBookingsCleanupService>();
 builder.Services.AddHostedService<MockDataSeederHostedService>();
 
 

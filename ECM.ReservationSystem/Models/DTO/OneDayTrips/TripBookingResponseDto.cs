@@ -14,10 +14,13 @@ namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
         public string PhoneNumber { get; set; } = string.Empty;
         public int AdultsCount { get; set; }
         public int ChildrenCount { get; set; }
+        public int CompanionsCount { get; set; }
         public decimal AdultUnitPrice { get; set; }
         public decimal ChildUnitPrice { get; set; }
+        public decimal CompanionUnitPrice { get; set; }
         public decimal TotalAmount { get; set; }
         public BookingStatus Status { get; set; }
+        public DateTime? PaymentDeadline { get; set; }
         public string CaseSystemId { get; set; } = string.Empty;
         public long? WorkflowId { get; set; }
         public long? DocumentId { get; set; }

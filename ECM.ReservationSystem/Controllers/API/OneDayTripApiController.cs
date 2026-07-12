@@ -18,13 +18,16 @@ public class OneDayTripApiController : ControllerBase
 
     private readonly ApplicationDbContext _context;
     private readonly ITripBookingService _tripBookingService;
+    private readonly ITripLocationService _tripLocationService;
 
     public OneDayTripApiController(
         ApplicationDbContext context,
-        ITripBookingService tripBookingService)
+        ITripBookingService tripBookingService,
+        ITripLocationService tripLocationService)
     {
         _context = context;
         _tripBookingService = tripBookingService;
+        _tripLocationService = tripLocationService;
     }
 
     // GET /api/OneDayTrip/locations
@@ -55,8 +58,7 @@ public class OneDayTripApiController : ControllerBase
 
         var trips = await _context.Trips
             .Where(t => t.TripLocationId == locationId
-                        && t.IsActive
-                        && t.Status == TripStatus.Open)
+                        && t.IsActive)
             .OrderBy(t => t.TripDate)
             .Select(t => new
             {
@@ -79,16 +81,17 @@ public class OneDayTripApiController : ControllerBase
     public async Task<IActionResult> GetPrice(
         int tripId,
         [FromQuery] int adults = 0,
-        [FromQuery] int children = 0)
+        [FromQuery] int children = 0,
+        [FromQuery] int companions = 0)
     {
-        if (adults < 0 || children < 0)
+        if (adults < 0 || children < 0 || companions < 0)
         {
             return BadRequest(new { message = "عدد الأشخاص غير صحيح." });
         }
 
         var trip = await _context.Trips
             .Where(t => t.Id == tripId)
-            .Select(t => new { t.AdultTicketPrice, t.ChildTicketPrice })
+            .Select(t => new { t.AdultTicketPrice, t.ChildTicketPrice, t.CompanionTicketPrice })
             .FirstOrDefaultAsync();
 
         if (trip is null)
@@ -96,12 +99,15 @@ public class OneDayTripApiController : ControllerBase
             return NotFound(new { message = "الرحلة غير موجودة." });
         }
 
-        var total = (adults * trip.AdultTicketPrice) + (children * trip.ChildTicketPrice);
+        var total = (adults * trip.AdultTicketPrice)
+                    + (children * trip.ChildTicketPrice)
+                    + (companions * trip.CompanionTicketPrice);
 
         return Ok(new
         {
             adultUnitPrice = trip.AdultTicketPrice,
             childUnitPrice = trip.ChildTicketPrice,
+            companionUnitPrice = trip.CompanionTicketPrice,
             total
         });
     }
@@ -112,7 +118,8 @@ public class OneDayTripApiController : ControllerBase
         [FromQuery] string? employeeNumber = null,
         [FromQuery] int tripId = 0,
         [FromQuery] int adults = 0,
-        [FromQuery] int children = 0)
+        [FromQuery] int children = 0,
+        [FromQuery] int companions = 0)
     {
         if (string.IsNullOrWhiteSpace(employeeNumber))
         {
@@ -140,19 +147,30 @@ public class OneDayTripApiController : ControllerBase
             });
         }
 
-        var isTripAvailable = trip.IsActive && trip.Status == TripStatus.Open;
+        var isTripAvailable = trip.IsActive;
+        var now = DateTime.Now;
 
         var alreadyBooked = await _context.TripBookings.AnyAsync(b =>
             b.TripId == tripId
             && b.EmployeeNumber == employeeNumber
-            && b.Status == BookingStatus.Confirmed);
+            && (b.Status == BookingStatus.Confirmed
+                || (b.Status == BookingStatus.PendingPayment
+                    && b.PaymentDeadline != null
+                    && b.PaymentDeadline > now)));
 
+        var totalGuests = adults + children + companions;
         var isCountValid = adults >= TripBookingRules.MinAdultsPerBooking
                            && children >= 0
-                           && (adults + children) <= TripBookingRules.MaxGuestsPerBooking;
+                           && companions >= 0
+                           && totalGuests <= TripBookingRules.MaxGuestsPerBooking;
 
-        var total = (adults * trip.AdultTicketPrice) + (children * trip.ChildTicketPrice);
-        var canBook = isTripAvailable && !alreadyBooked && isCountValid;
+        var remainingTickets = await _tripLocationService.GetRemainingTicketsAsync(trip.TripLocationId);
+        var hasEnoughTickets = totalGuests <= remainingTickets;
+
+        var total = (adults * trip.AdultTicketPrice)
+                    + (children * trip.ChildTicketPrice)
+                    + (companions * trip.CompanionTicketPrice);
+        var canBook = isTripAvailable && !alreadyBooked && isCountValid && hasEnoughTickets;
 
         string? message = null;
         if (!isTripAvailable)
@@ -161,11 +179,15 @@ public class OneDayTripApiController : ControllerBase
         }
         else if (alreadyBooked)
         {
-            message = "الموظف لديه بالفعل حجز مؤكد على هذه الرحلة.";
+            message = "الموظف لديه بالفعل حجز نشط على هذه الرحلة.";
         }
         else if (!isCountValid)
         {
             message = $"يجب أن يحتوي الحجز على بالغ واحد على الأقل وألا يتجاوز الإجمالي {TripBookingRules.MaxGuestsPerBooking} أشخاص.";
+        }
+        else if (!hasEnoughTickets)
+        {
+            message = $"لا توجد تذاكر كافية. المتبقي: {remainingTickets}.";
         }
 
         return Ok(new
@@ -184,9 +206,13 @@ public class OneDayTripApiController : ControllerBase
             alreadyBooked,
             adults,
             children,
+            companions,
             isCountValid,
+            remainingTickets,
+            hasEnoughTickets,
             adultUnitPrice = trip.AdultTicketPrice,
             childUnitPrice = trip.ChildTicketPrice,
+            companionUnitPrice = trip.CompanionTicketPrice,
             total,
             canBook,
             message
@@ -211,6 +237,45 @@ public class OneDayTripApiController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    // POST /api/OneDayTrip/update-booking  (called by the Case WF to confirm payment or cancel)
+    [HttpPost("update-booking")]
+    public async Task<IActionResult> UpdateBooking([FromBody] UpdateTripBookingRequest request)
+    {
+        if (request is null || request.DocumentId <= 0)
+        {
+            return BadRequest(new { message = "DocumentId مطلوب." });
+        }
+
+        if (request.BookingStatus != (int)BookingStatus.Confirmed
+            && request.BookingStatus != (int)BookingStatus.Cancelled)
+        {
+            return BadRequest(new { message = "الحالة يجب أن تكون 2 (مؤكد) أو 3 (ملغي)." });
+        }
+
+        try
+        {
+            var updated = await _tripBookingService.UpdateStatusByDocumentIdAsync(
+                request.DocumentId, (BookingStatus)request.BookingStatus);
+
+            if (!updated)
+            {
+                return NotFound(new { message = "لا يوجد حجز مرتبط بهذا الطلب." });
+            }
+
+            return Ok(new { success = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    public sealed class UpdateTripBookingRequest
+    {
+        public long DocumentId { get; set; }
+        public int BookingStatus { get; set; }
     }
 
     // GET /api/OneDayTrip/last-trip/{employeeNumber}
