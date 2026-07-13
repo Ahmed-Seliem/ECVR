@@ -21,10 +21,11 @@ public class TripBookingsController : Controller
 
     // GET: Admin/TripBookings
     [HttpGet("")]
-    public async Task<IActionResult> Index(int? tripId = null)
+    public async Task<IActionResult> Index(int? tripId = null, Domain.Entities.OneDayTrips.TripBookingType? bookingType = null)
     {
         await PopulateTripsAsync(tripId);
-        var bookings = await _tripBookingService.GetAllAsync(tripId);
+        ViewBag.SelectedBookingType = bookingType;
+        var bookings = await _tripBookingService.GetAllAsync(tripId, bookingType);
         return View(bookings);
     }
 

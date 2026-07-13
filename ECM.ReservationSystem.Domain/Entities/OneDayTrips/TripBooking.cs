@@ -39,6 +39,9 @@ public class TripBooking : AuditableEntity
     [Column(TypeName = "decimal(18,2)")]
     public decimal TotalAmount { get; set; }
 
+    // Employee vs Pension. Pension bookings add a surcharge on top of the ticket total.
+    public TripBookingType BookingType { get; set; } = TripBookingType.Employee;
+
     public BookingStatus Status { get; set; } = BookingStatus.PendingPayment;
 
     // Deadline to pay before the booking is auto-cancelled and its tickets are released.
@@ -57,4 +60,10 @@ public enum BookingStatus
     PendingPayment = 1,
     Confirmed = 2,
     Cancelled = 3
+}
+
+public enum TripBookingType
+{
+    Employee = 1,
+    Pension = 2
 }

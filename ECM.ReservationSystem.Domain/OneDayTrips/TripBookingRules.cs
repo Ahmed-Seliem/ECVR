@@ -8,6 +8,9 @@ public static class TripBookingRules
     // Payment window before an unpaid booking is auto-cancelled and its tickets released.
     public const int PaymentHoldWorkingDays = 1;
 
+    // Extra percentage added to the ticket total for pension bookings.
+    public const decimal PensionSurchargePercent = 10m;
+
     // Advance the given number of working days, skipping Friday & Saturday (Egyptian weekend).
     public static DateTime ComputePaymentDeadline(DateTime from, int workingDays = PaymentHoldWorkingDays)
     {

@@ -31,6 +31,9 @@ namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
         [Range(0, 4, ErrorMessage = "عدد المرافقين يجب أن يكون بين 0 و 4")]
         public int CompanionsCount { get; set; }
 
+        // From the form: "employees" or "pensions". Pension adds a surcharge on the total.
+        public string BookingType { get; set; } = "employees";
+
         public string CaseSystemId { get; set; } = string.Empty;
         public long? WorkflowId { get; set; }
         public long? DocumentId { get; set; }

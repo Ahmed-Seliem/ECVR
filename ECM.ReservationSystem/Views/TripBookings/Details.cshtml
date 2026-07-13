@@ -51,11 +51,24 @@
                         المرافق @Model.CompanionUnitPrice.ToString("N2")
                     </dd>
                     <dt class="col-sm-4">الإجمالي</dt><dd class="col-sm-8"><strong class="text-primary">@Model.TotalAmount.ToString("N2")</strong></dd>
+                    <dt class="col-sm-4">نوع الحجز</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.BookingType == TripBookingType.Pension)
+                        {
+                            <span class="badge bg-warning text-dark">معاشات</span>
+                            <span class="text-muted">(شامل 10% إضافة)</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">موظفين</span>
+                        }
+                    </dd>
                     <dt class="col-sm-4">الحالة</dt>
                     <dd class="col-sm-8"><span class="badge bg-@statusCss">@statusLabel</span></dd>
                     <dt class="col-sm-4">آخر ميعاد للدفع</dt><dd class="col-sm-8">@(Model.PaymentDeadline.HasValue ? Model.PaymentDeadline.Value.ToString("dd/MM/yyyy HH:mm") : "-")</dd>
                     <dt class="col-sm-4">رقم الوثيقة</dt><dd class="col-sm-8">@(Model.DocumentId?.ToString() ?? "-")</dd>
                     <dt class="col-sm-4">مرجع الحجز</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CaseSystemId) ? "-" : Model.CaseSystemId)</dd>
+                    <dt class="col-sm-4">تاريخ الحجز</dt><dd class="col-sm-8">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
                     <dt class="col-sm-4">ملاحظات</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Notes) ? "-" : Model.Notes)</dd>
                 </dl>
             </div>

@@ -19,6 +19,7 @@ namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
         public decimal ChildUnitPrice { get; set; }
         public decimal CompanionUnitPrice { get; set; }
         public decimal TotalAmount { get; set; }
+        public TripBookingType BookingType { get; set; }
         public BookingStatus Status { get; set; }
         public DateTime? PaymentDeadline { get; set; }
         public string CaseSystemId { get; set; } = string.Empty;

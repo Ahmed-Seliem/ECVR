@@ -1,0 +1,78 @@
+@model ECM.ReservationSystem.Models.ViewModels.OneDayTrips.OneDayTripReportsViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>تقرير رحلات اليوم الواحد</title>
+    <style>
+        body { font-family: Tahoma, Arial, sans-serif; margin: 24px; color: #222; }
+        h1 { margin: 0 0 16px; font-size: 24px; }
+        .group { margin-bottom: 24px; page-break-inside: avoid; }
+        .group-header { padding: 10px 12px; background: #f3ead8; border: 1px solid #d9c8a7; font-weight: 700; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #cfcfcf; padding: 8px; text-align: right; font-size: 12px; }
+        th { background: #f7f7f7; white-space: nowrap; }
+        td { white-space: nowrap; }
+        .summary { margin-top: 6px; color: #555; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <h1>تقرير رحلات اليوم الواحد</h1>
+
+    @foreach (var group in Model.Groups)
+    {
+        <section class="group">
+            <div class="group-header">
+                @group.LocationName | @group.TripDate.ToString("dd/MM/yyyy")
+            </div>
+            <div class="summary">
+                عدد الحجوزات: @group.BookingCount |
+                عدد الأشخاص: @group.PersonCount |
+                إجمالي المبالغ: @group.TotalAmount.ToString("N2")
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>الرقم</th>
+                        <th>القطاع</th>
+                        <th>التليفون</th>
+                        <th>بالغين</th>
+                        <th>أطفال</th>
+                        <th>مرافقين</th>
+                        <th>الإجمالي</th>
+                        <th>نوع الحجز</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in group.Items)
+                    {
+                        <tr>
+                            <td>@item.EmployeeName</td>
+                            <td>@item.EmployeeNumber</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.Sector) ? "-" : item.Sector)</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.PhoneNumber) ? "-" : item.PhoneNumber)</td>
+                            <td>@item.AdultsCount</td>
+                            <td>@item.ChildrenCount</td>
+                            <td>@item.CompanionsCount</td>
+                            <td>@item.TotalAmount.ToString("N2")</td>
+                            <td>@item.BookingTypeText</td>
+                            <td>@item.StatusText</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    }
+
+    <script>
+        window.addEventListener('load', function () {
+            window.print();
+        });
+    </script>
+</body>
+</html>

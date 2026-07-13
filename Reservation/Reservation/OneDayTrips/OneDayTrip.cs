@@ -104,6 +104,7 @@ namespace Reservation.OneDayTrips
                 AdultsCount = GetIntValue(root, "adultsCount") ?? 0,
                 ChildrenCount = GetIntValue(root, "childrenCount") ?? 0,
                 CompanionsCount = GetIntValue(root, "companionsCount") ?? 0,
+                BookingType = GetStringValue(root, "bookingType") ?? "employees",
                 Notes = BuildNotes(root),
                 WorkflowId = workflowId,
                 DocumentId = documentId
@@ -245,6 +246,7 @@ namespace Reservation.OneDayTrips
             public int AdultsCount { get; set; }
             public int ChildrenCount { get; set; }
             public int CompanionsCount { get; set; }
+            public string BookingType { get; set; } = "employees";
             public string Notes { get; set; } = string.Empty;
             public long WorkflowId { get; set; }
             public long DocumentId { get; set; }

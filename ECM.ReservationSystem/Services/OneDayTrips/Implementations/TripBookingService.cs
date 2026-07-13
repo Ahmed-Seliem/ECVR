@@ -18,7 +18,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             _tripLocationService = tripLocationService;
         }
 
-        public async Task<List<TripBookingResponseDto>> GetAllAsync(int? tripId = null)
+        public async Task<List<TripBookingResponseDto>> GetAllAsync(int? tripId = null, TripBookingType? bookingType = null)
         {
             var query = _context.TripBookings
                 .Include(b => b.Trip)
@@ -29,6 +29,11 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             if (tripId.HasValue)
             {
                 query = query.Where(b => b.TripId == tripId.Value);
+            }
+
+            if (bookingType.HasValue)
+            {
+                query = query.Where(b => b.BookingType == bookingType.Value);
             }
 
             return await query
@@ -116,9 +121,18 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 throw new InvalidOperationException($"لا توجد تذاكر كافية. المتبقي: {remaining}.");
             }
 
-            var totalAmount = (request.AdultsCount * trip.AdultTicketPrice)
-                            + (request.ChildrenCount * trip.ChildTicketPrice)
-                            + (request.CompanionsCount * trip.CompanionTicketPrice);
+            var baseTotal = (request.AdultsCount * trip.AdultTicketPrice)
+                          + (request.ChildrenCount * trip.ChildTicketPrice)
+                          + (request.CompanionsCount * trip.CompanionTicketPrice);
+
+            var bookingType = string.Equals(request.BookingType, "pensions", StringComparison.OrdinalIgnoreCase)
+                ? TripBookingType.Pension
+                : TripBookingType.Employee;
+
+            // Pension bookings add a surcharge on top of the ticket total.
+            var totalAmount = bookingType == TripBookingType.Pension
+                ? Math.Round(baseTotal * (1 + (TripBookingRules.PensionSurchargePercent / 100m)), 2)
+                : baseTotal;
 
             var booking = new TripBooking
             {
@@ -134,6 +148,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 ChildUnitPrice = trip.ChildTicketPrice,
                 CompanionUnitPrice = trip.CompanionTicketPrice,
                 TotalAmount = totalAmount,
+                BookingType = bookingType,
                 Status = BookingStatus.PendingPayment,
                 PaymentDeadline = TripBookingRules.ComputePaymentDeadline(now),
                 CaseSystemId = request.CaseSystemId,
@@ -256,6 +271,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             ChildUnitPrice = booking.ChildUnitPrice,
             CompanionUnitPrice = booking.CompanionUnitPrice,
             TotalAmount = booking.TotalAmount,
+            BookingType = booking.BookingType,
             Status = booking.Status,
             PaymentDeadline = booking.PaymentDeadline,
             CaseSystemId = booking.CaseSystemId,

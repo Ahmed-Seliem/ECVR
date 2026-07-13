@@ -1,0 +1,148 @@
+@using ECM.ReservationSystem.Models.ViewModels.OneDayTrips
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model OneDayTripReportsViewModel
+@{
+    ViewData["Title"] = "تقارير رحلات اليوم الواحد";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var locations = ViewBag.Locations as SelectList;
+    var bookingTypes = ViewBag.BookingTypes as SelectList;
+    var statuses = ViewBag.Statuses as SelectList;
+}
+
+<style>
+    .reports-page { direction: rtl; }
+    .reports-hero, .reports-filter, .report-group { border: 0; border-radius: 24px; box-shadow: 0 16px 34px rgba(15,23,42,.08); }
+    .reports-hero { padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; background: linear-gradient(135deg,#eef7f3,#fff,#f7f1e5); }
+    .reports-hero h1 { margin: 0; font-weight: 800; color: #17324d; }
+    .reports-filter { margin-bottom: 1rem; }
+    .reports-filter .card-header, .report-group .card-header { background: #fffaf2; border-bottom: 1px solid #f0e1c8; font-weight: 800; color: #6f4e1f; }
+    .reports-table th { white-space: nowrap; background: #faf7f0; }
+    .reports-table td { white-space: nowrap; }
+</style>
+
+<div class="reports-page">
+    <div class="reports-hero d-flex justify-content-between flex-wrap align-items-center gap-2">
+        <h1>تقارير رحلات اليوم الواحد</h1>
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="badge text-bg-primary">عدد الحجوزات: @Model.TotalBookings</span>
+            <span class="badge text-bg-secondary">عدد الأشخاص: @Model.TotalPersons</span>
+            <span class="badge text-bg-dark">الإجمالي: @Model.GrandTotal.ToString("N2")</span>
+        </div>
+    </div>
+
+    <div class="card reports-filter">
+        <div class="card-header">الفلاتر</div>
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">المكان</label>
+                    <select name="locationId" class="form-select select2">
+                        <option value="">الكل</option>
+                        @foreach (var location in locations ?? Enumerable.Empty<SelectListItem>())
+                        {
+                            <option value="@location.Value" selected="@location.Selected">@location.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">نوع الحجز</label>
+                    <select name="bookingType" class="form-select select2">
+                        <option value="">الكل</option>
+                        @foreach (var type in bookingTypes ?? Enumerable.Empty<SelectListItem>())
+                        {
+                            <option value="@type.Value" selected="@type.Selected">@type.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الحالة</label>
+                    <select name="status" class="form-select select2">
+                        <option value="">الكل</option>
+                        @foreach (var status in statuses ?? Enumerable.Empty<SelectListItem>())
+                        {
+                            <option value="@status.Value" selected="@status.Selected">@status.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">بحث</button>
+                    <a href="/Admin/OneDayTripReports" class="btn btn-outline-secondary flex-fill">مسح</a>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <a class="btn btn-outline-success"
+                       href="@Url.Action("ExportExcel", "OneDayTripReports", new { locationId = Model.LocationId, bookingType = Model.BookingType, status = Model.Status })">
+                        تصدير Excel
+                    </a>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <a class="btn btn-outline-danger"
+                       target="_blank"
+                       href="@Url.Action("ExportPdf", "OneDayTripReports", new { locationId = Model.LocationId, bookingType = Model.BookingType, status = Model.Status })">
+                        تصدير PDF
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (!Model.Groups.Any())
+    {
+        <div class="alert alert-info">لا توجد حجوزات مطابقة للفلاتر الحالية.</div>
+    }
+    else
+    {
+        foreach (var group in Model.Groups)
+        {
+            <div class="card report-group mb-3">
+                <div class="card-header d-flex justify-content-between flex-wrap gap-2">
+                    <div>
+                        <strong>@group.LocationName</strong>
+                        <span class="text-muted">| @group.TripDate.ToString("dd/MM/yyyy")</span>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge text-bg-primary">الحجوزات: @group.BookingCount</span>
+                        <span class="badge text-bg-secondary">الأشخاص: @group.PersonCount</span>
+                        <span class="badge text-bg-dark">الإجمالي: @group.TotalAmount.ToString("N2")</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle mb-0 reports-table">
+                            <thead>
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>الرقم</th>
+                                    <th>القطاع</th>
+                                    <th>التليفون</th>
+                                    <th>بالغين</th>
+                                    <th>أطفال</th>
+                                    <th>مرافقين</th>
+                                    <th>الإجمالي</th>
+                                    <th>نوع الحجز</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in group.Items)
+                                {
+                                    <tr>
+                                        <td>@item.EmployeeName</td>
+                                        <td>@item.EmployeeNumber</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.Sector) ? "-" : item.Sector)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.PhoneNumber) ? "-" : item.PhoneNumber)</td>
+                                        <td>@item.AdultsCount</td>
+                                        <td>@item.ChildrenCount</td>
+                                        <td>@item.CompanionsCount</td>
+                                        <td>@item.TotalAmount.ToString("N2")</td>
+                                        <td>@item.BookingTypeText</td>
+                                        <td>@item.StatusText</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

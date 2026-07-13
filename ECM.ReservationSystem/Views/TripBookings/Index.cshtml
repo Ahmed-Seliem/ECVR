@@ -1,8 +1,10 @@
+@using ECM.ReservationSystem.Domain.Entities.OneDayTrips
 @model IEnumerable<ECM.ReservationSystem.Models.DTOs.OneDayTrips.TripBookingResponseDto>
 @{
     ViewData["Title"] = "حجوزات رحلات اليوم الواحد";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     var trips = ViewBag.Trips as SelectList;
+    var selectedType = ViewBag.SelectedBookingType as TripBookingType?;
 }
 
 <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
@@ -15,7 +17,7 @@
 <div class="card shadow-sm mb-3">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <label class="form-label">الرحلة</label>
                 <select name="tripId" class="form-select select2">
                     <option value="">الكل</option>
@@ -26,6 +28,14 @@
                             <option value="@item.Value" selected="@item.Selected">@item.Text</option>
                         }
                     }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">نوع الحجز</label>
+                <select name="bookingType" class="form-select select2">
+                    <option value="">الكل</option>
+                    <option value="Employee" selected="@(selectedType == TripBookingType.Employee)">موظفين</option>
+                    <option value="Pension" selected="@(selectedType == TripBookingType.Pension)">معاشات</option>
                 </select>
             </div>
             <div class="col-md-4">

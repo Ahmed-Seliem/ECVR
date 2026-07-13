@@ -23,8 +23,8 @@
                     <th>اسم الموظف</th>
                     <th>عدد الأشخاص</th>
                     <th>الإجمالي</th>
+                    <th>نوع الحجز</th>
                     <th>الحالة</th>
-                    <th>تاريخ الحجز</th>
                     <th>الإجراءات</th>
                 </tr>
             </thead>
@@ -45,8 +45,17 @@
                             </span>
                         </td>
                         <td>@booking.TotalAmount.ToString("N2")</td>
+                        <td>
+                            @if (booking.BookingType == TripBookingType.Pension)
+                            {
+                                <span class="badge bg-warning text-dark">معاشات</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">موظفين</span>
+                            }
+                        </td>
                         <td><span class="badge bg-@status.CssClass">@status.Label</span></td>
-                        <td>@booking.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td>
                             <div class="btn-group">
                                 <a href="/Admin/TripBookings/Details/@booking.Id" class="btn btn-sm btn-outline-info">
