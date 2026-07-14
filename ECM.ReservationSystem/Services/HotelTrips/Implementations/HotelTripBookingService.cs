@@ -116,8 +116,12 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                 throw new InvalidOperationException("الموظف لديه بالفعل حجز نشط على هذه الرحلة.");
             }
 
-            // Ticket availability is a shared pool on the hotel (1 ticket per person).
-            var remaining = await _hotelService.GetRemainingTicketsAsync(trip.HotelId);
+            var bookingType = string.Equals(request.BookingType, "pensions", StringComparison.OrdinalIgnoreCase)
+                ? HotelBookingType.Pension
+                : HotelBookingType.Employee;
+
+            // Ticket availability: each booking type has its own pool on the hotel (1 ticket per person).
+            var remaining = await _hotelService.GetRemainingTicketsAsync(trip.HotelId, bookingType);
             if (totalGuests > remaining)
             {
                 throw new InvalidOperationException($"لا توجد تذاكر كافية. المتبقي: {remaining}.");
@@ -127,13 +131,11 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                           + (request.ChildrenCount * trip.Hotel.ChildTicketPrice)
                           + (request.CompanionsCount * trip.Hotel.CompanionTicketPrice);
 
-            var bookingType = string.Equals(request.BookingType, "pensions", StringComparison.OrdinalIgnoreCase)
-                ? HotelBookingType.Pension
-                : HotelBookingType.Employee;
-
-            var totalAmount = bookingType == HotelBookingType.Pension
-                ? Math.Round(baseTotal * (1 + (HotelBookingRules.PensionSurchargePercent / 100m)), 2)
-                : baseTotal;
+            // Pension surcharge (10%) is postponed for now — total = base regardless of type.
+            // var totalAmount = bookingType == HotelBookingType.Pension
+            //     ? Math.Round(baseTotal * (1 + (HotelBookingRules.PensionSurchargePercent / 100m)), 2)
+            //     : baseTotal;
+            var totalAmount = baseTotal;
 
             var booking = new HotelTripBooking
             {

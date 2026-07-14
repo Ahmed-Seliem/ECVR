@@ -114,8 +114,12 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 throw new InvalidOperationException("الموظف لديه بالفعل حجز نشط على هذه الرحلة.");
             }
 
-            // Ticket availability is a shared pool on the location (1 ticket per person).
-            var remaining = await _tripLocationService.GetRemainingTicketsAsync(trip.TripLocationId);
+            var bookingType = string.Equals(request.BookingType, "pensions", StringComparison.OrdinalIgnoreCase)
+                ? TripBookingType.Pension
+                : TripBookingType.Employee;
+
+            // Ticket availability: each booking type has its own pool on the location (1 ticket per person).
+            var remaining = await _tripLocationService.GetRemainingTicketsAsync(trip.TripLocationId, bookingType);
             if (totalGuests > remaining)
             {
                 throw new InvalidOperationException($"لا توجد تذاكر كافية. المتبقي: {remaining}.");
@@ -125,14 +129,11 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                           + (request.ChildrenCount * trip.ChildTicketPrice)
                           + (request.CompanionsCount * trip.CompanionTicketPrice);
 
-            var bookingType = string.Equals(request.BookingType, "pensions", StringComparison.OrdinalIgnoreCase)
-                ? TripBookingType.Pension
-                : TripBookingType.Employee;
-
-            // Pension bookings add a surcharge on top of the ticket total.
-            var totalAmount = bookingType == TripBookingType.Pension
-                ? Math.Round(baseTotal * (1 + (TripBookingRules.PensionSurchargePercent / 100m)), 2)
-                : baseTotal;
+            // Pension surcharge (10%) is postponed for now — total = base regardless of type.
+            // var totalAmount = bookingType == TripBookingType.Pension
+            //     ? Math.Round(baseTotal * (1 + (TripBookingRules.PensionSurchargePercent / 100m)), 2)
+            //     : baseTotal;
+            var totalAmount = baseTotal;
 
             var booking = new TripBooking
             {

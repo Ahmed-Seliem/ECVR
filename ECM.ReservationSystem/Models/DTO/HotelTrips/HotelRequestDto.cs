@@ -27,8 +27,11 @@ namespace ECM.ReservationSystem.Models.DTOs.HotelTrips
         [Range(0, 9999999.99, ErrorMessage = "سعر تذكرة المرافق يجب أن يكون رقمًا موجبًا")]
         public decimal? CompanionTicketPrice { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "عدد التذاكر يجب أن يكون رقمًا موجبًا")]
-        public int TicketQuantity { get; set; }
+        [Range(0, int.MaxValue, ErrorMessage = "عدد تذاكر الموظفين يجب أن يكون رقمًا موجبًا")]
+        public int EmployeeTicketQuantity { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "عدد تذاكر المعاشات يجب أن يكون رقمًا موجبًا")]
+        public int PensionTicketQuantity { get; set; }
 
         public bool IsActive { get; set; } = true;
     }

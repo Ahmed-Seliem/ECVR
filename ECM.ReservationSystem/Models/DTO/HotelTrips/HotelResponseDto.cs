@@ -10,8 +10,10 @@ namespace ECM.ReservationSystem.Models.DTOs.HotelTrips
         public decimal AdultTicketPrice { get; set; }
         public decimal ChildTicketPrice { get; set; }
         public decimal CompanionTicketPrice { get; set; }
-        public int TicketQuantity { get; set; }
-        public int RemainingTickets { get; set; }
+        public int EmployeeTicketQuantity { get; set; }
+        public int PensionTicketQuantity { get; set; }
+        public int EmployeeRemaining { get; set; }
+        public int PensionRemaining { get; set; }
         public bool IsActive { get; set; }
         public int TripsCount { get; set; }
         public DateTime CreatedAt { get; set; }

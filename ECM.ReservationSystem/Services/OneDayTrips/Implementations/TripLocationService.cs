@@ -32,7 +32,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             var usedByLocation = await GetUsedTicketsByLocationAsync();
 
             return locations
-                .Select(l => MapToDto(l, usedByLocation.TryGetValue(l.Id, out var used) ? used : 0))
+                .Select(l => MapToDto(l, usedByLocation.TryGetValue(l.Id, out var used) ? used : (0, 0)))
                 .ToList();
         }
 
@@ -48,11 +48,13 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 return null;
             }
 
-            var used = await GetUsedTicketsAsync(id);
+            var used = (
+                await GetUsedTicketsAsync(id, TripBookingType.Employee),
+                await GetUsedTicketsAsync(id, TripBookingType.Pension));
             return MapToDto(location, used);
         }
 
-        public async Task<int> GetRemainingTicketsAsync(int locationId)
+        public async Task<int> GetRemainingTicketsAsync(int locationId, TripBookingType bookingType)
         {
             var location = await _context.TripLocations
                 .AsNoTracking()
@@ -63,8 +65,12 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 return 0;
             }
 
-            var used = await GetUsedTicketsAsync(locationId);
-            return Math.Max(0, location.TicketCount - used);
+            var pool = bookingType == TripBookingType.Pension
+                ? location.PensionTicketCount
+                : location.EmployeeTicketCount;
+
+            var used = await GetUsedTicketsAsync(locationId, bookingType);
+            return Math.Max(0, pool - used);
         }
 
         public async Task<TripLocationResponseDto> CreateAsync(TripLocationRequestDto request)
@@ -74,14 +80,15 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 Name = request.Name,
                 NameAr = request.NameAr,
                 Description = request.Description,
-                TicketCount = request.TicketCount,
+                EmployeeTicketCount = request.EmployeeTicketCount,
+                PensionTicketCount = request.PensionTicketCount,
                 IsActive = request.IsActive
             };
 
             _context.TripLocations.Add(location);
             await _context.SaveChangesAsync();
 
-            return MapToDto(location, 0);
+            return MapToDto(location, (0, 0));
         }
 
         public async Task<bool> UpdateAsync(int id, TripLocationRequestDto request)
@@ -95,7 +102,8 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             location.Name = request.Name;
             location.NameAr = request.NameAr;
             location.Description = request.Description;
-            location.TicketCount = request.TicketCount;
+            location.EmployeeTicketCount = request.EmployeeTicketCount;
+            location.PensionTicketCount = request.PensionTicketCount;
             location.IsActive = request.IsActive;
 
             await _context.SaveChangesAsync();
@@ -121,12 +129,13 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             return true;
         }
 
-        // Tickets consumed by active bookings (confirmed, or pending-payment not yet expired).
-        private async Task<int> GetUsedTicketsAsync(int locationId)
+        // Tickets consumed by active bookings (confirmed, or pending-payment not yet expired) of the given type.
+        private async Task<int> GetUsedTicketsAsync(int locationId, TripBookingType bookingType)
         {
             var now = DateTime.Now;
             return await _context.TripBookings
                 .Where(b => b.Trip.TripLocationId == locationId
+                            && b.BookingType == bookingType
                             && (b.Status == BookingStatus.Confirmed
                                 || (b.Status == BookingStatus.PendingPayment
                                     && b.PaymentDeadline != null
@@ -134,7 +143,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 .SumAsync(b => b.AdultsCount + b.ChildrenCount + b.CompanionsCount);
         }
 
-        private async Task<Dictionary<int, int>> GetUsedTicketsByLocationAsync()
+        private async Task<Dictionary<int, (int Employee, int Pension)>> GetUsedTicketsByLocationAsync()
         {
             var now = DateTime.Now;
             var grouped = await _context.TripBookings
@@ -142,25 +151,43 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                             || (b.Status == BookingStatus.PendingPayment
                                 && b.PaymentDeadline != null
                                 && b.PaymentDeadline > now))
-                .GroupBy(b => b.Trip.TripLocationId)
+                .GroupBy(b => new { b.Trip.TripLocationId, b.BookingType })
                 .Select(g => new
                 {
-                    LocationId = g.Key,
+                    g.Key.TripLocationId,
+                    g.Key.BookingType,
                     Used = g.Sum(x => x.AdultsCount + x.ChildrenCount + x.CompanionsCount)
                 })
                 .ToListAsync();
 
-            return grouped.ToDictionary(x => x.LocationId, x => x.Used);
+            var dict = new Dictionary<int, (int Employee, int Pension)>();
+            foreach (var row in grouped)
+            {
+                dict.TryGetValue(row.TripLocationId, out var current);
+                if (row.BookingType == TripBookingType.Pension)
+                {
+                    current.Pension += row.Used;
+                }
+                else
+                {
+                    current.Employee += row.Used;
+                }
+                dict[row.TripLocationId] = current;
+            }
+
+            return dict;
         }
 
-        private static TripLocationResponseDto MapToDto(TripLocation location, int usedTickets) => new()
+        private static TripLocationResponseDto MapToDto(TripLocation location, (int Employee, int Pension) used) => new()
         {
             Id = location.Id,
             Name = location.Name,
             NameAr = location.NameAr,
             Description = location.Description,
-            TicketCount = location.TicketCount,
-            RemainingTickets = Math.Max(0, location.TicketCount - usedTickets),
+            EmployeeTicketCount = location.EmployeeTicketCount,
+            PensionTicketCount = location.PensionTicketCount,
+            EmployeeRemaining = Math.Max(0, location.EmployeeTicketCount - used.Employee),
+            PensionRemaining = Math.Max(0, location.PensionTicketCount - used.Pension),
             IsActive = location.IsActive,
             TripsCount = location.Trips?.Count ?? 0,
             CreatedAt = location.CreatedAt

@@ -11,8 +11,8 @@
                     <th>سعر البالغ</th>
                     <th>سعر الطفل</th>
                     <th>سعر المرافق</th>
-                    <th>التذاكر</th>
-                    <th>المتبقي</th>
+                    <th>تذاكر الموظفين</th>
+                    <th>تذاكر المعاشات</th>
                     <th>نشط</th>
                     <th>الإجراءات</th>
                 </tr>
@@ -26,8 +26,14 @@
                         <td>@hotel.AdultTicketPrice.ToString("N2")</td>
                         <td>@hotel.ChildTicketPrice.ToString("N2")</td>
                         <td>@hotel.CompanionTicketPrice.ToString("N2")</td>
-                        <td><span class="badge bg-primary">@hotel.TicketQuantity</span></td>
-                        <td><span class="badge bg-@(hotel.RemainingTickets > 0 ? "success" : "danger")">@hotel.RemainingTickets</span></td>
+                        <td>
+                            <span class="badge bg-primary">@hotel.EmployeeTicketQuantity</span>
+                            <span class="badge bg-@(hotel.EmployeeRemaining > 0 ? "success" : "danger")">متبقي @hotel.EmployeeRemaining</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">@hotel.PensionTicketQuantity</span>
+                            <span class="badge bg-@(hotel.PensionRemaining > 0 ? "success" : "danger")">متبقي @hotel.PensionRemaining</span>
+                        </td>
                         <td>
                             @if (hotel.IsActive)
                             {
@@ -49,7 +55,8 @@
                                         data-adultprice="@hotel.AdultTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                         data-childprice="@hotel.ChildTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                         data-companionprice="@hotel.CompanionTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-ticketquantity="@hotel.TicketQuantity"
+                                        data-employeetickets="@hotel.EmployeeTicketQuantity"
+                                        data-pensiontickets="@hotel.PensionTicketQuantity"
                                         data-active="@hotel.IsActive">
                                     <i class="fas fa-edit"></i>
                                 </button>

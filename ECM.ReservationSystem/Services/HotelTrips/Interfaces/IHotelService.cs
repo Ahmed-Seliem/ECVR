@@ -6,7 +6,7 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Interfaces
     {
         Task<List<HotelResponseDto>> GetAllAsync(int? cityId = null);
         Task<HotelResponseDto?> GetByIdAsync(int id);
-        Task<int> GetRemainingTicketsAsync(int hotelId);
+        Task<int> GetRemainingTicketsAsync(int hotelId, Domain.Entities.HotelTrips.HotelBookingType bookingType);
         Task<HotelResponseDto> CreateAsync(HotelRequestDto request);
         Task<bool> UpdateAsync(int id, HotelRequestDto request);
         Task<bool> DeleteAsync(int id);

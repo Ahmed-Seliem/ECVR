@@ -142,7 +142,8 @@ public class HotelTripApiController : ControllerBase
         [FromQuery] int hotelTripId = 0,
         [FromQuery] int adults = 0,
         [FromQuery] int children = 0,
-        [FromQuery] int companions = 0)
+        [FromQuery] int companions = 0,
+        [FromQuery] string? bookingType = null)
     {
         if (string.IsNullOrWhiteSpace(employeeNumber))
         {
@@ -153,6 +154,10 @@ public class HotelTripApiController : ControllerBase
         {
             return BadRequest(new { message = "hotelTripId is required." });
         }
+
+        var resolvedBookingType = string.Equals(bookingType, "pensions", StringComparison.OrdinalIgnoreCase)
+            ? HotelBookingType.Pension
+            : HotelBookingType.Employee;
 
         var trip = await _context.HotelTrips
             .Include(t => t.Hotel)
@@ -188,7 +193,7 @@ public class HotelTripApiController : ControllerBase
                            && companions >= 0
                            && totalGuests <= HotelBookingRules.MaxGuestsPerBooking;
 
-        var remainingTickets = await _hotelService.GetRemainingTicketsAsync(trip.HotelId);
+        var remainingTickets = await _hotelService.GetRemainingTicketsAsync(trip.HotelId, resolvedBookingType);
         var hasEnoughTickets = totalGuests <= remainingTickets;
 
         var total = (adults * trip.Hotel.AdultTicketPrice)

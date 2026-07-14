@@ -29,13 +29,21 @@
 
 		const currentDocTypeId = Number(dataObj.DocumentTypeId);
 
-		// One Day Trips: gated separately (isolated from the legacy reservation flow).
-		if (currentDocTypeId === Number(window.OneDayTripDocTypeBaseID)) {
+		// One Day Trips (employee + pension workflows): gated separately from the legacy flow.
+		const oneDayTripDocTypes = [
+			Number(window.OneDayTripEmployeeDocTypeBaseID),
+			Number(window.OneDayTripPensionDocTypeBaseID)
+		];
+		if (oneDayTripDocTypes.includes(currentDocTypeId)) {
 			return handleOneDayTripSend(options);
 		}
 
-		// Hotel Trips: gated separately (isolated from the legacy reservation flow).
-		if (currentDocTypeId === Number(window.HotelTripDocTypeBaseID)) {
+		// Hotel Trips (employee + pension workflows): gated separately from the legacy flow.
+		const hotelTripDocTypes = [
+			Number(window.HotelTripEmployeeDocTypeBaseID),
+			Number(window.HotelTripPensionDocTypeBaseID)
+		];
+		if (hotelTripDocTypes.includes(currentDocTypeId)) {
 			return handleHotelTripSend(options);
 		}
 
@@ -171,7 +179,7 @@
             url: window.ReservationURL + "/api/OneDayTrip/booking-context?employeeNumber=" +
                 encodeURIComponent(payload.employeeNumber) + "&tripId=" + encodeURIComponent(payload.tripId) +
                 "&adults=" + encodeURIComponent(payload.adultsCount) + "&children=" + encodeURIComponent(payload.childrenCount) +
-                "&companions=" + encodeURIComponent(payload.companionsCount) + "&_ts=" + Date.now(),
+                "&companions=" + encodeURIComponent(payload.companionsCount) + "&bookingType=" + encodeURIComponent(payload.bookingType) + "&_ts=" + Date.now(),
             type: "GET",
             dataType: "json"
         })
@@ -234,7 +242,7 @@
             url: window.ReservationURL + "/api/HotelTrip/booking-context?employeeNumber=" +
                 encodeURIComponent(payload.employeeNumber) + "&hotelTripId=" + encodeURIComponent(payload.hotelTripId) +
                 "&adults=" + encodeURIComponent(payload.adultsCount) + "&children=" + encodeURIComponent(payload.childrenCount) +
-                "&companions=" + encodeURIComponent(payload.companionsCount) + "&_ts=" + Date.now(),
+                "&companions=" + encodeURIComponent(payload.companionsCount) + "&bookingType=" + encodeURIComponent(payload.bookingType) + "&_ts=" + Date.now(),
             type: "GET",
             dataType: "json"
         })
@@ -463,7 +471,8 @@
             tripId: toNumber(getFieldValue("trip")),
             adultsCount: toNumber(getFieldValue("adultsCount")),
             childrenCount: toNumber(getFieldValue("childrenCount")),
-            companionsCount: toNumber(getFieldValue("companionsCount"))
+            companionsCount: toNumber(getFieldValue("companionsCount")),
+            bookingType: getFieldValue("bookingType") || "employees"
         };
     }
 
@@ -574,7 +583,8 @@
             hotelTripId: toNumber(getFieldValue("trip")),
             adultsCount: toNumber(getFieldValue("adultsCount")),
             childrenCount: toNumber(getFieldValue("childrenCount")),
-            companionsCount: toNumber(getFieldValue("companionsCount"))
+            companionsCount: toNumber(getFieldValue("companionsCount")),
+            bookingType: getFieldValue("bookingType") || "employees"
         };
     }
 

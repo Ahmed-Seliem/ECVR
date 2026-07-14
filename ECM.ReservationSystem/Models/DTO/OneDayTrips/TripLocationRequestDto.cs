@@ -14,8 +14,11 @@ namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
         [StringLength(500, ErrorMessage = "الوصف يجب ألا يتجاوز 500 حرف")]
         public string? Description { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "عدد التذاكر يجب أن يكون رقمًا موجبًا")]
-        public int TicketCount { get; set; }
+        [Range(0, int.MaxValue, ErrorMessage = "عدد تذاكر الموظفين يجب أن يكون رقمًا موجبًا")]
+        public int EmployeeTicketCount { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "عدد تذاكر المعاشات يجب أن يكون رقمًا موجبًا")]
+        public int PensionTicketCount { get; set; }
 
         public bool IsActive { get; set; } = true;
     }

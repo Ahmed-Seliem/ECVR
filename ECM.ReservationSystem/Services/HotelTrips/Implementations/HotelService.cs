@@ -34,7 +34,7 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
             var usedByHotel = await GetUsedTicketsByHotelAsync();
 
             return hotels
-                .Select(h => MapToDto(h, usedByHotel.TryGetValue(h.Id, out var used) ? used : 0))
+                .Select(h => MapToDto(h, usedByHotel.TryGetValue(h.Id, out var used) ? used : (0, 0)))
                 .ToList();
         }
 
@@ -52,19 +52,25 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                 return null;
             }
 
-            var used = await GetUsedTicketsAsync(id);
+            var used = (
+                await GetUsedTicketsAsync(id, HotelBookingType.Employee),
+                await GetUsedTicketsAsync(id, HotelBookingType.Pension));
             return MapToDto(hotel, used);
         }
 
-        public async Task<int> GetRemainingTicketsAsync(int hotelId)
+        public async Task<int> GetRemainingTicketsAsync(int hotelId, HotelBookingType bookingType)
         {
-            var quantity = await _context.Tickets
+            var ticket = await _context.Tickets
                 .Where(t => t.HotelId == hotelId)
-                .Select(t => (int?)t.Quantity)
-                .FirstOrDefaultAsync() ?? 0;
+                .Select(t => new { t.EmployeeQuantity, t.PensionQuantity })
+                .FirstOrDefaultAsync();
 
-            var used = await GetUsedTicketsAsync(hotelId);
-            return Math.Max(0, quantity - used);
+            var pool = ticket is null
+                ? 0
+                : (bookingType == HotelBookingType.Pension ? ticket.PensionQuantity : ticket.EmployeeQuantity);
+
+            var used = await GetUsedTicketsAsync(hotelId, bookingType);
+            return Math.Max(0, pool - used);
         }
 
         public async Task<HotelResponseDto> CreateAsync(HotelRequestDto request)
@@ -84,13 +90,17 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                 ChildTicketPrice = request.ChildTicketPrice!.Value,
                 CompanionTicketPrice = request.CompanionTicketPrice!.Value,
                 IsActive = request.IsActive,
-                Ticket = new Ticket { Quantity = request.TicketQuantity }
+                Ticket = new Ticket
+                {
+                    EmployeeQuantity = request.EmployeeTicketQuantity,
+                    PensionQuantity = request.PensionTicketQuantity
+                }
             };
 
             _context.Hotels.Add(hotel);
             await _context.SaveChangesAsync();
 
-            return await GetByIdAsync(hotel.Id) ?? MapToDto(hotel, 0);
+            return await GetByIdAsync(hotel.Id) ?? MapToDto(hotel, (0, 0));
         }
 
         public async Task<bool> UpdateAsync(int id, HotelRequestDto request)
@@ -120,12 +130,18 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
 
             if (hotel.Ticket is null)
             {
-                hotel.Ticket = new Ticket { HotelId = hotel.Id, Quantity = request.TicketQuantity };
+                hotel.Ticket = new Ticket
+                {
+                    HotelId = hotel.Id,
+                    EmployeeQuantity = request.EmployeeTicketQuantity,
+                    PensionQuantity = request.PensionTicketQuantity
+                };
                 _context.Tickets.Add(hotel.Ticket);
             }
             else
             {
-                hotel.Ticket.Quantity = request.TicketQuantity;
+                hotel.Ticket.EmployeeQuantity = request.EmployeeTicketQuantity;
+                hotel.Ticket.PensionQuantity = request.PensionTicketQuantity;
             }
 
             await _context.SaveChangesAsync();
@@ -151,12 +167,13 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
             return true;
         }
 
-        // Tickets consumed by active bookings (confirmed, or pending-payment not yet expired).
-        private async Task<int> GetUsedTicketsAsync(int hotelId)
+        // Tickets consumed by active bookings (confirmed, or pending-payment not yet expired) of the given type.
+        private async Task<int> GetUsedTicketsAsync(int hotelId, HotelBookingType bookingType)
         {
             var now = DateTime.Now;
             return await _context.HotelTripBookings
                 .Where(b => b.HotelTrip.HotelId == hotelId
+                            && b.BookingType == bookingType
                             && (b.Status == HotelBookingStatus.Confirmed
                                 || (b.Status == HotelBookingStatus.PendingPayment
                                     && b.PaymentDeadline != null
@@ -164,7 +181,7 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                 .SumAsync(b => b.AdultsCount + b.ChildrenCount + b.CompanionsCount);
         }
 
-        private async Task<Dictionary<int, int>> GetUsedTicketsByHotelAsync()
+        private async Task<Dictionary<int, (int Employee, int Pension)>> GetUsedTicketsByHotelAsync()
         {
             var now = DateTime.Now;
             var grouped = await _context.HotelTripBookings
@@ -172,20 +189,37 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                             || (b.Status == HotelBookingStatus.PendingPayment
                                 && b.PaymentDeadline != null
                                 && b.PaymentDeadline > now))
-                .GroupBy(b => b.HotelTrip.HotelId)
+                .GroupBy(b => new { b.HotelTrip.HotelId, b.BookingType })
                 .Select(g => new
                 {
-                    HotelId = g.Key,
+                    g.Key.HotelId,
+                    g.Key.BookingType,
                     Used = g.Sum(x => x.AdultsCount + x.ChildrenCount + x.CompanionsCount)
                 })
                 .ToListAsync();
 
-            return grouped.ToDictionary(x => x.HotelId, x => x.Used);
+            var dict = new Dictionary<int, (int Employee, int Pension)>();
+            foreach (var row in grouped)
+            {
+                dict.TryGetValue(row.HotelId, out var current);
+                if (row.BookingType == HotelBookingType.Pension)
+                {
+                    current.Pension += row.Used;
+                }
+                else
+                {
+                    current.Employee += row.Used;
+                }
+                dict[row.HotelId] = current;
+            }
+
+            return dict;
         }
 
-        private static HotelResponseDto MapToDto(Hotel hotel, int usedTickets)
+        private static HotelResponseDto MapToDto(Hotel hotel, (int Employee, int Pension) used)
         {
-            var quantity = hotel.Ticket?.Quantity ?? 0;
+            var employeeQty = hotel.Ticket?.EmployeeQuantity ?? 0;
+            var pensionQty = hotel.Ticket?.PensionQuantity ?? 0;
             return new HotelResponseDto
             {
                 Id = hotel.Id,
@@ -198,8 +232,10 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                 AdultTicketPrice = hotel.AdultTicketPrice,
                 ChildTicketPrice = hotel.ChildTicketPrice,
                 CompanionTicketPrice = hotel.CompanionTicketPrice,
-                TicketQuantity = quantity,
-                RemainingTickets = Math.Max(0, quantity - usedTickets),
+                EmployeeTicketQuantity = employeeQty,
+                PensionTicketQuantity = pensionQty,
+                EmployeeRemaining = Math.Max(0, employeeQty - used.Employee),
+                PensionRemaining = Math.Max(0, pensionQty - used.Pension),
                 IsActive = hotel.IsActive,
                 TripsCount = hotel.HotelTrips?.Count ?? 0,
                 CreatedAt = hotel.CreatedAt

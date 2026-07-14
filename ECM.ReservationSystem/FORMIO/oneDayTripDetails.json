@@ -103,39 +103,15 @@
     },
 
     {
-      "label": "",
-      "tag": "div",
-      "content": "<div class=\"alert alert-info\" style=\"margin:8px 0;\"><i class=\"fa fa-info-circle\"></i> يتم إضافة 10% على إجمالي الحجوزات الخاصة بالمعاشات.</div>",
-      "key": "pensionInfoNote",
-      "type": "htmlelement",
-      "input": false,
-      "tableView": false,
-      "hideLabel": true,
-      "id": "odt-pensionInfo"
-    },
-
-    {
       "label": "نوع الحجز",
-      "widget": "choicesjs",
-      "defaultValue": "employees",
-      "data": {
-        "values": [
-          { "label": "حجز موظفين", "value": "employees" },
-          { "label": "حجز معاشات", "value": "pensions" }
-        ]
-      },
-      "dataSrc": "values",
-      "selectThreshold": 0.3,
-      "validate": { "required": true },
       "key": "bookingType",
-      "type": "select",
+      "type": "hidden",
       "input": true,
-      "tableView": true,
       "persistent": true,
-      "clearOnHide": false,
-      "searchEnabled": false,
+      "tableView": false,
+      "defaultValue": "employees",
       "id": "odt-bookingType",
-      "description": "اختر (حجز معاشات) لإضافة 10% على الإجمالي"
+      "description": "يُضبط لكل workflow: employees أو pensions"
     },
 
     {
@@ -254,7 +230,7 @@
       "type": "hidden",
       "input": true,
       "persistent": false,
-      "calculateValue": "var adults = Number(data.adultsCount || 0); var children = Number(data.childrenCount || 0); var companions = Number(data.companionsCount || 0); var isPension = (data.bookingType === 'pensions'); var form = instance.root; function clearAll() { form.getComponent('adultUnitPrice').setValue(null); form.getComponent('childUnitPrice').setValue(null); form.getComponent('companionUnitPrice').setValue(null); form.getComponent('price').setValue(null); } if (!data.reservationUrl || !data.trip) { clearAll(); value=''; } else { try { var ts = Date.now(); var priceUrl = data.reservationUrl + '/api/OneDayTrip/price/' + encodeURIComponent(data.trip) + '?adults=' + encodeURIComponent(adults) + '&children=' + encodeURIComponent(children) + '&companions=' + encodeURIComponent(companions) + '&_ts=' + ts; var xhr = new XMLHttpRequest(); xhr.open('GET', priceUrl, false); xhr.setRequestHeader('Accept', 'application/json'); xhr.send(null); if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText) { var res = JSON.parse(xhr.responseText); var baseTotal = res.total || 0; var finalTotal = isPension ? (Math.round(baseTotal * 1.1 * 100) / 100) : baseTotal; form.getComponent('adultUnitPrice').setValue(res.adultUnitPrice || 0); form.getComponent('childUnitPrice').setValue(res.childUnitPrice || 0); form.getComponent('companionUnitPrice').setValue(res.companionUnitPrice || 0); form.getComponent('price').setValue(finalTotal); res.bookingType = isPension ? 'pensions' : 'employees'; res.baseTotal = baseTotal; res.pensionSurchargeApplied = isPension; res.finalTotal = finalTotal; value = JSON.stringify(res); } else { clearAll(); value=''; } } catch(e) { clearAll(); value=''; } }",
+      "calculateValue": "var adults = Number(data.adultsCount || 0); var children = Number(data.childrenCount || 0); var companions = Number(data.companionsCount || 0); var isPension = (data.bookingType === 'pensions'); var form = instance.root; function clearAll() { form.getComponent('adultUnitPrice').setValue(null); form.getComponent('childUnitPrice').setValue(null); form.getComponent('companionUnitPrice').setValue(null); form.getComponent('price').setValue(null); } if (!data.reservationUrl || !data.trip) { clearAll(); value=''; } else { try { var ts = Date.now(); var priceUrl = data.reservationUrl + '/api/OneDayTrip/price/' + encodeURIComponent(data.trip) + '?adults=' + encodeURIComponent(adults) + '&children=' + encodeURIComponent(children) + '&companions=' + encodeURIComponent(companions) + '&_ts=' + ts; var xhr = new XMLHttpRequest(); xhr.open('GET', priceUrl, false); xhr.setRequestHeader('Accept', 'application/json'); xhr.send(null); if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText) { var res = JSON.parse(xhr.responseText); var baseTotal = res.total || 0; var finalTotal = baseTotal; /* pension 10% surcharge postponed */ form.getComponent('adultUnitPrice').setValue(res.adultUnitPrice || 0); form.getComponent('childUnitPrice').setValue(res.childUnitPrice || 0); form.getComponent('companionUnitPrice').setValue(res.companionUnitPrice || 0); form.getComponent('price').setValue(finalTotal); res.bookingType = isPension ? 'pensions' : 'employees'; res.baseTotal = baseTotal; res.pensionSurchargeApplied = isPension; res.finalTotal = finalTotal; value = JSON.stringify(res); } else { clearAll(); value=''; } } catch(e) { clearAll(); value=''; } }",
       "refreshOn": "trip",
       "id": "odt-reservationContext"
     },
@@ -322,7 +298,7 @@
       "type": "hidden",
       "input": true,
       "persistent": false,
-      "calculateValue": "function empty(){value='';} if(!data.number || !data.trip || !data.reservationUrl){empty();} else { try { var xhr = new XMLHttpRequest(); xhr.open('GET', data.reservationUrl + '/api/OneDayTrip/booking-context?employeeNumber=' + encodeURIComponent(data.number) + '&tripId=' + encodeURIComponent(data.trip) + '&adults=' + encodeURIComponent(Number(data.adultsCount||0)) + '&children=' + encodeURIComponent(Number(data.childrenCount||0)) + '&companions=' + encodeURIComponent(Number(data.companionsCount||0)) + '&_ts=' + Date.now(), false); xhr.setRequestHeader('Accept','application/json'); xhr.send(null); value = (xhr.status >= 200 && xhr.status < 300) ? xhr.responseText : ''; } catch(e){ empty(); } }",
+      "calculateValue": "function empty(){value='';} if(!data.number || !data.trip || !data.reservationUrl){empty();} else { try { var xhr = new XMLHttpRequest(); xhr.open('GET', data.reservationUrl + '/api/OneDayTrip/booking-context?employeeNumber=' + encodeURIComponent(data.number) + '&tripId=' + encodeURIComponent(data.trip) + '&adults=' + encodeURIComponent(Number(data.adultsCount||0)) + '&children=' + encodeURIComponent(Number(data.childrenCount||0)) + '&companions=' + encodeURIComponent(Number(data.companionsCount||0)) + '&bookingType=' + encodeURIComponent(data.bookingType || 'employees') + '&_ts=' + Date.now(), false); xhr.setRequestHeader('Accept','application/json'); xhr.send(null); value = (xhr.status >= 200 && xhr.status < 300) ? xhr.responseText : ''; } catch(e){ empty(); } }",
       "id": "odt-bookingContext"
     },
 

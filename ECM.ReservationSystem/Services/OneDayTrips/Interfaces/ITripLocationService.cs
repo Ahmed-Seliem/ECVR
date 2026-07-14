@@ -6,7 +6,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Interfaces
     {
         Task<List<TripLocationResponseDto>> GetAllAsync(bool includeInactive = true);
         Task<TripLocationResponseDto?> GetByIdAsync(int id);
-        Task<int> GetRemainingTicketsAsync(int locationId);
+        Task<int> GetRemainingTicketsAsync(int locationId, Domain.Entities.OneDayTrips.TripBookingType bookingType);
         Task<TripLocationResponseDto> CreateAsync(TripLocationRequestDto request);
         Task<bool> UpdateAsync(int id, TripLocationRequestDto request);
         Task<bool> DeleteAsync(int id);
