@@ -246,6 +246,53 @@
                             </li>
                         </ul>
                     </li>
+                    @{
+                        var hotelTripsActive = IsActive("/Admin/HotelCities")
+                            || IsActive("/Admin/Hotels")
+                            || IsActive("/Admin/HotelTrips")
+                            || IsActive("/Admin/HotelTripBookings")
+                            || IsActive("/Admin/HotelTripReports");
+                    }
+                    <li class="@(hotelTripsActive ? "active" : "")">
+                        <a href="#hotelTripsMenu" data-bs-toggle="collapse" role="button"
+                           aria-expanded="@(hotelTripsActive ? "true" : "false")" aria-controls="hotelTripsMenu">
+                            <i class="fas fa-hotel"></i>
+                            <span>رحلات الفنادق</span>
+                            <i class="fas fa-chevron-down menu-arrow"></i>
+                        </a>
+                        <ul class="submenu collapse @(hotelTripsActive ? "show" : "")" id="hotelTripsMenu">
+                            <li class="@(IsActive("/Admin/HotelCities") ? "active" : "")">
+                                <a href="/Admin/HotelCities">
+                                    <i class="fas fa-city"></i>
+                                    <span>المدن</span>
+                                </a>
+                            </li>
+                            <li class="@(IsActive("/Admin/Hotels") ? "active" : "")">
+                                <a href="/Admin/Hotels">
+                                    <i class="fas fa-hotel"></i>
+                                    <span>الفنادق</span>
+                                </a>
+                            </li>
+                            <li class="@(IsActive("/Admin/HotelTrips") ? "active" : "")">
+                                <a href="/Admin/HotelTrips">
+                                    <i class="fas fa-route"></i>
+                                    <span>الرحلات</span>
+                                </a>
+                            </li>
+                            <li class="@(IsActive("/Admin/HotelTripBookings") ? "active" : "")">
+                                <a href="/Admin/HotelTripBookings">
+                                    <i class="fas fa-ticket-alt"></i>
+                                    <span>الحجوزات</span>
+                                </a>
+                            </li>
+                            <li class="@(IsActive("/Admin/HotelTripReports") ? "active" : "")">
+                                <a href="/Admin/HotelTripReports">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <span>التقارير</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                     <li class="@(IsActive("/Admin/Reports") ? "active" : "")">
                         <a href="/Admin/Reports">
                             <i class="fas fa-chart-bar"></i>

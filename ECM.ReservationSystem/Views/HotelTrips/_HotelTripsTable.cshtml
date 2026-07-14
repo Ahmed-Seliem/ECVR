@@ -1,0 +1,68 @@
+@model IEnumerable<ECM.ReservationSystem.Models.DTOs.HotelTrips.HotelTripResponseDto>
+
+@if (Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover datatable align-middle">
+            <thead>
+                <tr>
+                    <th>الفندق</th>
+                    <th>المدينة</th>
+                    <th>تاريخ البداية</th>
+                    <th>تاريخ النهاية</th>
+                    <th>عدد الحجوزات</th>
+                    <th>نشطة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var trip in Model)
+                {
+                    <tr>
+                        <td>@trip.HotelName</td>
+                        <td>@trip.CityName</td>
+                        <td>@trip.StartDate.ToString("dd/MM/yyyy")</td>
+                        <td>@trip.EndDate.ToString("dd/MM/yyyy")</td>
+                        <td><span class="badge bg-info">@trip.BookingsCount</span></td>
+                        <td>
+                            @if (trip.IsActive)
+                            {
+                                <span class="badge bg-success">نعم</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">لا</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-warning js-edit-hoteltrip"
+                                        data-id="@trip.Id"
+                                        data-hotelid="@trip.HotelId"
+                                        data-startdate="@trip.StartDate.ToString("yyyy-MM-dd")"
+                                        data-enddate="@trip.EndDate.ToString("yyyy-MM-dd")"
+                                        data-notes="@trip.Notes"
+                                        data-active="@trip.IsActive">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger js-delete-hoteltrip"
+                                        data-id="@trip.Id">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-route fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">لا توجد رحلات مضافة</h5>
+    </div>
+}

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using ECM.ReservationSystem.Domain.Common;
 using ECM.ReservationSystem.Domain.Entities;
 using ECM.ReservationSystem.Domain.Entities.OneDayTrips;
+using ECM.ReservationSystem.Domain.Entities.HotelTrips;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,6 +38,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<TripLocation> TripLocations { get; set; }
     public DbSet<Trip> Trips { get; set; }
     public DbSet<TripBooking> TripBookings { get; set; }
+
+    // Hotel Trips module (isolated from OneDayTrips and the legacy business)
+    public DbSet<HotelCity> HotelCities { get; set; }
+    public DbSet<Hotel> Hotels { get; set; }
+    public DbSet<Ticket> Tickets { get; set; }
+    public DbSet<HotelTrip> HotelTrips { get; set; }
+    public DbSet<HotelTripBooking> HotelTripBookings { get; set; }
 
     public override int SaveChanges()
     {
@@ -211,6 +219,55 @@ public class ApplicationDbContext : DbContext
                 t.HasCheckConstraint("CK_TripBookings_ChildrenCount_NonNegative", "[ChildrenCount] >= 0");
                 t.HasCheckConstraint("CK_TripBookings_CompanionsCount_NonNegative", "[CompanionsCount] >= 0");
                 t.HasCheckConstraint("CK_TripBookings_TotalGuests_Max", "[AdultsCount] + [ChildrenCount] + [CompanionsCount] <= 5");
+            });
+
+        // ===== Hotel Trips module (isolated) =====
+        modelBuilder.Entity<HotelCity>()
+            .HasIndex(c => c.Name)
+            .IsUnique();
+
+        modelBuilder.Entity<Hotel>()
+            .HasOne(h => h.HotelCity)
+            .WithMany(c => c.Hotels)
+            .HasForeignKey(h => h.HotelCityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // One ticket pool per hotel (1:1).
+        modelBuilder.Entity<Hotel>()
+            .HasOne(h => h.Ticket)
+            .WithOne(t => t.Hotel)
+            .HasForeignKey<Ticket>(t => t.HotelId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<HotelTrip>()
+            .HasOne(t => t.Hotel)
+            .WithMany(h => h.HotelTrips)
+            .HasForeignKey(t => t.HotelId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<HotelTrip>()
+            .HasIndex(t => new { t.HotelId, t.StartDate, t.EndDate });
+
+        modelBuilder.Entity<HotelTripBooking>()
+            .HasOne(b => b.HotelTrip)
+            .WithMany(t => t.Bookings)
+            .HasForeignKey(b => b.HotelTripId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<HotelTripBooking>()
+            .HasIndex(b => b.HotelTripId);
+
+        modelBuilder.Entity<HotelTripBooking>()
+            .HasIndex(b => new { b.EmployeeNumber, b.HotelTripId });
+
+        // DB-level guard for booking business rules (extra layer beside the service validation)
+        modelBuilder.Entity<HotelTripBooking>()
+            .ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_HotelTripBookings_AdultsCount_Min", "[AdultsCount] >= 1");
+                t.HasCheckConstraint("CK_HotelTripBookings_ChildrenCount_NonNegative", "[ChildrenCount] >= 0");
+                t.HasCheckConstraint("CK_HotelTripBookings_CompanionsCount_NonNegative", "[CompanionsCount] >= 0");
+                t.HasCheckConstraint("CK_HotelTripBookings_TotalGuests_Max", "[AdultsCount] + [ChildrenCount] + [CompanionsCount] <= 5");
             });
     }
 

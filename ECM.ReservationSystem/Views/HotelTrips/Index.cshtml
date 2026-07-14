@@ -1,0 +1,227 @@
+@model IEnumerable<ECM.ReservationSystem.Models.DTOs.HotelTrips.HotelTripResponseDto>
+@{
+    ViewData["Title"] = "رحلات الفنادق";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var hotels = ViewBag.Hotels as SelectList;
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0">
+        <i class="fas fa-route"></i>
+        رحلات الفنادق
+    </h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createHotelTripModal">
+        <i class="fas fa-plus"></i>
+        إضافة رحلة
+    </button>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">الفندق</label>
+                <select name="hotelId" class="form-select select2">
+                    <option value="">الكل</option>
+                    @if (hotels != null)
+                    {
+                        foreach (var item in hotels)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> بحث</button>
+                <a href="/Admin/HotelTrips" class="btn btn-outline-secondary"><i class="fas fa-eraser"></i> مسح</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @await Html.PartialAsync("_HotelTripsTable", Model)
+    </div>
+</div>
+
+<form id="hotelTripTokenForm">@Html.AntiForgeryToken()</form>
+
+<div class="modal fade" id="createHotelTripModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="/Admin/HotelTrips/Create" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة رحلة جديدة</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">الفندق</label>
+                        <select name="HotelId" class="form-select select2 modal-select" data-parent="#createHotelTripModal" required>
+                            <option value="">-- اختر الفندق --</option>
+                            @if (hotels != null)
+                            {
+                                foreach (var item in hotels)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ البداية</label>
+                            <input name="StartDate" type="text" class="form-control js-date-picker" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ النهاية</label>
+                            <input name="EndDate" type="text" class="form-control js-date-picker" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات</label>
+                        <textarea name="Notes" class="form-control" maxlength="500" rows="2"></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="createHotelTripActive" name="IsActive" value="true" checked />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="createHotelTripActive">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editHotelTripModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editHotelTripForm" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الرحلة</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">الفندق</label>
+                        <select id="editHotelTripHotelId" name="HotelId" class="form-select select2 modal-select" data-parent="#editHotelTripModal" required>
+                            @if (hotels != null)
+                            {
+                                foreach (var item in hotels)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ البداية</label>
+                            <input id="editHotelTripStartDate" name="StartDate" type="text" class="form-control js-date-picker" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ النهاية</label>
+                            <input id="editHotelTripEndDate" name="EndDate" type="text" class="form-control js-date-picker" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات</label>
+                        <textarea id="editHotelTripNotes" name="Notes" class="form-control" maxlength="500" rows="2"></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="editHotelTripIsActive" name="IsActive" value="true" />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="editHotelTripIsActive">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('focusin', function (e) {
+            if (e.target.closest && e.target.closest('.select2-container')) {
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        $(function () {
+            const editModal = new bootstrap.Modal(document.getElementById('editHotelTripModal'));
+
+            const setupModalSelect2 = function (modalSelector) {
+                $(`${modalSelector} .modal-select`).each(function () {
+                    const parent = $(this).data('parent');
+                    if ($(this).hasClass('select2-hidden-accessible')) {
+                        $(this).select2('destroy');
+                    }
+                    $(this).select2({ dropdownParent: $(parent), width: '100%' });
+                });
+            };
+
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr('.js-date-picker', {
+                    dateFormat: 'Y-m-d',
+                    locale: typeof Arabic !== 'undefined' ? Arabic : 'default'
+                });
+            }
+
+            $('#createHotelTripModal').on('shown.bs.modal', function () { setupModalSelect2('#createHotelTripModal'); });
+            $('#editHotelTripModal').on('shown.bs.modal', function () { setupModalSelect2('#editHotelTripModal'); });
+
+            $(document).on('click', '.js-edit-hoteltrip', function () {
+                const row = $(this);
+                $('#editHotelTripHotelId').val(row.data('hotelid')).trigger('change');
+                $('#editHotelTripNotes').val(row.data('notes'));
+                $('#editHotelTripIsActive').prop('checked', row.data('active') === true || row.data('active') === 'True');
+                $('#editHotelTripForm').attr('action', '/Admin/HotelTrips/Edit/' + row.data('id'));
+
+                const startEl = document.querySelector('#editHotelTripStartDate');
+                const endEl = document.querySelector('#editHotelTripEndDate');
+                if (startEl && startEl._flatpickr) { startEl._flatpickr.setDate(row.data('startdate'), true); } else { $('#editHotelTripStartDate').val(row.data('startdate')); }
+                if (endEl && endEl._flatpickr) { endEl._flatpickr.setDate(row.data('enddate'), true); } else { $('#editHotelTripEndDate').val(row.data('enddate')); }
+
+                editModal.show();
+            });
+
+            $(document).on('click', '.js-delete-hoteltrip', function () {
+                const id = $(this).data('id');
+                swal({
+                    title: 'تأكيد الحذف',
+                    text: 'سيتم حذف الرحلة',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، حذف',
+                    cancelButtonText: 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) return;
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = '/Admin/HotelTrips/Delete/' + id;
+                    const token = document.querySelector('#hotelTripTokenForm input[name="__RequestVerificationToken"]').value;
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token;
+                    form.appendChild(tokenInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,143 @@
+@model IEnumerable<ECM.ReservationSystem.Models.DTOs.HotelTrips.HotelCityResponseDto>
+@{
+    ViewData["Title"] = "مدن الفنادق";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0">
+        <i class="fas fa-city"></i>
+        مدن الفنادق
+    </h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createHotelCityModal">
+        <i class="fas fa-plus"></i>
+        إضافة مدينة
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @await Html.PartialAsync("_HotelCitiesTable", Model)
+    </div>
+</div>
+
+<form id="hotelCityTokenForm">@Html.AntiForgeryToken()</form>
+
+<div class="modal fade" id="createHotelCityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="/Admin/HotelCities/Create" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة مدينة جديدة</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">الاسم بالانجليزية</label>
+                        <input name="Name" class="form-control" required maxlength="100" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الاسم بالعربية</label>
+                        <input name="NameAr" class="form-control" maxlength="100" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea name="Description" class="form-control" maxlength="500" rows="2"></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="createHotelCityActive" name="IsActive" value="true" checked />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="createHotelCityActive">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editHotelCityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editHotelCityForm" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل المدينة</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">الاسم بالانجليزية</label>
+                        <input id="editHotelCityName" name="Name" class="form-control" required maxlength="100" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الاسم بالعربية</label>
+                        <input id="editHotelCityNameAr" name="NameAr" class="form-control" maxlength="100" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea id="editHotelCityDescription" name="Description" class="form-control" maxlength="500" rows="2"></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="editHotelCityIsActive" name="IsActive" value="true" />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="editHotelCityIsActive">نشطة</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const editModal = new bootstrap.Modal(document.getElementById('editHotelCityModal'));
+
+            $(document).on('click', '.js-edit-hotelcity', function () {
+                const row = $(this);
+                $('#editHotelCityName').val(row.data('name'));
+                $('#editHotelCityNameAr').val(row.data('namear'));
+                $('#editHotelCityDescription').val(row.data('description'));
+                $('#editHotelCityIsActive').prop('checked', row.data('active') === true || row.data('active') === 'True');
+                $('#editHotelCityForm').attr('action', '/Admin/HotelCities/Edit/' + row.data('id'));
+                editModal.show();
+            });
+
+            $(document).on('click', '.js-delete-hotelcity', function () {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                swal({
+                    title: 'تأكيد الحذف',
+                    text: `سيتم حذف المدينة: ${name}`,
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، حذف',
+                    cancelButtonText: 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) return;
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = '/Admin/HotelCities/Delete/' + id;
+                    const token = document.querySelector('#hotelCityTokenForm input[name="__RequestVerificationToken"]').value;
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token;
+                    form.appendChild(tokenInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+        });
+    </script>
+}

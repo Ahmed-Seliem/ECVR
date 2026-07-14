@@ -1,0 +1,247 @@
+@model IEnumerable<ECM.ReservationSystem.Models.DTOs.HotelTrips.HotelResponseDto>
+@{
+    ViewData["Title"] = "الفنادق";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var cities = ViewBag.Cities as SelectList;
+}
+
+<div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0">
+        <i class="fas fa-hotel"></i>
+        الفنادق
+    </h1>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createHotelModal">
+        <i class="fas fa-plus"></i>
+        إضافة فندق
+    </button>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">المدينة</label>
+                <select name="cityId" class="form-select select2">
+                    <option value="">الكل</option>
+                    @if (cities != null)
+                    {
+                        foreach (var item in cities)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> بحث</button>
+                <a href="/Admin/Hotels" class="btn btn-outline-secondary"><i class="fas fa-eraser"></i> مسح</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @await Html.PartialAsync("_HotelsTable", Model)
+    </div>
+</div>
+
+<form id="hotelTokenForm">@Html.AntiForgeryToken()</form>
+
+<div class="modal fade" id="createHotelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="/Admin/Hotels/Create" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة فندق جديد</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">المدينة</label>
+                            <select name="HotelCityId" class="form-select select2 modal-select" data-parent="#createHotelModal" required>
+                                <option value="">-- اختر المدينة --</option>
+                                @if (cities != null)
+                                {
+                                    foreach (var item in cities)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">اسم الفندق</label>
+                            <input name="Name" class="form-control" required maxlength="100" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الاسم بالعربية</label>
+                        <input name="NameAr" class="form-control" maxlength="100" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">سعر تذكرة البالغ</label>
+                            <input name="AdultTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">سعر تذكرة الطفل</label>
+                            <input name="ChildTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">سعر تذكرة المرافق</label>
+                            <input name="CompanionTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">عدد التذاكر (رصيد الفندق)</label>
+                        <input name="TicketQuantity" type="number" min="0" class="form-control" value="0" required />
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="createHotelActive" name="IsActive" value="true" checked />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="createHotelActive">نشط</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editHotelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editHotelForm" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الفندق</h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">المدينة</label>
+                            <select id="editHotelCityId" name="HotelCityId" class="form-select select2 modal-select" data-parent="#editHotelModal" required>
+                                @if (cities != null)
+                                {
+                                    foreach (var item in cities)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">اسم الفندق</label>
+                            <input id="editHotelName" name="Name" class="form-control" required maxlength="100" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الاسم بالعربية</label>
+                        <input id="editHotelNameAr" name="NameAr" class="form-control" maxlength="100" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">سعر تذكرة البالغ</label>
+                            <input id="editHotelAdultPrice" name="AdultTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">سعر تذكرة الطفل</label>
+                            <input id="editHotelChildPrice" name="ChildTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">سعر تذكرة المرافق</label>
+                            <input id="editHotelCompanionPrice" name="CompanionTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">عدد التذاكر (رصيد الفندق)</label>
+                        <input id="editHotelTicketQuantity" name="TicketQuantity" type="number" min="0" class="form-control" required />
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="editHotelIsActive" name="IsActive" value="true" />
+                        <input type="hidden" name="IsActive" value="false" />
+                        <label class="form-check-label" for="editHotelIsActive">نشط</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('focusin', function (e) {
+            if (e.target.closest && e.target.closest('.select2-container')) {
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        $(function () {
+            const editModal = new bootstrap.Modal(document.getElementById('editHotelModal'));
+
+            const setupModalSelect2 = function (modalSelector) {
+                $(`${modalSelector} .modal-select`).each(function () {
+                    const parent = $(this).data('parent');
+                    if ($(this).hasClass('select2-hidden-accessible')) {
+                        $(this).select2('destroy');
+                    }
+                    $(this).select2({ dropdownParent: $(parent), width: '100%' });
+                });
+            };
+
+            $('#createHotelModal').on('shown.bs.modal', function () { setupModalSelect2('#createHotelModal'); });
+            $('#editHotelModal').on('shown.bs.modal', function () { setupModalSelect2('#editHotelModal'); });
+
+            $(document).on('click', '.js-edit-hotel', function () {
+                const row = $(this);
+                $('#editHotelCityId').val(row.data('cityid')).trigger('change');
+                $('#editHotelName').val(row.data('name'));
+                $('#editHotelNameAr').val(row.data('namear'));
+                $('#editHotelAdultPrice').val(row.data('adultprice'));
+                $('#editHotelChildPrice').val(row.data('childprice'));
+                $('#editHotelCompanionPrice').val(row.data('companionprice'));
+                $('#editHotelTicketQuantity').val(row.data('ticketquantity'));
+                $('#editHotelIsActive').prop('checked', row.data('active') === true || row.data('active') === 'True');
+                $('#editHotelForm').attr('action', '/Admin/Hotels/Edit/' + row.data('id'));
+                editModal.show();
+            });
+
+            $(document).on('click', '.js-delete-hotel', function () {
+                const id = $(this).data('id');
+                swal({
+                    title: 'تأكيد الحذف',
+                    text: 'سيتم حذف الفندق',
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، حذف',
+                    cancelButtonText: 'إلغاء',
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (!isConfirm) return;
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.action = '/Admin/Hotels/Delete/' + id;
+                    const token = document.querySelector('#hotelTokenForm input[name="__RequestVerificationToken"]').value;
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token;
+                    form.appendChild(tokenInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            });
+        });
+    </script>
+}

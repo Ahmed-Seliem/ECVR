@@ -11,6 +11,10 @@
     window.oneDayTripHoldSucceeded = false;
     window.oneDayTripHoldKey = "";
 
+    // Hotel Trips (isolated from the legacy reservation flow)
+    window.hotelTripHoldSucceeded = false;
+    window.hotelTripHoldKey = "";
+
     $.ajax = function (options) {
         if (
             !options ||
@@ -28,6 +32,11 @@
 		// One Day Trips: gated separately (isolated from the legacy reservation flow).
 		if (currentDocTypeId === Number(window.OneDayTripDocTypeBaseID)) {
 			return handleOneDayTripSend(options);
+		}
+
+		// Hotel Trips: gated separately (isolated from the legacy reservation flow).
+		if (currentDocTypeId === Number(window.HotelTripDocTypeBaseID)) {
+			return handleHotelTripSend(options);
 		}
 
 		const allowedDocTypes = [
@@ -201,6 +210,69 @@
             if ($("#reserveOneDayTripHoldBtn").length) {
                 resetOneDayTripHoldState();
                 showOdtStatus("تم تغيير بيانات الحجز. برجاء الضغط على زر تأكيد الحجز مرة أخرى.", "warning");
+            }
+        }
+    );
+
+    // ===== Hotel Trips =====
+    $(document).on("click", "#reserveHotelTripHoldBtn", function () {
+        const payload = buildHotelTripPayload();
+
+        const validationMessage = validateHotelTripBeforeHold(payload);
+        if (validationMessage) {
+            resetHotelTripHoldState();
+            showHotelStatus(validationMessage, "error");
+            Common.alertMsg(validationMessage);
+            return;
+        }
+
+        showHotelStatus("جاري التحقق من التوفّر...", "info");
+        disableSendButton();
+        $("#reserveHotelTripHoldBtn").prop("disabled", true);
+
+        originalAjax({
+            url: window.ReservationURL + "/api/HotelTrip/booking-context?employeeNumber=" +
+                encodeURIComponent(payload.employeeNumber) + "&hotelTripId=" + encodeURIComponent(payload.hotelTripId) +
+                "&adults=" + encodeURIComponent(payload.adultsCount) + "&children=" + encodeURIComponent(payload.childrenCount) +
+                "&companions=" + encodeURIComponent(payload.companionsCount) + "&_ts=" + Date.now(),
+            type: "GET",
+            dataType: "json"
+        })
+            .done(function (ctx) {
+                if (ctx && ctx.canBook) {
+                    window.hotelTripHoldSucceeded = true;
+                    window.hotelTripHoldKey = buildHotelTripHoldKey(payload);
+
+                    showHotelStatus("تم التحقق من الحجز، جاري إرسال الطلب...", "success");
+                    enableSendButton();
+                    triggerSendButton();
+                } else {
+                    resetHotelTripHoldState();
+                    const msg = (ctx && ctx.message) ? ctx.message : "لا يمكن إتمام الحجز.";
+                    showHotelStatus(msg, "error");
+                    $("#reserveHotelTripHoldBtn").prop("disabled", false);
+                }
+            })
+            .fail(function (xhr) {
+                resetHotelTripHoldState();
+
+                let msg = "فشل التحقق من الحجز.";
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+
+                showHotelStatus(msg, "error");
+                $("#reserveHotelTripHoldBtn").prop("disabled", false);
+            });
+    });
+
+    $(document).on(
+        "change",
+        "[name='data[city]'], [name='data[hotel]'], [name='data[trip]'], [name='data[totalGuests]'], [name='data[adultsCount]'], [name='data[childrenCount]'], [name='data[companionsCount]'], [name='data[bookingType]']",
+        function () {
+            if ($("#reserveHotelTripHoldBtn").length) {
+                resetHotelTripHoldState();
+                showHotelStatus("تم تغيير بيانات الحجز. برجاء الضغط على زر تأكيد الحجز مرة أخرى.", "warning");
             }
         }
     );
@@ -446,6 +518,117 @@
         if (type === "warning") color = "#b36b00";
 
         $("#reserveOneDayTripHoldStatus").html(
+            "<span style='color:" + color + ";font-weight:bold;'>" + message + "</span>"
+        );
+    }
+
+    // ===== Hotel Trips helpers (isolated) =====
+    function handleHotelTripSend(options) {
+        const deferred = $.Deferred();
+        const payload = buildHotelTripPayload();
+        const currentKey = buildHotelTripHoldKey(payload);
+
+        if (!window.hotelTripHoldSucceeded || !window.hotelTripHoldKey || window.hotelTripHoldKey !== currentKey) {
+            showHotelStatus("برجاء الضغط على زر تأكيد الحجز وإرسال الطلب", "error");
+            Common.alertMsg("برجاء الضغط على زر تأكيد الحجز وإرسال الطلب");
+            disableSendButton();
+            deferred.reject();
+            return deferred.promise();
+        }
+
+        const saveOptions = $.extend(true, {}, options, { skipReservationValidation: true });
+
+        originalAjax(saveOptions)
+            .done(function (data, textStatus, jqXHR) {
+                if (typeof options.success === "function") {
+                    options.success(data, textStatus, jqXHR);
+                }
+                deferred.resolve(data, textStatus, jqXHR);
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                if (typeof options.error === "function") {
+                    options.error(jqXHR, textStatus, errorThrown);
+                }
+
+                let msg = "فشل إرسال الطلب.";
+                if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                    msg = jqXHR.responseJSON.message;
+                }
+
+                showHotelStatus(msg, "error");
+                deferred.reject(jqXHR, textStatus, errorThrown);
+            })
+            .always(function (dataOrJqXHR, textStatus) {
+                if (typeof options.complete === "function") {
+                    options.complete(dataOrJqXHR, textStatus);
+                }
+            });
+
+        return deferred.promise();
+    }
+
+    function buildHotelTripPayload() {
+        return {
+            employeeNumber: getFieldValue("number") || "",
+            phoneNumber: getFieldValue("phoneNumber") || "",
+            hotelTripId: toNumber(getFieldValue("trip")),
+            adultsCount: toNumber(getFieldValue("adultsCount")),
+            childrenCount: toNumber(getFieldValue("childrenCount")),
+            companionsCount: toNumber(getFieldValue("companionsCount"))
+        };
+    }
+
+    function buildHotelTripHoldKey(payload) {
+        return [
+            payload.hotelTripId || 0,
+            payload.adultsCount || 0,
+            payload.childrenCount || 0,
+            payload.companionsCount || 0
+        ].join("|");
+    }
+
+    function validateHotelTripBeforeHold(payload) {
+        if (!payload.employeeNumber || !String(payload.employeeNumber).trim()) {
+            return "برجاء إدخال رقم الموظف.";
+        }
+
+        if (!payload.phoneNumber || !String(payload.phoneNumber).trim()) {
+            return "برجاء إدخال رقم التليفون.";
+        }
+
+        if (!phoneRegex.test(String(payload.phoneNumber).trim())) {
+            return "رقم التليفون غير صحيح.";
+        }
+
+        if (!payload.hotelTripId) {
+            return "اختر الرحلة أولًا.";
+        }
+
+        if (payload.adultsCount < 1) {
+            return "يجب أن يحتوي الحجز على بالغ واحد على الأقل.";
+        }
+
+        if ((payload.adultsCount + payload.childrenCount + payload.companionsCount) > 5) {
+            return "إجمالي عدد الأشخاص لا يمكن أن يتجاوز 5.";
+        }
+
+        return "";
+    }
+
+    function resetHotelTripHoldState() {
+        window.hotelTripHoldSucceeded = false;
+        window.hotelTripHoldKey = "";
+        disableSendButton();
+        $("#reserveHotelTripHoldBtn").prop("disabled", false).show();
+    }
+
+    function showHotelStatus(message, type) {
+        let color = "#0c5460";
+        if (type === "success") color = "green";
+        if (type === "error") color = "red";
+        if (type === "warning") color = "#b36b00";
+
+        $("#reserveHotelTripHoldStatus").html(
             "<span style='color:" + color + ";font-weight:bold;'>" + message + "</span>"
         );
     }

@@ -1,0 +1,86 @@
+@using ECM.ReservationSystem.Domain.Entities.HotelTrips
+@model IEnumerable<ECM.ReservationSystem.Models.DTOs.HotelTrips.HotelTripBookingResponseDto>
+
+@functions {
+    (string CssClass, string Label) GetBookingStatus(HotelBookingStatus status) => status switch
+    {
+        HotelBookingStatus.PendingPayment => ("warning", "بانتظار الدفع"),
+        HotelBookingStatus.Confirmed => ("success", "مؤكد"),
+        HotelBookingStatus.Cancelled => ("danger", "ملغي"),
+        _ => ("light", status.ToString())
+    };
+}
+
+@if (Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover datatable align-middle">
+            <thead>
+                <tr>
+                    <th>الفندق</th>
+                    <th>الفترة</th>
+                    <th>رقم الموظف</th>
+                    <th>اسم الموظف</th>
+                    <th>عدد الأشخاص</th>
+                    <th>الإجمالي</th>
+                    <th>نوع الحجز</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var booking in Model)
+                {
+                    var status = GetBookingStatus(booking.Status);
+                    var totalGuests = booking.AdultsCount + booking.ChildrenCount + booking.CompanionsCount;
+                    <tr>
+                        <td>@booking.HotelName</td>
+                        <td>@booking.StartDate.ToString("dd/MM/yyyy") - @booking.EndDate.ToString("dd/MM/yyyy")</td>
+                        <td>@booking.EmployeeNumber</td>
+                        <td>@booking.EmployeeName</td>
+                        <td>
+                            <span class="badge bg-secondary"
+                                  title="بالغين @booking.AdultsCount، أطفال @booking.ChildrenCount، مرافقين @booking.CompanionsCount">
+                                @totalGuests
+                            </span>
+                        </td>
+                        <td>@booking.TotalAmount.ToString("N2")</td>
+                        <td>
+                            @if (booking.BookingType == HotelBookingType.Pension)
+                            {
+                                <span class="badge bg-warning text-dark">معاشات</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">موظفين</span>
+                            }
+                        </td>
+                        <td><span class="badge bg-@status.CssClass">@status.Label</span></td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="/Admin/HotelTripBookings/Details/@booking.Id" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                @if (booking.Status != HotelBookingStatus.Cancelled)
+                                {
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger js-cancel-hotelbooking"
+                                            data-id="@booking.Id">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">لا توجد حجوزات</h5>
+    </div>
+}

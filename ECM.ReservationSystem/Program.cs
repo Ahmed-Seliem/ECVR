@@ -10,6 +10,9 @@ using ECM.ReservationSystem.Services.Interfaces;
 using ECM.ReservationSystem.Services.OneDayTrips;
 using ECM.ReservationSystem.Services.OneDayTrips.Interfaces;
 using ECM.ReservationSystem.Services.OneDayTrips.Implementations;
+using ECM.ReservationSystem.Services.HotelTrips;
+using ECM.ReservationSystem.Services.HotelTrips.Interfaces;
+using ECM.ReservationSystem.Services.HotelTrips.Implementations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -91,9 +94,16 @@ builder.Services.AddScoped<ITripLocationService, TripLocationService>();
 builder.Services.AddScoped<ITripService, TripService>();
 builder.Services.AddScoped<ITripBookingService, TripBookingService>();
 
+// Hotel Trips module (isolated)
+builder.Services.AddScoped<IHotelCityService, HotelCityService>();
+builder.Services.AddScoped<IHotelService, HotelService>();
+builder.Services.AddScoped<IHotelTripService, HotelTripService>();
+builder.Services.AddScoped<IHotelTripBookingService, HotelTripBookingService>();
+
 
 builder.Services.AddHostedService<ExpiredHoldsCleanupService>();
 builder.Services.AddHostedService<ExpiredTripBookingsCleanupService>();
+builder.Services.AddHostedService<ExpiredHotelTripBookingsCleanupService>();
 builder.Services.AddHostedService<MockDataSeederHostedService>();
 
 
