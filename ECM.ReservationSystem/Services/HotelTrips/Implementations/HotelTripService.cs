@@ -15,7 +15,7 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
             _context = context;
         }
 
-        public async Task<List<HotelTripResponseDto>> GetAllAsync(int? hotelId = null)
+        public async Task<List<HotelTripResponseDto>> GetAllAsync(int? hotelId = null, int? year = null, int? month = null)
         {
             var query = _context.HotelTrips
                 .Include(t => t.Hotel)
@@ -27,6 +27,16 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
             if (hotelId.HasValue)
             {
                 query = query.Where(t => t.HotelId == hotelId.Value);
+            }
+
+            if (year.HasValue)
+            {
+                query = query.Where(t => t.StartDate.Year == year.Value);
+            }
+
+            if (month.HasValue)
+            {
+                query = query.Where(t => t.StartDate.Month == month.Value);
             }
 
             return await query

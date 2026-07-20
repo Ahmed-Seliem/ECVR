@@ -7,6 +7,8 @@ namespace ECM.ReservationSystem.Models.ViewModels.HotelTrips
         public int? HotelId { get; set; }
         public HotelBookingType? BookingType { get; set; }
         public HotelBookingStatus? Status { get; set; }
+        public int? Year { get; set; }
+        public int? Month { get; set; }
 
         public int TotalBookings { get; set; }
         public int TotalPersons { get; set; }

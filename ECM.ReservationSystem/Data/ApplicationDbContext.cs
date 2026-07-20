@@ -307,11 +307,13 @@ public class ApplicationDbContext : DbContext
             return null;
         }
 
+        // Use ClaimsPrincipal.FindFirst(...)?.Value (core System.Security.Claims) instead of the
+        // FindFirstValue extension, which pulls Microsoft.Extensions.Identity.Core (not present at runtime).
         var possibleValues = new[]
         {
-            principal.FindFirstValue(ClaimTypes.NameIdentifier),
-            principal.FindFirstValue("Id"),
-            principal.FindFirstValue("UserId")
+            principal.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+            principal.FindFirst("Id")?.Value,
+            principal.FindFirst("UserId")?.Value
         };
 
         foreach (var value in possibleValues)

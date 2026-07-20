@@ -20,10 +20,13 @@ public class HotelTripsController : Controller
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(int? hotelId = null)
+    public async Task<IActionResult> Index(int? hotelId = null, int? year = null, int? month = null)
     {
         await PopulateHotelsAsync(hotelId);
-        var trips = await _hotelTripService.GetAllAsync(hotelId);
+        ViewBag.Years = Enumerable.Range(DateTime.Now.Year - 2, 5).ToList();
+        ViewBag.SelectedYear = year;
+        ViewBag.SelectedMonth = month;
+        var trips = await _hotelTripService.GetAllAsync(hotelId, year, month);
         return View(trips);
     }
 

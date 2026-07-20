@@ -1,0 +1,26 @@
+@{
+    var years = ViewBag.Years as List<int> ?? new List<int>();
+    var selectedYear = ViewBag.SelectedYear as int?;
+    var selectedMonth = ViewBag.SelectedMonth as int?;
+    var monthNames = new[] { "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر" };
+}
+<div class="col-md-2">
+    <label class="form-label">السنة</label>
+    <select name="year" class="form-select select2">
+        <option value="">الكل</option>
+        @foreach (var y in years)
+        {
+            <option value="@y" selected="@(selectedYear == y)">@y</option>
+        }
+    </select>
+</div>
+<div class="col-md-2">
+    <label class="form-label">الشهر</label>
+    <select name="month" class="form-select select2">
+        <option value="">الكل</option>
+        @for (int m = 1; m <= 12; m++)
+        {
+            <option value="@m" selected="@(selectedMonth == m)">@monthNames[m - 1]</option>
+        }
+    </select>
+</div>

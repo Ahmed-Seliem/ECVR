@@ -64,20 +64,21 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-3 d-flex gap-2">
+                @await Html.PartialAsync("_YearMonthFilter")
+                <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-fill">بحث</button>
                     <a href="/Admin/OneDayTripReports" class="btn btn-outline-secondary flex-fill">مسح</a>
                 </div>
                 <div class="col-md-3 d-grid">
                     <a class="btn btn-outline-success"
-                       href="@Url.Action("ExportExcel", "OneDayTripReports", new { locationId = Model.LocationId, bookingType = Model.BookingType, status = Model.Status })">
+                       href="@Url.Action("ExportExcel", "OneDayTripReports", new { locationId = Model.LocationId, bookingType = Model.BookingType, status = Model.Status, year = Model.Year, month = Model.Month })">
                         تصدير Excel
                     </a>
                 </div>
                 <div class="col-md-3 d-grid">
                     <a class="btn btn-outline-danger"
                        target="_blank"
-                       href="@Url.Action("ExportPdf", "OneDayTripReports", new { locationId = Model.LocationId, bookingType = Model.BookingType, status = Model.Status })">
+                       href="@Url.Action("ExportPdf", "OneDayTripReports", new { locationId = Model.LocationId, bookingType = Model.BookingType, status = Model.Status, year = Model.Year, month = Model.Month })">
                         تصدير PDF
                     </a>
                 </div>

@@ -15,7 +15,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             _context = context;
         }
 
-        public async Task<List<TripResponseDto>> GetAllAsync(int? locationId = null)
+        public async Task<List<TripResponseDto>> GetAllAsync(int? locationId = null, int? year = null, int? month = null)
         {
             var query = _context.Trips
                 .Include(t => t.TripLocation)
@@ -26,6 +26,16 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             if (locationId.HasValue)
             {
                 query = query.Where(t => t.TripLocationId == locationId.Value);
+            }
+
+            if (year.HasValue)
+            {
+                query = query.Where(t => t.TripDate.Year == year.Value);
+            }
+
+            if (month.HasValue)
+            {
+                query = query.Where(t => t.TripDate.Month == month.Value);
             }
 
             return await query

@@ -21,10 +21,13 @@ public class TripsController : Controller
 
     // GET: Admin/Trips
     [HttpGet("")]
-    public async Task<IActionResult> Index(int? locationId = null)
+    public async Task<IActionResult> Index(int? locationId = null, int? year = null, int? month = null)
     {
         await PopulateLocationsAsync(locationId);
-        var trips = await _tripService.GetAllAsync(locationId);
+        ViewBag.Years = Enumerable.Range(DateTime.Now.Year - 2, 5).ToList();
+        ViewBag.SelectedYear = year;
+        ViewBag.SelectedMonth = month;
+        var trips = await _tripService.GetAllAsync(locationId, year, month);
         return View(trips);
     }
 

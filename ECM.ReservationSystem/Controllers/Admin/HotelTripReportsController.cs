@@ -21,30 +21,30 @@ public class HotelTripReportsController : Controller
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status)
+    public async Task<IActionResult> Index(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status, int? year, int? month)
     {
-        var model = await BuildModelAsync(hotelId, bookingType, status);
-        await PopulateFiltersAsync(hotelId, bookingType, status);
+        var model = await BuildModelAsync(hotelId, bookingType, status, year, month);
+        await PopulateFiltersAsync(hotelId, bookingType, status, year, month);
         return View(model);
     }
 
     [HttpGet("ExportExcel")]
-    public async Task<IActionResult> ExportExcel(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status)
+    public async Task<IActionResult> ExportExcel(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status, int? year, int? month)
     {
-        var model = await BuildModelAsync(hotelId, bookingType, status);
+        var model = await BuildModelAsync(hotelId, bookingType, status, year, month);
         var content = BuildExcelHtml(model);
         var fileName = $"hotel-trip-reports-{DateTime.Now:yyyyMMdd-HHmmss}.xls";
         return File(Encoding.UTF8.GetBytes(content), "application/vnd.ms-excel; charset=utf-8", fileName);
     }
 
     [HttpGet("ExportPdf")]
-    public async Task<IActionResult> ExportPdf(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status)
+    public async Task<IActionResult> ExportPdf(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status, int? year, int? month)
     {
-        var model = await BuildModelAsync(hotelId, bookingType, status);
+        var model = await BuildModelAsync(hotelId, bookingType, status, year, month);
         return View("Print", model);
     }
 
-    private async Task<HotelTripReportsViewModel> BuildModelAsync(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status)
+    private async Task<HotelTripReportsViewModel> BuildModelAsync(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status, int? year, int? month)
     {
         var query = _context.HotelTripBookings
             .Include(b => b.HotelTrip)
@@ -66,6 +66,16 @@ public class HotelTripReportsController : Controller
         if (status.HasValue)
         {
             query = query.Where(b => b.Status == status.Value);
+        }
+
+        if (year.HasValue)
+        {
+            query = query.Where(b => b.HotelTrip.StartDate.Year == year.Value);
+        }
+
+        if (month.HasValue)
+        {
+            query = query.Where(b => b.HotelTrip.StartDate.Month == month.Value);
         }
 
         var bookings = await query
@@ -122,6 +132,8 @@ public class HotelTripReportsController : Controller
             HotelId = hotelId,
             BookingType = bookingType,
             Status = status,
+            Year = year,
+            Month = month,
             TotalBookings = bookings.Count,
             TotalPersons = bookings.Sum(b => b.AdultsCount + b.ChildrenCount + b.CompanionsCount),
             GrandTotal = bookings.Sum(b => b.TotalAmount),
@@ -129,8 +141,12 @@ public class HotelTripReportsController : Controller
         };
     }
 
-    private async Task PopulateFiltersAsync(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status)
+    private async Task PopulateFiltersAsync(int? hotelId, HotelBookingType? bookingType, HotelBookingStatus? status, int? year, int? month)
     {
+        ViewBag.Years = Enumerable.Range(DateTime.Now.Year - 2, 5).ToList();
+        ViewBag.SelectedYear = year;
+        ViewBag.SelectedMonth = month;
+
         ViewBag.Hotels = new SelectList(
             await _context.Hotels.OrderBy(h => h.Name).ToListAsync(),
             "Id",
