@@ -67,9 +67,6 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             {
                 TripLocationId = request.TripLocationId!.Value,
                 TripDate = request.TripDate!.Value,
-                AdultTicketPrice = request.AdultTicketPrice!.Value,
-                ChildTicketPrice = request.ChildTicketPrice!.Value,
-                CompanionTicketPrice = request.CompanionTicketPrice!.Value,
                 Notes = request.Notes,
                 IsActive = request.IsActive
             };
@@ -96,9 +93,6 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
 
             trip.TripLocationId = request.TripLocationId!.Value;
             trip.TripDate = request.TripDate!.Value;
-            trip.AdultTicketPrice = request.AdultTicketPrice!.Value;
-            trip.ChildTicketPrice = request.ChildTicketPrice!.Value;
-            trip.CompanionTicketPrice = request.CompanionTicketPrice!.Value;
             trip.Notes = request.Notes;
             trip.IsActive = request.IsActive;
 
@@ -133,9 +127,6 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 ? string.Empty
                 : (string.IsNullOrWhiteSpace(trip.TripLocation.NameAr) ? trip.TripLocation.Name : trip.TripLocation.NameAr),
             TripDate = trip.TripDate,
-            AdultTicketPrice = trip.AdultTicketPrice,
-            ChildTicketPrice = trip.ChildTicketPrice,
-            CompanionTicketPrice = trip.CompanionTicketPrice,
             Notes = trip.Notes,
             IsActive = trip.IsActive,
             BookingsCount = trip.Bookings?.Count ?? 0,

@@ -80,6 +80,9 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 Name = request.Name,
                 NameAr = request.NameAr,
                 Description = request.Description,
+                AdultTicketPrice = request.AdultTicketPrice!.Value,
+                ChildTicketPrice = request.ChildTicketPrice!.Value,
+                CompanionTicketPrice = request.CompanionTicketPrice!.Value,
                 EmployeeTicketCount = request.EmployeeTicketCount,
                 PensionTicketCount = request.PensionTicketCount,
                 IsActive = request.IsActive
@@ -102,6 +105,9 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             location.Name = request.Name;
             location.NameAr = request.NameAr;
             location.Description = request.Description;
+            location.AdultTicketPrice = request.AdultTicketPrice!.Value;
+            location.ChildTicketPrice = request.ChildTicketPrice!.Value;
+            location.CompanionTicketPrice = request.CompanionTicketPrice!.Value;
             location.EmployeeTicketCount = request.EmployeeTicketCount;
             location.PensionTicketCount = request.PensionTicketCount;
             location.IsActive = request.IsActive;
@@ -184,6 +190,9 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             Name = location.Name,
             NameAr = location.NameAr,
             Description = location.Description,
+            AdultTicketPrice = location.AdultTicketPrice,
+            ChildTicketPrice = location.ChildTicketPrice,
+            CompanionTicketPrice = location.CompanionTicketPrice,
             EmployeeTicketCount = location.EmployeeTicketCount,
             PensionTicketCount = location.PensionTicketCount,
             EmployeeRemaining = Math.Max(0, location.EmployeeTicketCount - used.Employee),

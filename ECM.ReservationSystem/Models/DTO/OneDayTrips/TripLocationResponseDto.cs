@@ -6,6 +6,9 @@ namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
         public string Name { get; set; } = string.Empty;
         public string NameAr { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public decimal AdultTicketPrice { get; set; }
+        public decimal ChildTicketPrice { get; set; }
+        public decimal CompanionTicketPrice { get; set; }
         public int EmployeeTicketCount { get; set; }
         public int PensionTicketCount { get; set; }
         public int EmployeeRemaining { get; set; }

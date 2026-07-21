@@ -103,8 +103,10 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
             }
 
             var now = DateTime.Now;
+            // A hotel can be booked once only: block if the employee already has an active booking on
+            // ANY trip of the same hotel (not just this specific trip).
             var alreadyBooked = await _context.HotelTripBookings.AnyAsync(b =>
-                b.HotelTripId == trip.Id
+                b.HotelTrip.HotelId == trip.HotelId
                 && b.EmployeeNumber == request.EmployeeNumber
                 && (b.Status == HotelBookingStatus.Confirmed
                     || (b.Status == HotelBookingStatus.PendingPayment
@@ -113,7 +115,7 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
 
             if (alreadyBooked)
             {
-                throw new InvalidOperationException("الموظف لديه بالفعل حجز نشط على هذه الرحلة.");
+                throw new InvalidOperationException("الموظف لديه بالفعل حجز نشط على هذا الفندق.");
             }
 
             var bookingType = string.Equals(request.BookingType, "pensions", StringComparison.OrdinalIgnoreCase)

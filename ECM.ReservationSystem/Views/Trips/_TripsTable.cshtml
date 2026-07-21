@@ -8,9 +8,6 @@
                 <tr>
                     <th>المكان</th>
                     <th>تاريخ الرحلة</th>
-                    <th>سعر البالغ</th>
-                    <th>سعر الطفل</th>
-                    <th>سعر المرافق</th>
                     <th>عدد الحجوزات</th>
                     <th>نشطة</th>
                     <th>الإجراءات</th>
@@ -22,9 +19,6 @@
                     <tr>
                         <td>@trip.LocationName</td>
                         <td>@trip.TripDate.ToString("dd/MM/yyyy")</td>
-                        <td>@trip.AdultTicketPrice.ToString("N2")</td>
-                        <td>@trip.ChildTicketPrice.ToString("N2")</td>
-                        <td>@trip.CompanionTicketPrice.ToString("N2")</td>
                         <td><span class="badge bg-info">@trip.BookingsCount</span></td>
                         <td>
                             @if (trip.IsActive)
@@ -43,9 +37,6 @@
                                         data-id="@trip.Id"
                                         data-locationid="@trip.TripLocationId"
                                         data-tripdate="@trip.TripDate.ToString("yyyy-MM-dd")"
-                                        data-adultprice="@trip.AdultTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-childprice="@trip.ChildTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-companionprice="@trip.CompanionTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                         data-notes="@trip.Notes"
                                         data-active="@trip.IsActive">
                                     <i class="fas fa-edit"></i>

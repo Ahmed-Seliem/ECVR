@@ -89,9 +89,15 @@ public class OneDayTripApiController : ControllerBase
             return BadRequest(new { message = "عدد الأشخاص غير صحيح." });
         }
 
+        // Prices are defined on the place (TripLocation).
         var trip = await _context.Trips
             .Where(t => t.Id == tripId)
-            .Select(t => new { t.AdultTicketPrice, t.ChildTicketPrice, t.CompanionTicketPrice })
+            .Select(t => new
+            {
+                t.TripLocation.AdultTicketPrice,
+                t.TripLocation.ChildTicketPrice,
+                t.TripLocation.CompanionTicketPrice
+            })
             .FirstOrDefaultAsync();
 
         if (trip is null)
@@ -155,8 +161,9 @@ public class OneDayTripApiController : ControllerBase
         var isTripAvailable = trip.IsActive;
         var now = DateTime.Now;
 
+        // A place can be booked once only: check any active booking on the same place (not just this trip).
         var alreadyBooked = await _context.TripBookings.AnyAsync(b =>
-            b.TripId == tripId
+            b.Trip.TripLocationId == trip.TripLocationId
             && b.EmployeeNumber == employeeNumber
             && (b.Status == BookingStatus.Confirmed
                 || (b.Status == BookingStatus.PendingPayment
@@ -172,9 +179,9 @@ public class OneDayTripApiController : ControllerBase
         var remainingTickets = await _tripLocationService.GetRemainingTicketsAsync(trip.TripLocationId, resolvedBookingType);
         var hasEnoughTickets = totalGuests <= remainingTickets;
 
-        var total = (adults * trip.AdultTicketPrice)
-                    + (children * trip.ChildTicketPrice)
-                    + (companions * trip.CompanionTicketPrice);
+        var total = (adults * trip.TripLocation.AdultTicketPrice)
+                    + (children * trip.TripLocation.ChildTicketPrice)
+                    + (companions * trip.TripLocation.CompanionTicketPrice);
         var canBook = isTripAvailable && !alreadyBooked && isCountValid && hasEnoughTickets;
 
         string? message = null;
@@ -184,7 +191,7 @@ public class OneDayTripApiController : ControllerBase
         }
         else if (alreadyBooked)
         {
-            message = "الموظف لديه بالفعل حجز نشط على هذه الرحلة.";
+            message = "الموظف لديه بالفعل حجز نشط على هذا المكان.";
         }
         else if (!isCountValid)
         {
@@ -215,9 +222,9 @@ public class OneDayTripApiController : ControllerBase
             isCountValid,
             remainingTickets,
             hasEnoughTickets,
-            adultUnitPrice = trip.AdultTicketPrice,
-            childUnitPrice = trip.ChildTicketPrice,
-            companionUnitPrice = trip.CompanionTicketPrice,
+            adultUnitPrice = trip.TripLocation.AdultTicketPrice,
+            childUnitPrice = trip.TripLocation.ChildTicketPrice,
+            companionUnitPrice = trip.TripLocation.CompanionTicketPrice,
             total,
             canBook,
             message

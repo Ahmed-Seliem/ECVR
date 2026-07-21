@@ -78,19 +78,9 @@
                         <label class="form-label">تاريخ الرحلة</label>
                         <input name="TripDate" type="text" class="form-control js-date-picker" required />
                     </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">سعر تذكرة البالغ</label>
-                            <input name="AdultTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">سعر تذكرة الطفل</label>
-                            <input name="ChildTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">سعر تذكرة المرافق</label>
-                            <input name="CompanionTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
-                        </div>
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="fas fa-info-circle"></i>
+                        أسعار التذاكر تُحدَّد على المكان.
                     </div>
                     <div class="mb-3">
                         <label class="form-label">ملاحظات</label>
@@ -137,19 +127,9 @@
                         <label class="form-label">تاريخ الرحلة</label>
                         <input id="editTripDate" name="TripDate" type="text" class="form-control js-date-picker" required />
                     </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">سعر تذكرة البالغ</label>
-                            <input id="editAdultPrice" name="AdultTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">سعر تذكرة الطفل</label>
-                            <input id="editChildPrice" name="ChildTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">سعر تذكرة المرافق</label>
-                            <input id="editCompanionPrice" name="CompanionTicketPrice" type="number" step="0.01" min="0" class="form-control" required />
-                        </div>
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="fas fa-info-circle"></i>
+                        أسعار التذاكر تُحدَّد على المكان.
                     </div>
                     <div class="mb-3">
                         <label class="form-label">ملاحظات</label>
@@ -211,9 +191,6 @@
             $(document).on('click', '.js-edit-trip', function () {
                 const row = $(this);
                 $('#editTripLocationId').val(row.data('locationid')).trigger('change');
-                $('#editAdultPrice').val(row.data('adultprice'));
-                $('#editChildPrice').val(row.data('childprice'));
-                $('#editCompanionPrice').val(row.data('companionprice'));
                 $('#editTripNotes').val(row.data('notes'));
                 $('#editTripIsActive').prop('checked', row.data('active') === true || row.data('active') === 'True');
                 $('#editTripForm').attr('action', '/Admin/Trips/Edit/' + row.data('id'));

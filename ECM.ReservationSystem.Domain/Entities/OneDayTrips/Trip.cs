@@ -12,14 +12,7 @@ public class Trip : AuditableEntity
     [Required]
     public DateTime TripDate { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal AdultTicketPrice { get; set; }
-
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal ChildTicketPrice { get; set; }
-
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal CompanionTicketPrice { get; set; }
+    // Ticket prices moved to the TripLocation (prices are defined per place, not per trip).
 
     [StringLength(500)]
     public string? Notes { get; set; }

@@ -101,8 +101,10 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
             }
 
             var now = DateTime.Now;
+            // A place (location) can be booked once only: block if the employee already has an active
+            // booking on ANY trip of the same place (not just the same trip date).
             var alreadyBooked = await _context.TripBookings.AnyAsync(b =>
-                b.TripId == trip.Id
+                b.Trip.TripLocationId == trip.TripLocationId
                 && b.EmployeeNumber == request.EmployeeNumber
                 && (b.Status == BookingStatus.Confirmed
                     || (b.Status == BookingStatus.PendingPayment
@@ -111,7 +113,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
 
             if (alreadyBooked)
             {
-                throw new InvalidOperationException("الموظف لديه بالفعل حجز نشط على هذه الرحلة.");
+                throw new InvalidOperationException("الموظف لديه بالفعل حجز نشط على هذا المكان.");
             }
 
             var bookingType = string.Equals(request.BookingType, "pensions", StringComparison.OrdinalIgnoreCase)
@@ -125,9 +127,11 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 throw new InvalidOperationException($"لا توجد تذاكر كافية. المتبقي: {remaining}.");
             }
 
-            var baseTotal = (request.AdultsCount * trip.AdultTicketPrice)
-                          + (request.ChildrenCount * trip.ChildTicketPrice)
-                          + (request.CompanionsCount * trip.CompanionTicketPrice);
+            // Prices are defined on the place (TripLocation).
+            var location = trip.TripLocation;
+            var baseTotal = (request.AdultsCount * location.AdultTicketPrice)
+                          + (request.ChildrenCount * location.ChildTicketPrice)
+                          + (request.CompanionsCount * location.CompanionTicketPrice);
 
             // Pension surcharge (10%) is postponed for now — total = base regardless of type.
             // var totalAmount = bookingType == TripBookingType.Pension
@@ -145,9 +149,9 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Implementations
                 AdultsCount = request.AdultsCount,
                 ChildrenCount = request.ChildrenCount,
                 CompanionsCount = request.CompanionsCount,
-                AdultUnitPrice = trip.AdultTicketPrice,
-                ChildUnitPrice = trip.ChildTicketPrice,
-                CompanionUnitPrice = trip.CompanionTicketPrice,
+                AdultUnitPrice = location.AdultTicketPrice,
+                ChildUnitPrice = location.ChildTicketPrice,
+                CompanionUnitPrice = location.CompanionTicketPrice,
                 TotalAmount = totalAmount,
                 BookingType = bookingType,
                 Status = BookingStatus.PendingPayment,

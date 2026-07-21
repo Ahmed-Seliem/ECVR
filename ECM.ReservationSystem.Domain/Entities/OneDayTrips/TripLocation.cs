@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using ECM.ReservationSystem.Domain.Common;
 
 namespace ECM.ReservationSystem.Domain.Entities.OneDayTrips;
@@ -14,6 +15,16 @@ public class TripLocation : AuditableEntity
 
     [StringLength(500)]
     public string? Description { get; set; }
+
+    // Ticket prices are defined per place, shared across all the location's trips.
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal AdultTicketPrice { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal ChildTicketPrice { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal CompanionTicketPrice { get; set; }
 
     // Separate ticket pools per booking type, shared across all the location's trips (1 ticket per person).
     public int EmployeeTicketCount { get; set; }

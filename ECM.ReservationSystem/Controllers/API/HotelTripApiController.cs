@@ -179,8 +179,9 @@ public class HotelTripApiController : ControllerBase
         var isTripAvailable = trip.IsActive && trip.Hotel.IsActive;
         var now = DateTime.Now;
 
+        // A hotel can be booked once only: check any active booking on the same hotel (not just this trip).
         var alreadyBooked = await _context.HotelTripBookings.AnyAsync(b =>
-            b.HotelTripId == hotelTripId
+            b.HotelTrip.HotelId == trip.HotelId
             && b.EmployeeNumber == employeeNumber
             && (b.Status == HotelBookingStatus.Confirmed
                 || (b.Status == HotelBookingStatus.PendingPayment
@@ -208,7 +209,7 @@ public class HotelTripApiController : ControllerBase
         }
         else if (alreadyBooked)
         {
-            message = "الموظف لديه بالفعل حجز نشط على هذه الرحلة.";
+            message = "الموظف لديه بالفعل حجز نشط على هذا الفندق.";
         }
         else if (!isCountValid)
         {
