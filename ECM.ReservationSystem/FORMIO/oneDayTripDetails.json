@@ -105,13 +105,19 @@
     {
       "label": "نوع الحجز",
       "key": "bookingType",
-      "type": "hidden",
+      "type": "textfield",
       "input": true,
+      "hidden": false,
+      "disabled": true,
+      "hideLabel": true,
+      "clearOnHide": false,
+      "customClass": "d-none",
+      "attributes": { "style": "display:none" },
       "persistent": true,
       "tableView": false,
       "defaultValue": "employees",
       "id": "odt-bookingType",
-      "description": "يُضبط لكل workflow: employees أو pensions"
+      "description": "يُضبط لكل workflow: employees أو pensions (مخفي بـ inline style عشان CustomJs يقدر يقراه)"
     },
 
     {

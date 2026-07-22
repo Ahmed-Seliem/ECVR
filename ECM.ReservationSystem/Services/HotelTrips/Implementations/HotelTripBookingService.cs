@@ -227,7 +227,32 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                 return false;
             }
 
-            booking.Status = status;
+            // Rejection is always allowed.
+            if (status == HotelBookingStatus.Cancelled)
+            {
+                booking.Status = HotelBookingStatus.Cancelled;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+
+            // Confirming: guard against approving a booking whose payment window has already closed
+            // (otherwise a stale WF approval could resurrect a cancelled booking and overbook released tickets).
+            if (booking.Status == HotelBookingStatus.Cancelled)
+            {
+                throw new InvalidOperationException("تم إلغاء الحجز لانتهاء مهلة الدفع، ولا يمكن تأكيده.");
+            }
+
+            if (booking.Status == HotelBookingStatus.PendingPayment
+                && booking.PaymentDeadline != null
+                && booking.PaymentDeadline <= DateTime.Now)
+            {
+                // Expired but not yet auto-cancelled: cancel it now so its tickets stay released, then reject the confirm.
+                booking.Status = HotelBookingStatus.Cancelled;
+                await _context.SaveChangesAsync();
+                throw new InvalidOperationException("انتهت مهلة الدفع، تم إلغاء الحجز ولا يمكن تأكيده.");
+            }
+
+            booking.Status = HotelBookingStatus.Confirmed;
             await _context.SaveChangesAsync();
             return true;
         }
