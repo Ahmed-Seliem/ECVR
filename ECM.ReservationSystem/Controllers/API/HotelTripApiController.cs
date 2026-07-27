@@ -307,6 +307,53 @@ public class HotelTripApiController : ControllerBase
         public int BookingStatus { get; set; }
     }
 
+    // GET /api/HotelTrip/booking-info/{documentId}
+    // Used by the approval task form to show the payment deadline / expiry state before the admin approves.
+    [HttpGet("booking-info/{documentId:long}")]
+    public async Task<IActionResult> GetBookingInfo(long documentId)
+    {
+        if (documentId <= 0)
+        {
+            return BadRequest(new { message = "documentId is required." });
+        }
+
+        var booking = await _context.HotelTripBookings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(b => b.DocumentId == documentId);
+
+        if (booking is null)
+        {
+            return Ok(new { exists = false });
+        }
+
+        var now = DateTime.Now;
+        var isCancelled = booking.Status == HotelBookingStatus.Cancelled;
+        var isExpired = booking.Status == HotelBookingStatus.PendingPayment
+                        && booking.PaymentDeadline != null
+                        && booking.PaymentDeadline <= now;
+        var canConfirm = !isCancelled && !isExpired;
+
+        return Ok(new
+        {
+            exists = true,
+            status = (int)booking.Status,
+            statusText = GetStatusText(booking.Status),
+            paymentDeadline = booking.PaymentDeadline,
+            paymentDeadlineDisplay = booking.PaymentDeadline?.ToString("dddd، dd/MM/yyyy hh:mm tt", ArabicCulture),
+            isCancelled,
+            isExpired,
+            canConfirm
+        });
+    }
+
+    private static string GetStatusText(HotelBookingStatus status) => status switch
+    {
+        HotelBookingStatus.PendingPayment => "بانتظار الدفع",
+        HotelBookingStatus.Confirmed => "مؤكد",
+        HotelBookingStatus.Cancelled => "ملغي",
+        _ => status.ToString()
+    };
+
     // GET /api/HotelTrip/last-trip/{employeeNumber}
     [HttpGet("last-trip/{employeeNumber}")]
     public async Task<IActionResult> GetLastTrip(string employeeNumber)

@@ -674,3 +674,68 @@
         return data;
     }
 })();
+
+// ===== Reservation approval task: show booking status/deadline & block approving expired bookings =====
+// Reads the current document id from the portal's own GetDocumentBasicInfoByTaskId call, asks our API
+// for the booking state, fills the task-form display fields, and hides the Approve button when the
+// booking is already cancelled or its payment deadline has passed (works for One-Day and Hotel trips).
+(function () {
+    const RES_API = (window.ReservationURL || "http://localhost:5212").replace(/\/+$/, "");
+
+    function moduleFromDocType(name) {
+        if (!name) return null;
+        if (name.indexOf("فنادق") !== -1) return "HotelTrip";
+        if (name.indexOf("اليوم الواحد") !== -1) return "OneDayTrip";
+        return null;
+    }
+
+    function applyBookingInfo(documentId, module) {
+        fetch(RES_API + "/api/" + module + "/booking-info/" + documentId + "?_ts=" + Date.now())
+            .then(function (r) { return r.json(); })
+            .then(function (info) {
+                if (!info || !info.exists) return;
+
+                const statusEl = document.querySelector("[name='data[bookingStatusText]']");
+                if (statusEl) statusEl.value = info.statusText || "";
+
+                const deadlineEl = document.querySelector("[name='data[bookingDeadlineText]']");
+                if (deadlineEl) deadlineEl.value = info.paymentDeadlineDisplay || "";
+
+                const warningEl = document.getElementById("bookingExpiredWarning");
+
+                if (info.canConfirm === false) {
+                    // Booking cancelled or past its payment deadline: block approval and warn.
+                    document.querySelectorAll("button").forEach(function (b) {
+                        if ((b.textContent || "").trim() === "Approve") b.style.display = "none";
+                    });
+                    if (warningEl) warningEl.style.display = "block";
+                } else {
+                    if (warningEl) warningEl.style.display = "none";
+                }
+            })
+            .catch(function () { });
+    }
+
+    const origOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (method, url) {
+        this.__resUrl = url;
+        return origOpen.apply(this, arguments);
+    };
+
+    const origSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.send = function () {
+        const xhr = this;
+        xhr.addEventListener("load", function () {
+            try {
+                if (xhr.__resUrl && xhr.__resUrl.indexOf("GetDocumentBasicInfoByTaskId") !== -1) {
+                    const doc = JSON.parse(xhr.responseText);
+                    const module = moduleFromDocType(doc.documentTypeName);
+                    if (doc && doc.id && module) {
+                        setTimeout(function () { applyBookingInfo(doc.id, module); }, 800);
+                    }
+                }
+            } catch (e) { /* ignore non-JSON or unrelated responses */ }
+        });
+        return origSend.apply(this, arguments);
+    };
+})();
