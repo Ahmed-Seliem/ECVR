@@ -248,6 +248,27 @@ public class HotelTripApiController : ControllerBase
         });
     }
 
+    // POST /api/HotelTrip/hold  (called by the form's confirm button BEFORE submitting the WF, so a losing
+    // concurrent request is rejected here and never creates a Case document)
+    [HttpPost("hold")]
+    public async Task<IActionResult> Hold([FromBody] HotelTripBookingRequestDto request)
+    {
+        if (request is null)
+        {
+            return BadRequest(new { message = "بيانات الحجز غير صحيحة." });
+        }
+
+        try
+        {
+            var booking = await _bookingService.HoldAsync(request);
+            return Ok(booking);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     // POST /api/HotelTrip/bookings
     [HttpPost("bookings")]
     public async Task<IActionResult> CreateBooking([FromBody] HotelTripBookingRequestDto request)

@@ -68,7 +68,49 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                 .ToListAsync();
         }
 
+        public async Task<HotelTripBookingResponseDto> HoldAsync(HotelTripBookingRequestDto request)
+        {
+            // Pre-submit hold: atomically create the PendingPayment booking BEFORE the WF is submitted, so a
+            // losing concurrent request never creates a Case document. The DocumentId is linked later.
+            return await InsertBookingAsync(request);
+        }
+
         public async Task<HotelTripBookingResponseDto> CreateAsync(HotelTripBookingRequestDto request)
+        {
+            // If a pre-submit hold already exists for this employee+trip (created by HoldAsync, not yet
+            // linked to a document), link it to this Case document instead of creating a duplicate booking.
+            if (request.DocumentId.HasValue && request.DocumentId.Value > 0)
+            {
+                var linkNow = DateTime.Now;
+                var hold = await _context.HotelTripBookings
+                    .Where(b => b.HotelTripId == request.HotelTripId
+                                && b.EmployeeNumber == request.EmployeeNumber
+                                && b.DocumentId == null
+                                && b.Status == HotelBookingStatus.PendingPayment
+                                && b.PaymentDeadline != null
+                                && b.PaymentDeadline > linkNow)
+                    .OrderByDescending(b => b.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (hold != null)
+                {
+                    hold.DocumentId = request.DocumentId;
+                    hold.WorkflowId = request.WorkflowId;
+                    hold.CaseSystemId = request.CaseSystemId;
+                    if (!string.IsNullOrWhiteSpace(request.Notes))
+                    {
+                        hold.Notes = request.Notes;
+                    }
+
+                    await _context.SaveChangesAsync();
+                    return await GetByIdAsync(hold.Id) ?? MapToDto(hold);
+                }
+            }
+
+            return await InsertBookingAsync(request);
+        }
+
+        private async Task<HotelTripBookingResponseDto> InsertBookingAsync(HotelTripBookingRequestDto request)
         {
             var totalGuests = request.AdultsCount + request.ChildrenCount + request.CompanionsCount;
 
@@ -122,13 +164,6 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                 ? HotelBookingType.Pension
                 : HotelBookingType.Employee;
 
-            // Ticket availability: each booking type has its own pool on the hotel (1 ticket per person).
-            var remaining = await _hotelService.GetRemainingTicketsAsync(trip.HotelId, bookingType);
-            if (totalGuests > remaining)
-            {
-                throw new InvalidOperationException($"لا توجد تذاكر كافية. المتبقي: {remaining}.");
-            }
-
             var baseTotal = (request.AdultsCount * trip.Hotel.AdultTicketPrice)
                           + (request.ChildrenCount * trip.Hotel.ChildTicketPrice)
                           + (request.CompanionsCount * trip.Hotel.CompanionTicketPrice);
@@ -162,8 +197,27 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Implementations
                 Notes = request.Notes
             };
 
+            // Serialize concurrent bookings on the same hotel's ticket pool using a named application lock
+            // (SQL Server sp_getapplock), so two requests can't both pass the availability check and consume
+            // the last tickets. The lock is released automatically when the transaction commits/rolls back.
+            await using var tx = await _context.Database.BeginTransactionAsync();
+
+            var lockResource = $"hoteltrip-pool-{trip.HotelId}";
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+DECLARE @lockResult int;
+EXEC @lockResult = sp_getapplock @Resource = {lockResource}, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 15000;
+IF @lockResult < 0 THROW 51000, N'تعذّر تأمين الحجز، برجاء المحاولة مرة أخرى.', 1;");
+
+            // Ticket availability: each booking type has its own pool on the hotel (1 ticket per person).
+            var remaining = await _hotelService.GetRemainingTicketsAsync(trip.HotelId, bookingType);
+            if (totalGuests > remaining)
+            {
+                throw new InvalidOperationException($"لا توجد تذاكر كافية. المتبقي: {remaining}.");
+            }
+
             _context.HotelTripBookings.Add(booking);
             await _context.SaveChangesAsync();
+            await tx.CommitAsync();
 
             return await GetByIdAsync(booking.Id) ?? MapToDto(booking);
         }

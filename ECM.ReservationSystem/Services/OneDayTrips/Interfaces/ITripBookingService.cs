@@ -7,6 +7,7 @@ namespace ECM.ReservationSystem.Services.OneDayTrips.Interfaces
         Task<List<TripBookingResponseDto>> GetAllAsync(int? tripId = null, Domain.Entities.OneDayTrips.TripBookingType? bookingType = null);
         Task<TripBookingResponseDto?> GetByIdAsync(int id);
         Task<List<TripBookingResponseDto>> GetByEmployeeAsync(string employeeNumber);
+        Task<TripBookingResponseDto> HoldAsync(TripBookingRequestDto request);
         Task<TripBookingResponseDto> CreateAsync(TripBookingRequestDto request);
         Task<bool> ConfirmPaymentAsync(int id);
         Task<bool> CancelAsync(int id);

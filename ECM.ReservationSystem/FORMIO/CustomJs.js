@@ -171,42 +171,37 @@
             return;
         }
 
-        showOdtStatus("جاري التحقق من التوفّر...", "info");
+        showOdtStatus("جاري حجز التذاكر...", "info");
         disableSendButton();
         $("#reserveOneDayTripHoldBtn").prop("disabled", true);
 
+        // Atomically hold the tickets BEFORE submitting the WF. A losing concurrent request is rejected
+        // here and never submits (so it never creates a Case document / draft).
         originalAjax({
-            url: window.ReservationURL + "/api/OneDayTrip/booking-context?employeeNumber=" +
-                encodeURIComponent(payload.employeeNumber) + "&tripId=" + encodeURIComponent(payload.tripId) +
-                "&adults=" + encodeURIComponent(payload.adultsCount) + "&children=" + encodeURIComponent(payload.childrenCount) +
-                "&companions=" + encodeURIComponent(payload.companionsCount) + "&bookingType=" + encodeURIComponent(payload.bookingType) + "&_ts=" + Date.now(),
-            type: "GET",
-            dataType: "json"
+            url: window.ReservationURL + "/api/OneDayTrip/hold",
+            type: "POST",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify(payload)
         })
-            .done(function (ctx) {
-                if (ctx && ctx.canBook) {
-                    window.oneDayTripHoldSucceeded = true;
-                    window.oneDayTripHoldKey = buildOneDayTripHoldKey(payload);
+            .done(function () {
+                window.oneDayTripHoldSucceeded = true;
+                window.oneDayTripHoldKey = buildOneDayTripHoldKey(payload);
 
-                    showOdtStatus("تم التحقق من الحجز، جاري إرسال الطلب...", "success");
-                    enableSendButton();
-                    triggerSendButton();
-                } else {
-                    resetOneDayTripHoldState();
-                    const msg = (ctx && ctx.message) ? ctx.message : "لا يمكن إتمام الحجز.";
-                    showOdtStatus(msg, "error");
-                    $("#reserveOneDayTripHoldBtn").prop("disabled", false);
-                }
+                showOdtStatus("تم حجز التذاكر، جاري إرسال الطلب...", "success");
+                enableSendButton();
+                triggerSendButton();
             })
             .fail(function (xhr) {
                 resetOneDayTripHoldState();
 
-                let msg = "فشل التحقق من الحجز.";
+                let msg = "لا يمكن إتمام الحجز.";
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     msg = xhr.responseJSON.message;
                 }
 
                 showOdtStatus(msg, "error");
+                Common.alertMsg(msg);
                 $("#reserveOneDayTripHoldBtn").prop("disabled", false);
             });
     });
@@ -234,42 +229,37 @@
             return;
         }
 
-        showHotelStatus("جاري التحقق من التوفّر...", "info");
+        showHotelStatus("جاري حجز التذاكر...", "info");
         disableSendButton();
         $("#reserveHotelTripHoldBtn").prop("disabled", true);
 
+        // Atomically hold the tickets BEFORE submitting the WF. A losing concurrent request is rejected
+        // here and never submits (so it never creates a Case document / draft).
         originalAjax({
-            url: window.ReservationURL + "/api/HotelTrip/booking-context?employeeNumber=" +
-                encodeURIComponent(payload.employeeNumber) + "&hotelTripId=" + encodeURIComponent(payload.hotelTripId) +
-                "&adults=" + encodeURIComponent(payload.adultsCount) + "&children=" + encodeURIComponent(payload.childrenCount) +
-                "&companions=" + encodeURIComponent(payload.companionsCount) + "&bookingType=" + encodeURIComponent(payload.bookingType) + "&_ts=" + Date.now(),
-            type: "GET",
-            dataType: "json"
+            url: window.ReservationURL + "/api/HotelTrip/hold",
+            type: "POST",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify(payload)
         })
-            .done(function (ctx) {
-                if (ctx && ctx.canBook) {
-                    window.hotelTripHoldSucceeded = true;
-                    window.hotelTripHoldKey = buildHotelTripHoldKey(payload);
+            .done(function () {
+                window.hotelTripHoldSucceeded = true;
+                window.hotelTripHoldKey = buildHotelTripHoldKey(payload);
 
-                    showHotelStatus("تم التحقق من الحجز، جاري إرسال الطلب...", "success");
-                    enableSendButton();
-                    triggerSendButton();
-                } else {
-                    resetHotelTripHoldState();
-                    const msg = (ctx && ctx.message) ? ctx.message : "لا يمكن إتمام الحجز.";
-                    showHotelStatus(msg, "error");
-                    $("#reserveHotelTripHoldBtn").prop("disabled", false);
-                }
+                showHotelStatus("تم حجز التذاكر، جاري إرسال الطلب...", "success");
+                enableSendButton();
+                triggerSendButton();
             })
             .fail(function (xhr) {
                 resetHotelTripHoldState();
 
-                let msg = "فشل التحقق من الحجز.";
+                let msg = "لا يمكن إتمام الحجز.";
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     msg = xhr.responseJSON.message;
                 }
 
                 showHotelStatus(msg, "error");
+                Common.alertMsg(msg);
                 $("#reserveHotelTripHoldBtn").prop("disabled", false);
             });
     });
@@ -467,6 +457,8 @@
     function buildOneDayTripPayload() {
         return {
             employeeNumber: getFieldValue("number") || "",
+            employeeName: getFieldValue("name") || "",
+            sector: getFieldValue("department") || getFieldValue("employeeDepartment") || getFieldValue("sector") || "",
             phoneNumber: getFieldValue("phoneNumber") || "",
             tripId: toNumber(getFieldValue("trip")),
             adultsCount: toNumber(getFieldValue("adultsCount")),
@@ -579,6 +571,8 @@
     function buildHotelTripPayload() {
         return {
             employeeNumber: getFieldValue("number") || "",
+            employeeName: getFieldValue("name") || "",
+            sector: getFieldValue("department") || getFieldValue("employeeDepartment") || getFieldValue("sector") || "",
             phoneNumber: getFieldValue("phoneNumber") || "",
             hotelTripId: toNumber(getFieldValue("trip")),
             adultsCount: toNumber(getFieldValue("adultsCount")),

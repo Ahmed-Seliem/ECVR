@@ -7,6 +7,7 @@ namespace ECM.ReservationSystem.Services.HotelTrips.Interfaces
         Task<List<HotelTripBookingResponseDto>> GetAllAsync(int? hotelTripId = null, Domain.Entities.HotelTrips.HotelBookingType? bookingType = null);
         Task<HotelTripBookingResponseDto?> GetByIdAsync(int id);
         Task<List<HotelTripBookingResponseDto>> GetByEmployeeAsync(string employeeNumber);
+        Task<HotelTripBookingResponseDto> HoldAsync(HotelTripBookingRequestDto request);
         Task<HotelTripBookingResponseDto> CreateAsync(HotelTripBookingRequestDto request);
         Task<bool> ConfirmPaymentAsync(int id);
         Task<bool> CancelAsync(int id);

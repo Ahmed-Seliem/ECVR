@@ -231,6 +231,27 @@ public class OneDayTripApiController : ControllerBase
         });
     }
 
+    // POST /api/OneDayTrip/hold  (called by the form's confirm button BEFORE submitting the WF, so a losing
+    // concurrent request is rejected here and never creates a Case document)
+    [HttpPost("hold")]
+    public async Task<IActionResult> Hold([FromBody] TripBookingRequestDto request)
+    {
+        if (request is null)
+        {
+            return BadRequest(new { message = "بيانات الحجز غير صحيحة." });
+        }
+
+        try
+        {
+            var booking = await _tripBookingService.HoldAsync(request);
+            return Ok(booking);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     // POST /api/OneDayTrip/bookings
     [HttpPost("bookings")]
     public async Task<IActionResult> CreateBooking([FromBody] TripBookingRequestDto request)
