@@ -42,13 +42,12 @@
                     <dt class="col-sm-4">عدد الأشخاص</dt>
                     <dd class="col-sm-8">
                         <strong>@totalGuests</strong>
-                        <span class="text-muted">(بالغين @Model.AdultsCount، أطفال @Model.ChildrenCount، مرافقين @Model.CompanionsCount)</span>
+                        <span class="text-muted">(بالغين @Model.AdultsCount، أطفال @Model.ChildrenCount)</span>
                     </dd>
                     <dt class="col-sm-4">أسعار التذاكر</dt>
                     <dd class="col-sm-8">
                         البالغ @Model.AdultUnitPrice.ToString("N2") /
-                        الطفل @Model.ChildUnitPrice.ToString("N2") /
-                        المرافق @Model.CompanionUnitPrice.ToString("N2")
+                        الطفل @Model.ChildUnitPrice.ToString("N2")
                     </dd>
                     <dt class="col-sm-4">الإجمالي</dt><dd class="col-sm-8"><strong class="text-primary">@Model.TotalAmount.ToString("N2")</strong></dd>
                     <dt class="col-sm-4">نوع الحجز</dt>

@@ -22,9 +22,7 @@ namespace ECM.ReservationSystem.Models.DTOs.OneDayTrips
         [Range(0, 9999999.99, ErrorMessage = "سعر تذكرة الطفل يجب أن يكون رقمًا موجبًا")]
         public decimal? ChildTicketPrice { get; set; }
 
-        [Required(ErrorMessage = "سعر تذكرة المرافق مطلوب")]
-        [Range(0, 9999999.99, ErrorMessage = "سعر تذكرة المرافق يجب أن يكون رقمًا موجبًا")]
-        public decimal? CompanionTicketPrice { get; set; }
+        // Companions removed from One-Day trips — no companion ticket price collected.
 
         [Range(0, int.MaxValue, ErrorMessage = "عدد تذاكر الموظفين يجب أن يكون رقمًا موجبًا")]
         public int EmployeeTicketCount { get; set; }

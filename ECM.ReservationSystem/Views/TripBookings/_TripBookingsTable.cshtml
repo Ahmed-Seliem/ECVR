@@ -32,7 +32,7 @@
                 @foreach (var booking in Model)
                 {
                     var status = GetBookingStatus(booking.Status);
-                    var totalGuests = booking.AdultsCount + booking.ChildrenCount + booking.CompanionsCount;
+                    var totalGuests = booking.AdultsCount + booking.ChildrenCount;
                     <tr>
                         <td>@booking.LocationName</td>
                         <td>@booking.TripDate.ToString("dd/MM/yyyy")</td>
@@ -40,7 +40,7 @@
                         <td>@booking.EmployeeName</td>
                         <td>
                             <span class="badge bg-secondary"
-                                  title="بالغين @booking.AdultsCount، أطفال @booking.ChildrenCount، مرافقين @booking.CompanionsCount">
+                                  title="بالغين @booking.AdultsCount، أطفال @booking.ChildrenCount">
                                 @totalGuests
                             </span>
                         </td>

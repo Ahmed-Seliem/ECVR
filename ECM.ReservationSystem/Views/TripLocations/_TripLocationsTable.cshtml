@@ -9,7 +9,7 @@
                     <th>الاسم</th>
                     <th>الاسم بالعربية</th>
                     @* <th>الوصف</th> *@
-                    <th>الأسعار (بالغ/طفل/مرافق)</th>
+                    <th>الأسعار (بالغ/طفل)</th>
                     <th>تذاكر الموظفين</th>
                     <th>تذاكر المعاشات</th>
                     <th>عدد الرحلات</th>
@@ -28,7 +28,6 @@
                         <td>
                             <span class="badge bg-light text-dark">@location.AdultTicketPrice.ToString("N2")</span>
                             <span class="badge bg-light text-dark">@location.ChildTicketPrice.ToString("N2")</span>
-                            <span class="badge bg-light text-dark">@location.CompanionTicketPrice.ToString("N2")</span>
                         </td>
                         <td>
                             <span class="badge bg-primary">@location.EmployeeTicketCount</span>
@@ -60,7 +59,6 @@
                                         data-description="@location.Description"
                                         data-adultprice="@location.AdultTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                         data-childprice="@location.ChildTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-companionprice="@location.CompanionTicketPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                         data-employeetickets="@location.EmployeeTicketCount"
                                         data-pensiontickets="@location.PensionTicketCount"
                                         data-active="@location.IsActive">

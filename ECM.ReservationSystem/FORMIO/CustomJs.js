@@ -463,7 +463,7 @@
             tripId: toNumber(getFieldValue("trip")),
             adultsCount: toNumber(getFieldValue("adultsCount")),
             childrenCount: toNumber(getFieldValue("childrenCount")),
-            companionsCount: toNumber(getFieldValue("companionsCount")),
+            companionsCount: 0, // companions removed from One-Day trips
             bookingType: getFieldValue("bookingType") || "employees"
         };
     }
