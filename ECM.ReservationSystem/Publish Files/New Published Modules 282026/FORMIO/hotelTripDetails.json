@@ -1,0 +1,358 @@
+{
+  "title": "تفاصيل رحلة الفندق",
+  "collapsible": false,
+  "key": "hotelTripDetails",
+  "type": "panel",
+  "label": "Panel",
+  "input": false,
+  "tableView": false,
+  "components": [
+    {
+      "key": "reservationUrl",
+      "type": "hidden",
+      "input": true,
+      "defaultValue": "http://localhost:5212",
+      "persistent": true,
+      "label": "",
+      "id": "ht-url"
+    },
+    {
+      "key": "requestNonce",
+      "type": "hidden",
+      "input": true,
+      "persistent": false,
+      "calculateValue": "value = data.requestNonce || Date.now();",
+      "label": "",
+      "id": "ht-nonce"
+    },
+
+    {
+      "label": "المدينة",
+      "widget": "choicesjs",
+      "dataSrc": "url",
+      "data": {
+        "url": "{{data.reservationUrl}}/api/HotelTrip/cities?_ts={{data.requestNonce}}",
+        "headers": [{ "key": "", "value": "" }]
+      },
+      "valueProperty": "id",
+      "template": "<span>{{ item.name }}</span>",
+      "clearOnRefresh": true,
+      "selectThreshold": 0.3,
+      "validate": { "required": true },
+      "key": "city",
+      "type": "select",
+      "disableCache": true,
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "searchEnabled": true,
+      "lazyLoad": true,
+      "id": "ht-city"
+    },
+
+    {
+      "label": "الفندق",
+      "widget": "choicesjs",
+      "dataSrc": "url",
+      "data": {
+        "url": "{{data.reservationUrl}}/api/HotelTrip/hotels/{{data.city}}?_ts={{data.requestNonce}}",
+        "headers": [{ "key": "", "value": "" }]
+      },
+      "valueProperty": "id",
+      "template": "<span>{{ item.name }}</span>",
+      "refreshOn": "city",
+      "clearOnRefresh": true,
+      "selectThreshold": 0.3,
+      "validate": { "required": true },
+      "key": "hotel",
+      "type": "select",
+      "disableCache": true,
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "searchEnabled": true,
+      "lazyLoad": true,
+      "id": "ht-hotel"
+    },
+
+    {
+      "label": "الرحلات المتاحة",
+      "widget": "choicesjs",
+      "dataSrc": "url",
+      "data": {
+        "url": "{{data.reservationUrl}}/api/HotelTrip/trips/{{data.hotel}}?_ts={{data.requestNonce}}",
+        "headers": [{ "key": "", "value": "" }]
+      },
+      "valueProperty": "id",
+      "template": "<span>{{ item.tripDateDisplay }}</span>",
+      "refreshOn": "hotel",
+      "clearOnRefresh": true,
+      "selectThreshold": 0.3,
+      "validate": { "required": true },
+      "key": "trip",
+      "type": "select",
+      "disableCache": true,
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "searchEnabled": true,
+      "lazyLoad": true,
+      "id": "ht-trip"
+    },
+
+    {
+      "label": "اسم الفندق",
+      "disabled": true,
+      "calculateValue": "value = $('select[id*=\"ht-hotel\"]').text().replace('<span>', '').replace('</span>', '');",
+      "key": "hotelName",
+      "type": "textfield",
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "id": "ht-hotelName"
+    },
+    {
+      "label": "فترة الرحلة",
+      "disabled": true,
+      "calculateValue": "value = $('select[id*=\"ht-trip\"]').text().replace('<span>', '').replace('</span>', '');",
+      "key": "tripDateDisplay",
+      "type": "textfield",
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "id": "ht-tripDateDisplay"
+    },
+
+    {
+      "label": "نوع الحجز",
+      "key": "bookingType",
+      "type": "textfield",
+      "input": true,
+      "hidden": false,
+      "disabled": true,
+      "hideLabel": true,
+      "clearOnHide": false,
+      "customClass": "d-none",
+      "attributes": { "style": "display:none" },
+      "persistent": true,
+      "tableView": false,
+      "defaultValue": "employees",
+      "id": "ht-bookingType",
+      "description": "يُضبط لكل workflow: employees أو pensions (مخفي بـ inline style عشان CustomJs يقدر يقراه)"
+    },
+
+    {
+      "label": "إجمالي عدد الأفراد",
+      "widget": "choicesjs",
+      "defaultValue": "1",
+      "data": {
+        "values": [
+          { "label": "1", "value": "1" },
+          { "label": "2", "value": "2" },
+          { "label": "3", "value": "3" },
+          { "label": "4", "value": "4" },
+          { "label": "5", "value": "5" }
+        ]
+      },
+      "dataSrc": "values",
+      "selectThreshold": 0.3,
+      "validate": { "required": true },
+      "key": "totalGuests",
+      "type": "select",
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "clearOnHide": true,
+      "clearOnRefresh": false,
+      "searchEnabled": false,
+      "id": "ht-totalGuests",
+      "description": "الحد الأقصى 5 أفراد لكل حجز (على الأقل بالغ واحد)"
+    },
+
+    {
+      "type": "columns",
+      "key": "guestsBreakdownColumns",
+      "input": false,
+      "tableView": false,
+      "label": "Columns",
+      "id": "ht-guestsColumns",
+      "columns": [
+        {
+          "width": 4,
+          "size": "md",
+          "currentWidth": 4,
+          "components": [
+            {
+              "label": "عدد البالغين",
+              "key": "adultsCount",
+              "type": "number",
+              "input": true,
+              "tableView": true,
+              "persistent": true,
+              "clearOnHide": true,
+              "defaultValue": 1,
+              "validate": {
+                "required": true,
+                "min": 1,
+                "integer": true,
+                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0) + Number(data.companionsCount||0)) <= Number(data.totalGuests||0) ? true : 'مجموع الأفراد لا يجب أن يتجاوز إجمالي عدد الأفراد المختار';"
+              },
+              "id": "ht-adultsCount"
+            }
+          ]
+        },
+        {
+          "width": 4,
+          "size": "md",
+          "currentWidth": 4,
+          "components": [
+            {
+              "label": "عدد الأطفال",
+              "key": "childrenCount",
+              "type": "number",
+              "input": true,
+              "tableView": true,
+              "persistent": true,
+              "clearOnHide": true,
+              "defaultValue": 0,
+              "validate": {
+                "required": true,
+                "min": 0,
+                "integer": true,
+                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0) + Number(data.companionsCount||0)) <= Number(data.totalGuests||0) ? true : 'مجموع الأفراد لا يجب أن يتجاوز إجمالي عدد الأفراد المختار';"
+              },
+              "id": "ht-childrenCount"
+            }
+          ]
+        },
+        {
+          "width": 4,
+          "size": "md",
+          "currentWidth": 4,
+          "components": [
+            {
+              "label": "عدد المرافقين",
+              "key": "companionsCount",
+              "type": "number",
+              "input": true,
+              "tableView": true,
+              "persistent": true,
+              "clearOnHide": true,
+              "defaultValue": 0,
+              "validate": {
+                "required": true,
+                "min": 0,
+                "integer": true,
+                "custom": "valid = (Number(data.adultsCount||0) + Number(data.childrenCount||0) + Number(data.companionsCount||0)) === Number(data.totalGuests||0) ? true : 'مجموع البالغين والأطفال والمرافقين يجب أن يساوي إجمالي عدد الأفراد المختار';"
+              },
+              "id": "ht-companionsCount"
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "key": "reservationContext",
+      "type": "hidden",
+      "input": true,
+      "persistent": false,
+      "calculateValue": "var adults = Number(data.adultsCount || 0); var children = Number(data.childrenCount || 0); var companions = Number(data.companionsCount || 0); var isPension = (data.bookingType === 'pensions'); var form = instance.root; function clearAll() { form.getComponent('adultUnitPrice').setValue(null); form.getComponent('childUnitPrice').setValue(null); form.getComponent('companionUnitPrice').setValue(null); form.getComponent('price').setValue(null); } if (!data.reservationUrl || !data.trip) { clearAll(); value=''; } else { try { var ts = Date.now(); var priceUrl = data.reservationUrl + '/api/HotelTrip/price/' + encodeURIComponent(data.trip) + '?adults=' + encodeURIComponent(adults) + '&children=' + encodeURIComponent(children) + '&companions=' + encodeURIComponent(companions) + '&_ts=' + ts; var xhr = new XMLHttpRequest(); xhr.open('GET', priceUrl, false); xhr.setRequestHeader('Accept', 'application/json'); xhr.send(null); if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText) { var res = JSON.parse(xhr.responseText); var baseTotal = res.total || 0; var finalTotal = baseTotal; /* pension 10% surcharge postponed */ form.getComponent('adultUnitPrice').setValue(res.adultUnitPrice || 0); form.getComponent('childUnitPrice').setValue(res.childUnitPrice || 0); form.getComponent('companionUnitPrice').setValue(res.companionUnitPrice || 0); form.getComponent('price').setValue(finalTotal); res.bookingType = isPension ? 'pensions' : 'employees'; res.baseTotal = baseTotal; res.finalTotal = finalTotal; value = JSON.stringify(res); } else { clearAll(); value=''; } } catch(e) { clearAll(); value=''; } }",
+      "refreshOn": "trip",
+      "id": "ht-reservationContext"
+    },
+
+    {
+      "label": "إجمالي السعر",
+      "disabled": true,
+      "clearOnHide": false,
+      "key": "price",
+      "type": "number",
+      "input": true,
+      "tableView": true,
+      "persistent": true,
+      "id": "ht-price"
+    },
+
+    {
+      "title": "تفاصيل السعر",
+      "collapsible": false,
+      "key": "priceDetails",
+      "type": "panel",
+      "label": "Panel",
+      "input": false,
+      "tableView": false,
+      "id": "ht-priceDetails",
+      "components": [
+        {
+          "label": "سعر تذكرة البالغ",
+          "disabled": true,
+          "clearOnHide": false,
+          "key": "adultUnitPrice",
+          "type": "number",
+          "input": true,
+          "tableView": true,
+          "persistent": true,
+          "id": "ht-adultUnitPrice"
+        },
+        {
+          "label": "سعر تذكرة الطفل",
+          "disabled": true,
+          "clearOnHide": false,
+          "key": "childUnitPrice",
+          "type": "number",
+          "input": true,
+          "tableView": true,
+          "persistent": true,
+          "id": "ht-childUnitPrice"
+        },
+        {
+          "label": "سعر تذكرة المرافق",
+          "disabled": true,
+          "clearOnHide": false,
+          "key": "companionUnitPrice",
+          "type": "number",
+          "input": true,
+          "tableView": true,
+          "persistent": true,
+          "id": "ht-companionUnitPrice"
+        }
+      ]
+    },
+
+    {
+      "key": "bookingContext",
+      "type": "hidden",
+      "input": true,
+      "persistent": false,
+      "calculateValue": "function empty(){value='';} if(!data.number || !data.trip || !data.reservationUrl){empty();} else { try { var xhr = new XMLHttpRequest(); xhr.open('GET', data.reservationUrl + '/api/HotelTrip/booking-context?employeeNumber=' + encodeURIComponent(data.number) + '&hotelTripId=' + encodeURIComponent(data.trip) + '&adults=' + encodeURIComponent(Number(data.adultsCount||0)) + '&children=' + encodeURIComponent(Number(data.childrenCount||0)) + '&companions=' + encodeURIComponent(Number(data.companionsCount||0)) + '&bookingType=' + encodeURIComponent(data.bookingType || 'employees') + '&_ts=' + Date.now(), false); xhr.setRequestHeader('Accept','application/json'); xhr.send(null); value = (xhr.status >= 200 && xhr.status < 300) ? xhr.responseText : ''; } catch(e){ empty(); } }",
+      "id": "ht-bookingContext"
+    },
+
+    {
+      "key": "lastTripContext",
+      "type": "hidden",
+      "input": true,
+      "persistent": false,
+      "calculateValue": "function empty(){value='';} if(!data.number || !data.reservationUrl){empty();} else { try { var xhr = new XMLHttpRequest(); xhr.open('GET', data.reservationUrl + '/api/HotelTrip/last-trip/' + encodeURIComponent(data.number) + '?_ts=' + Date.now(), false); xhr.setRequestHeader('Accept','application/json'); xhr.send(null); value = (xhr.status >= 200 && xhr.status < 300) ? xhr.responseText : ''; } catch(e){ empty(); } }",
+      "id": "ht-lastTripContext"
+    },
+
+    {
+      "label": "اضغط هنا لتأكيد الحجز وارسال الطلب",
+      "tag": "div",
+      "content": "<div style=\"margin:12px 0;text-align:center;\">\r\n  <button type=\"button\" id=\"reserveHotelTripHoldBtn\" class=\"btn btn-warning\" style=\"min-width:220px;\">\r\n    اضغط هنا لتأكيد الحجز وارسال الطلب\r\n  </button>\r\n\r\n  <div id=\"reserveHotelTripHoldStatus\" style=\"margin-top:8px;font-size:13px;\"></div>\r\n</div>",
+      "key": "holdReservationButton",
+      "type": "htmlelement",
+      "input": false,
+      "tableView": false,
+      "hideLabel": true,
+      "id": "ht-holdBtn"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+HotelTripEmployeeDocTypeBaseID
+HotelTripPensionDocTypeBaseID
+OneDayTripEmployeeDocTypeBaseID
+OneDayTripPensionDocTypeBaseID
